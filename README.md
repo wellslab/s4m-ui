@@ -4,7 +4,10 @@
 
 ```bash
 # install dependencies
-$ npm install
+$ npm install bootstrap-vue
+$ npm install sass-loader 
+$ npm install node-sass
+$ npm add @nuxtjs/axios 
 
 # serve with hot reload at localhost:3000
 $ npm run dev
