@@ -1,7 +1,7 @@
 export default {
   // Global page headers (https://go.nuxtjs.dev/config-head)
   head: {
-    title: 's4m',
+    title: 'Stemformatics',
     meta: [
       { charset: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
@@ -18,6 +18,7 @@ export default {
 
   // Plugins to run before rendering page (https://go.nuxtjs.dev/config-plugins)
   plugins: [
+    //{ src: '~/plugins/plotly.js', ssr: false }
   ],
 
   // Auto import components (https://go.nuxtjs.dev/config-components)
@@ -34,14 +35,20 @@ export default {
     '@nuxtjs/axios',
     '@nuxtjs/proxy'
   ],
+  
+  bootstrapVue: {
+    bootstrapCSS: false, // Or `css: false`
+    bootstrapVueCSS: false // Or `bvCSS: false`
+  },
 
   axios: {
-    proxy: true
+    proxy: true,
+    baseURL: 'http://localhost:3000',
   },
   
   proxy: {
     '/api': {
-      target: 'https://api.stemformatics.org',
+      target: 'https://api2.stemformatics.org',
       pathRewrite: {
         '^/api' : ''
         }

@@ -17,6 +17,7 @@
     "core-js": "^3.6.5",
     "node-sass": "^5.0.0",
     "nuxt": "^2.14.6",
+    "plotly.js-dist": "^1.57.1",
     "sass-loader": "^10.0.5"
   },
   "devDependencies": {}

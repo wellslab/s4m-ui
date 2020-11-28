@@ -1,27 +1,14 @@
 <template>
-  <div>
+  <b-container>
     <PageNavigation />
-    <div class="container-fluid">
-        <div class="row">
-            <PageSidebar />
-            <Nuxt />
-        </div>
-    </div>
-  </div>
+    <Nuxt />
+  </b-container>
 </template>
 
-<script>
-import PageNavigation from "../components/PageNavigation";
-import PageSidebar from "../components/PageSidebar";
-
-export default {
-  components: {
-    PageNavigation,
-    PageSidebar
-  }
-}
-</script>
-
 <style lang="scss">
-@import 'assets/custom.scss';
+  @import 'assets/custom.scss';
+  @import '~bootstrap/scss/bootstrap.scss';
+  @import '~bootstrap-vue/src/index.scss';
 </style>
+
+

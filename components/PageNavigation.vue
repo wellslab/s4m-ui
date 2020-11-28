@@ -1,18 +1,19 @@
 <template>
-<div>
-  <b-navbar toggleable="lg" type="primary" variant="light">
-    <b-navbar-brand href="#">S4M</b-navbar-brand>
+<b-navbar toggleable="lg" type="light" style="background-color:#FEEFEF;">
+  <b-container>
+    <b-navbar-brand href="#" style="color:#EB4A0D; font-weight:600;">Stemformatics</b-navbar-brand>
+    <b-navbar-toggle target="nav-collapse"></b-navbar-toggle>
     <b-collapse id="nav-collapse" is-nav>
       <!-- Right aligned nav items -->
       <b-navbar-nav class="ml-auto">
-        <b-nav-item href="#">About</b-nav-item>
-        <b-nav-item href="#">Datasets</b-nav-item>
-        <b-nav-item href="#">Atlases</b-nav-item>
-        <b-button size="sm" class="my-2 my-sm-0" type="submit">Login</b-button>
+        <b-nav-item to="/about/team">About</b-nav-item>
+        <b-nav-item to="/datasets/api" class="ml-4">Datasets</b-nav-item>
+        <b-nav-item href="#" class="ml-4">Atlases</b-nav-item>
+        <b-nav-item href="#" class="ml-4">Genes</b-nav-item>
       </b-navbar-nav>
     </b-collapse>
-  </b-navbar>
-</div>
+  </b-container>
+</b-navbar>
 </template>
 
 <script>
@@ -22,4 +23,9 @@ export default {
 </script>
 
 <style>
+.login-button {
+  background-color:#EB4A0D !important;
+  border-color: transparent !important;
+}
+
 </style>
