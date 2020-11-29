@@ -42,11 +42,7 @@
 <script>
 export default {
     head: {
-      script: [
-        {
-          src: 'https://cdn.plot.ly/plotly-latest.min.js'
-        }
-      ],
+      script: [ { src: 'https://cdn.plot.ly/plotly-latest.min.js' } ],
     },
 
     data() {
