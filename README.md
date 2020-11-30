@@ -34,6 +34,11 @@
 # Build Setup
 
 ```bash
+# If installing in a conda env
+$ conda create --prefix /mnt/data/miniconda3/envs/s4m  # create new env to specific loation
+$ conda activate s4m
+$ conda install nodejs
+
 # install dependencies
 $ npm install bootstrap-vue
 $ npm install sass-loader 

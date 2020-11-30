@@ -41,9 +41,14 @@ export default {
     bootstrapVueCSS: false // Or `bvCSS: false`
   },
 
+  server: {
+    port: 5432,
+    host: '0.0.0.0',
+  },
+
   axios: {
     proxy: true,
-    baseURL: 'http://localhost:3000',
+    baseURL: 'http://0.0.0.0:5432',
   },
   
   proxy: {
@@ -57,5 +62,7 @@ export default {
   
   // Build Configuration (https://go.nuxtjs.dev/config-build)
   build: {
-  }
+  },
+
+  target: 'static'
 }
