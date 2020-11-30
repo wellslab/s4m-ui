@@ -3,8 +3,8 @@
     <b-breadcrumb :items="breadcrumb"></b-breadcrumb>
     <div class="text-center h4">
         <b-form-select v-model="atlasType" class="col-md-3">
-            <b-form-select-option value="blood">Blood Atlas</b-form-select-option>
             <b-form-select-option value="myeloid">Myeloid Atlas</b-form-select-option>
+            <b-form-select-option value="blood">Blood Atlas</b-form-select-option>
         </b-form-select>
         <b-link v-b-tooltip.hover title="Background and more information" @click="showInfo=true"><b-icon-info-circle></b-icon-info-circle></b-link>
     </div>
@@ -69,7 +69,7 @@ export default {
           { text: 'Atlas', active: true },
         ],
         
-        atlasType: this.$route.query.type==null? "blood": this.$route.query.type,  // default type if none specified
+        atlasType: this.$route.query.type==null? "myeloid": this.$route.query.type,  // default type if none specified
         coords: {},         // {col: {row: val, ...}}
         sampleIds: [],      // ['sample1', ...]
         sampleTable: {},    // {'celltype':{'sample1':'HPC', ...}, ...}

@@ -2,7 +2,7 @@
 <b-container class="pt-4">
     <b-breadcrumb :items="breadcrumb"></b-breadcrumb>
     <b-row>
-      <b-col class="col-md-3">
+      <b-col class="col-12 col-sm-12 col-md-6 col-lg-3 col-xl-3">
         <PageSidebar :sidebarType="'about'" :activeItem="'team'" />
       </b-col>
       <b-col>

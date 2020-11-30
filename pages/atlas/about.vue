@@ -3,11 +3,12 @@
     <b-breadcrumb :items="breadcrumb"></b-breadcrumb>
     <b-row>
       <b-col class="col-12 col-sm-12 col-md-6 col-lg-3 col-xl-3">
-        <PageSidebar :sidebarType="'datasets'" :activeItem="'api'" />
+        <PageSidebar :sidebarType="'atlas'" :activeItem="'about'" />
       </b-col>
       <b-col>
-        <h5>API access</h5>
-        <p>All Stemformatics data can be accessed via API.</p>
+        <h5>About the Stemformatics integrated atlases</h5>
+        <p>Describe info about the atlas here.
+        </p>
       </b-col>
     </b-row>
 </b-container>
@@ -19,16 +20,10 @@ export default {
       return {
         breadcrumb: [
           { text: 'Home', to: '/' },
-          { text: 'Datasets', active: true },
-          { text: 'API access', active: true }
+          { text: 'Atlases', to: '/atlas' },
+          { text: 'About', active: true }
         ],
       }
-    },
-
-    methods: {
-    },
-
-    mounted() {
     }
 }
 </script>

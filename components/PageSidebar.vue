@@ -21,6 +21,14 @@
         <b-list-group-item :class="{current: activeItem=='annotation'}">About sample annotation</b-list-group-item>
         </b-list-group>
     </nav>
+
+    <nav v-if="sidebarType=='atlas'">
+        <b-list-group>
+        <b-list-group-item to="/atlas/myeloid" :class="{current: activeItem=='myeloid'}">Myeloid atlas</b-list-group-item>
+        <b-list-group-item to="/atlas/blood" :class="{current: activeItem=='blood'}">Blood atlas</b-list-group-item>
+        <b-list-group-item to="/atlas/about" :class="{current: activeItem=='about'}">About atlases</b-list-group-item>
+        </b-list-group>
+    </nav>
 </div>
 </template>
 
