@@ -9,7 +9,7 @@
         <b-nav-item to="/about/team">About</b-nav-item>
         <b-nav-item to="/datasets/api" class="ml-4">Datasets</b-nav-item>
         <b-nav-item to="/atlas" class="ml-4">Atlases</b-nav-item>
-        <b-nav-item href="#" class="ml-4">Genes</b-nav-item>
+        <b-nav-item to="/genes/expression" class="ml-4">Genes</b-nav-item>
       </b-navbar-nav>
     </b-collapse>
   </b-container>

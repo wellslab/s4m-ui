@@ -22,9 +22,6 @@ export default {
           { text: 'Datasets', active: true },
           { text: 'API access', active: true }
         ],
-        // You can get url parameters this way eg: /datasets/view?id=2000
-        datasetId: this.$route.query.id==null? 1000: this.$route.query.id,
-
       }
     },
 

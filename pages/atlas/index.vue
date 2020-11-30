@@ -6,7 +6,7 @@
             <b-form-select-option value="blood">Blood Atlas</b-form-select-option>
             <b-form-select-option value="myeloid">Myeloid Atlas</b-form-select-option>
         </b-form-select>
-        <b-icon-info-circle></b-icon-info-circle>
+        <b-link v-b-tooltip.hover title="Background and more information" @click="showInfo=true"><b-icon-info-circle></b-icon-info-circle></b-link>
     </div>
     <div class="text-center mt-3">
         <b-form-select v-model="selectedPlotBy" class="col-md-2 bg-light small-select">
@@ -38,6 +38,10 @@
             </b-list-group>
         </b-col>
     </b-row>
+    <b-modal v-model="showInfo" ok-only>
+        <PageSidebar :sidebarType="'datasets'" :activeItem="'api'" />
+    </b-modal>
+
 </b-container>
 </template>
 
@@ -88,6 +92,7 @@ export default {
 
         legends: [],
         loading: true,
+        showInfo: false,
       }
     },
 
@@ -293,14 +298,14 @@ export default {
             this.colourBy = Object.keys(this.sampleTable);   // ["Cell Type", "Sample Source", ...]
 
             // Fetch colours and ordering
-            this.$axios.get("/blood_atlas_colours.tsv").then(res => {
-                this.sampleTypeColoursOriginal = res.data.colours;
-                this.sampleTypeColours = res.data.colours;
-                this.sampleTypeOrdering = res.data.ordering;
+            this.$axios.get("/blood_atlas_colours.tsv").then(res2 => {
+                this.sampleTypeColoursOriginal = res2.data.colours;
+                this.sampleTypeColours = res2.data.colours;
+                this.sampleTypeOrdering = res2.data.ordering;
 
                 // Fetch coordinates
-                this.$axios.get("/blood_atlas_coordinates.json").then(res => {
-                    this.coords = res.data;
+                this.$axios.get("/blood_atlas_coordinates.json").then(res3 => {
+                    this.coords = res3.data;
                     this.sampleIds = Object.keys(this.coords[Object.keys(this.coords)[0]]);
                     this.loading = false;
                     this.updateLegends();
