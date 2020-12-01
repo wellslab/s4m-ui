@@ -42,13 +42,13 @@ export default {
   },
 
   server: {
-    port: 5000,
+    port: 5002,
     host: '0.0.0.0',
   },
 
   axios: {
     proxy: true,
-    baseURL: 'http://0.0.0.0:5000',
+    baseURL: 'http://0.0.0.0:5002',
   },
   
   proxy: {
