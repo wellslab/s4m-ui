@@ -53,11 +53,11 @@ export default {
   
   proxy: {
     '/api': {
-      target: 'https://api2.stemformatics.org',
+      target: 'http://api-dev.stemformatics.org',
       pathRewrite: {
         '^/api' : ''
-        }
-      }
+        },
+      },
   },
   
   // Build Configuration (https://go.nuxtjs.dev/config-build)

@@ -38,7 +38,7 @@ export default {
         datasetId: this.$route.query.datasetid==null? 7283: this.$route.query.datasetid,
         geneId: this.$route.query.geneid==null? "ENSG00000102145": this.$route.query.geneid,
 
-        dataset: {},    // {id:"7238", ...}
+        dataset: {},    // {id:"7283", ...}
         samples: {},
         sampleGroups: [],
         selectedSampleGroup: null,
@@ -88,11 +88,11 @@ export default {
 
     mounted() {
         // Fetch dataset metadata and sample table
-        this.$axios.get("/api/samples / metadata/" + this.datasetId + "/metadata", {headers: {"Access-Control-Allow-Origin": "*"}}).then(res => {
+        this.$axios.get("https://api2.stemformatics.org/samples / metadata/" + this.datasetId + "/metadata", {headers: {"Access-Control-Allow-Origin": "*"}}).then(res => {
             this.dataset = JSON.parse(res.data)[0];
             this.dataset.displayName = this.dataset.name.split("_")[0] + " (" + this.dataset.name.split("_")[1] + ")";
 
-            this.$axios.get("/api/samples / metadata/" + this.datasetId + "/samples", {headers: {"Access-Control-Allow-Origin": "*"}}).then(res2 => {
+            this.$axios.get("https://api2.stemformatics.org/samples / metadata/" + this.datasetId + "/samples", {headers: {"Access-Control-Allow-Origin": "*"}}).then(res2 => {
                 // result is a comma separated string version of the table
                 let lines = res2.data.split("\n");
                 

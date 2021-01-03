@@ -102,29 +102,20 @@ export default {
 
     mounted() {
         // Fetch dataset metadata and sample metada from API server and populate local variables
-        this.$axios.get("/api/samples / metadata/" + this.datasetId + "/metadata", {headers: {"Access-Control-Allow-Origin": "*"}}).then(res => {
-            this.datasetMetadata = JSON.parse(res.data)[0];
+        this.$axios.get("/api/dataset/" + this.datasetId, {headers: {"Access-Control-Allow-Origin": "*"}}).then(res => {
+            this.datasetMetadata = res.data;
             this.datasetMetadata.displayName = this.datasetMetadata.name.split("_")[0] + " (" + this.datasetMetadata.name.split("_")[1] + ")";
             this.metadataTable = [];
-            let hideKeys = ["_id", "annotator", "can_annotate", "name", "displayName"]; // don't show this in the table
+            let hideKeys = ["name", "displayName"]; // don't show these in the table
             for (let key in this.datasetMetadata)
                 if (hideKeys.indexOf(key)==-1)
                     this.metadataTable.push({'key': key, 'value': this.datasetMetadata[key]});
 
             this.breadcrumb.push({text: this.datasetMetadata.displayName, active: true});
         });
-        this.$axios.get("/api/samples / metadata/" + this.datasetId + "/samples", {headers: {"Access-Control-Allow-Origin": "*"}}).then(res => {
-            // result is a comma separated string version of the table
-            let lines = res.data.split("\n");
-            this.samples = [];
-            this.sampleGroups = lines[0].split(",");
-            for (let i=1; i<lines.length; i++) {
-                let values = {};
-                let columns = lines[i].split(",");
-                for (let j=0; j<this.sampleGroups.length; j++)
-                    values[this.sampleGroups[j]] = columns[j];
-                this.samples.push(values);
-            }
+        this.$axios.get("/api/samples/" + this.datasetId, {headers: {"Access-Control-Allow-Origin": "*"}}).then(res => {
+            this.samples = res.data;
+            this.sampleGroups = Object.keys(this.samples[0]);
 
             // PCA should be plotted after sample table construction
             this.plotPCA();
