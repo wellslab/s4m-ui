@@ -15,7 +15,7 @@
     <nav v-if="sidebarType=='datasets'">
         <b-list-group>
         <b-list-group-item :class="{current: activeItem=='explore'}">Explore datasets</b-list-group-item>
-        <b-list-group-item :class="{current: activeItem=='select'}">Select and filter</b-list-group-item>
+        <b-list-group-item :class="{current: activeItem=='select'}">Search and filter</b-list-group-item>
         <b-list-group-item to="/datasets/view" :class="{current: activeItem=='view'}">View a dataset</b-list-group-item>
         <b-list-group-item to="/datasets/api" :class="{current: activeItem=='api'}">API access</b-list-group-item>
         <b-list-group-item :class="{current: activeItem=='annotation'}">About sample annotation</b-list-group-item>
@@ -46,6 +46,7 @@ export default {
 
 <style>
 .current {
-  background-color:#FEEFEF !important;
+  background-color:#000 !important;
+  color: white !important;
 }
 </style>

@@ -1,7 +1,7 @@
 <template>
-<b-navbar toggleable="lg" type="light" style="background-color:#FEEFEF;">
+<b-navbar toggleable="lg" type="light" class="py-0">
   <b-container>
-    <b-navbar-brand to="/" style="color:#EB4A0D; font-weight:600;">Stemformatics</b-navbar-brand>
+    <b-navbar-brand to="/"><img src="/img/StemformaticsLogo1.png" style="width:300px;" alt="Stemformatics Logo"></b-navbar-brand>
     <b-navbar-toggle target="nav-collapse"></b-navbar-toggle>
     <b-collapse id="nav-collapse" is-nav>
       <!-- Right aligned nav items -->
@@ -17,7 +17,7 @@
         </b-dropdown>
         <b-dropdown text="Datasets" variant="bg-transparent" class="ml-4">
           <b-dropdown-item to="/datasets/api">Explore datasets</b-dropdown-item>
-          <b-dropdown-item to="/datasets/api">Select and filter</b-dropdown-item>
+          <b-dropdown-item to="/datasets/search">Search and filter</b-dropdown-item>
           <b-dropdown-item to="/datasets/view">View a dataset</b-dropdown-item>
           <b-dropdown-item to="/datasets/api">API access</b-dropdown-item>
           <b-dropdown-item to="/datasets/api">About sample annotation</b-dropdown-item>

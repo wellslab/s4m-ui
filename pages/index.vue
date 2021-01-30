@@ -45,7 +45,7 @@ export default {
 
 <style>
 .card-header {
-  color:#EB4A0D !important;
+  color:#EE255F !important;
   background-color:transparent !important;
   font-weight:600 !important;
 }

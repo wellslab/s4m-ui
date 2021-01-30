@@ -3,8 +3,8 @@
     <b-breadcrumb :items="breadcrumb"></b-breadcrumb>
     <b-tabs content-class="mt-3">
         <b-tab title="Overview" active class="text-center">
-            <h5><a :href="'https://pubmed.ncbi.nlm.nih.gov/' + datasetMetadata.pubmed_id" target="_blank">
-                {{datasetMetadata.displayName}}</a>
+            <h5><b-link :href="'https://pubmed.ncbi.nlm.nih.gov/' + datasetMetadata.pubmed_id" target="_blank">
+                {{datasetMetadata.displayName}}</b-link>
             </h5>
             <p>{{datasetMetadata.title}}</p>
             <div class="overflow-auto text-center">

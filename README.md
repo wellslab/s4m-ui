@@ -40,11 +40,15 @@ $ conda activate s4m
 $ conda install nodejs
 
 # install dependencies
+$ npm install nuxt
 $ npm install bootstrap-vue
-$ npm install sass-loader 
-$ npm install node-sass
+#$ npm install sass-loader 
+#$ npm install node-sass
 $ npm add @nuxtjs/axios 
 # $ npm install plotly.js-dist  # Not sure how to make plotly work this way - currently just loading cdn into header
+
+$ npm uninstall argon-dashboard
+$ npm audit
 
 # serve with hot reload at localhost:3000
 $ npm run dev
