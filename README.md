@@ -57,8 +57,9 @@ $ npm run dev
 $ npm run build
 $ npm run start
 
-# generate static project
+# generate static project (see scripts section under package.json - running npm run generate is equivalent to nuxt generate for example)
 $ npm run generate
+$ npm start
 ```
 
 For detailed explanation on how things work, check out [Nuxt.js docs](https://nuxtjs.org).
