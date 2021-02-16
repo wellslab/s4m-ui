@@ -6,8 +6,7 @@
             <DatasetSearch />
         </b-tab>
         <b-tab title="Sample search" class="text-center">
-            <h5>Samples</h5>
-            <p>Sample table here</p>
+            <SampleSearch />
         </b-tab>
     </b-tabs>
 </b-container>

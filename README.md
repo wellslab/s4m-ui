@@ -67,3 +67,43 @@ For detailed explanation on how things work, check out [Nuxt.js docs](https://nu
 Open source svg icons:
 https://remixicon.com/
 
+## Temporary clipboard
+
+To get query parameters that was used to call the page:
+```
+atlasType: this.$route.query.type==null? "myeloid": this.$route.query.type,  // default type if none specified
+```
+
+
+Used this function to just convert tsv files into {col: {rowId: val, ...}, ...} format
+```
+_dataConverter(tsvFile) {
+    this.$axios.get(tsvFile).then(res => {
+        let lines = res.data.split("\n");
+        let table = {};
+        let columns = lines[0].split("\t")
+        columns.shift();   // ["Cell Type", "Sample Source", ...]
+
+        for (let i=1; i<lines.length; i++) {
+            let cols = lines[i].split("\t");
+            for (let j=0; j<columns.length; j++) {
+                if (!(columns[j] in table))
+                    table[columns[j]] = {};
+                table[columns[j]][cols[0]] = cols[j+1];
+            }
+        }
+        console.log(JSON.stringify(table));
+    })
+},
+```
+
+This is one way to redirect one page to another. However note that if the redirect is to the same page with different parameters, it doesn't reload the page (ie. mounted() does not run again)
+```
+export default {
+    middleware: [
+         function({ redirect }) {
+             redirect('/atlas?type=blood');
+         },
+    ],
+};
+```

@@ -102,7 +102,7 @@ export default {
 
     mounted() {
         // Fetch dataset metadata and sample metada from API server and populate local variables
-        this.$axios.get("/api/dataset/" + this.datasetId, {headers: {"Access-Control-Allow-Origin": "*"}}).then(res => {
+        this.$axios.get("/api/datasets/" + this.datasetId + "/metadata", {headers: {"Access-Control-Allow-Origin": "*"}}).then(res => {
             this.datasetMetadata = res.data;
             this.datasetMetadata.displayName = this.datasetMetadata.name.split("_")[0] + " (" + this.datasetMetadata.name.split("_")[1] + ")";
             this.metadataTable = [];
@@ -113,7 +113,7 @@ export default {
 
             this.breadcrumb.push({text: this.datasetMetadata.displayName, active: true});
         });
-        this.$axios.get("/api/samples/" + this.datasetId, {headers: {"Access-Control-Allow-Origin": "*"}}).then(res => {
+        this.$axios.get("/api/datasets/" + this.datasetId + "/samples", {headers: {"Access-Control-Allow-Origin": "*"}}).then(res => {
             this.samples = res.data;
             this.sampleGroups = Object.keys(this.samples[0]);
 

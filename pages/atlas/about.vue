@@ -6,7 +6,7 @@
         <PageSidebar :sidebarType="'atlas'" :activeItem="'about'" />
       </b-col>
       <b-col>
-        <h5>About the Stemformatics integrated atlases</h5>
+        <h3>About the Stemformatics integrated atlases</h3>
         <p>Describe info about the atlas here.
         </p>
       </b-col>
