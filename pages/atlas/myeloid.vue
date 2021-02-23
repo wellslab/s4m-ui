@@ -1,8 +1,10 @@
 <template>
+<div>
+<Breadcrumb :breadcrumb="breadcrumb"/>
 <b-container class="pt-4">
-    <b-breadcrumb :items="breadcrumb"></b-breadcrumb>
     <Atlas atlasType="myeloid"/>
 </b-container>
+</div>
 </template>
 
 <script>

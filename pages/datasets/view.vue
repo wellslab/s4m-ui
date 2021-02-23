@@ -1,42 +1,70 @@
 <template>
+<div>
+<Breadcrumb :breadcrumb="breadcrumb"/>
 <b-container class="pt-4">
-    <b-breadcrumb :items="breadcrumb"></b-breadcrumb>
     <b-tabs content-class="mt-3">
         <b-tab title="Overview" active class="text-center">
-            <h5><b-link :href="'https://pubmed.ncbi.nlm.nih.gov/' + datasetMetadata.pubmed_id" target="_blank">
-                {{datasetMetadata.displayName}}</b-link>
-            </h5>
-            <p>{{datasetMetadata.title}}</p>
+            <h4>
+                <b-link to="/datasets/search" v-b-tooltip.hover title="Use the search page under Datasets menu to change dataset">
+                    {{datasetMetadata.displayName}}:
+                </b-link>
+                <small>PCA of log normalised values</small>
+            </h4>
+            <div class="col-md-3" style="display:inline-table">
+                <label for="sampleGroupSelect" style="display:table-cell">colour by:</label>
+                <b-form-select id="sampleGroupSelect" size="sm" v-model="selectedSampleGroup" :options="sampleGroups" @change="plotPCA()"></b-form-select>
+            </div>
             <div class="overflow-auto text-center">
-                <div id="plotDiv" style="width:800px; height:600px; margin:auto"></div>
+                <div id="pcaPlotDiv" style="width:800px; height:600px; margin:auto"></div>
             </div>
         </b-tab>
 
         <b-tab title="Details">
-            <h5 class="text-center">{{datasetMetadata.displayName}}: Dataset Details</h5>
+            <h4 class="text-center">
+                <b-link to="/datasets/search" v-b-tooltip.hover title="Use the search page under Datasets menu to change dataset">
+                    {{datasetMetadata.displayName}}:
+                </b-link>
+                <small>Dataset Details</small>
+            </h4>
             <b-table-simple hover small class="small">
                 <b-tbody>
                     <b-tr v-for="row in metadataTable" :key="row.description">
                         <b-td>{{row.key}}</b-td>
-                        <b-td>{{row.value}}</b-td>
+                        <b-td>
+                            <b-link v-if="row.key=='pubmed_id'" :href="'https://pubmed.ncbi.nlm.nih.gov/' + row.value" target="_blank">{{row.value}}</b-link>
+                            <b-link v-else-if="row.key=='accession' && row.value.startsWith('GSE')" :href="'https://www.ncbi.nlm.nih.gov/gds/?term=' + row.value + '[Accession]'" target="_blank">{{row.value}}</b-link>
+                            <b-link v-else-if="row.key=='accession' && row.value.startsWith('E-MTAB')" :href="'https://www.ebi.ac.uk/arrayexpress/experiments/' + row.value" target="_blank">{{row.value}}</b-link>
+                            <span v-else>{{row.value}}</span>
+                        </b-td>
                     </b-tr>
                 </b-tbody>
             </b-table-simple>
         </b-tab>
 
         <b-tab title="Samples">
-            <h5 class="text-center">{{datasetMetadata.displayName}}: Sample Table</h5>
+            <h4 class="text-center">
+                <b-link to="/datasets/search" v-b-tooltip.hover title="Use the search page under Datasets menu to change dataset">
+                    {{datasetMetadata.displayName}}:
+                </b-link>
+                <small>Sample Table</small>
+            </h4>
             <b-table hover small sticky-header="500px" :items="samples" class="small"></b-table>
         </b-tab>
 
         <b-tab title="Tools">
-            <h5 class="text-center">{{datasetMetadata.displayName}}: Tools</h5>
+            <h4 class="text-center">
+                <b-link to="/datasets/search" v-b-tooltip.hover title="Use the search page under Datasets menu to change dataset">
+                    {{datasetMetadata.displayName}}:
+                </b-link>
+                <small>Tools</small>
+            </h4>
             <p class="text-center">Description of how this dataset was processed and key QC decisions made.</p>
             <p class="text-center">Download expression data.</p>
             <p class="text-center">(use accordion here)</p>
         </b-tab>
     </b-tabs>
 </b-container>
+</div>
 </template>
 
 <script>
@@ -46,79 +74,99 @@ export default {
     },
 
     data() {
-      return {
-        breadcrumb: [
-          { text: 'Home', to: '/' },
-          { text: 'Datasets', active: true },
-          { text: 'View a dataset', active: true }
-        ],
+        return {
+            breadcrumb: [
+                { text: 'Home', to: '/' },
+                { text: 'Datasets', active: true },
+                { text: 'View a dataset', active: true }
+            ],
 
-        // You can get url parameters this way eg: /datasets/view?id=2000
-        datasetId: this.$route.query.id==null? 7283: this.$route.query.id,
+            // You can get url parameters this way eg: /datasets/view?id=2000
+            datasetId: this.$route.query.id==null? 7283: this.$route.query.id,
 
-        // dataset metadata
-        datasetMetadata: {},
-        metadataTable: [],
+            // pca plot
+            sampleGroups: [],   // ["sample_type", "age", ...]
+            selectedSampleGroup: "",
+            pcaCoords: {},
+            pcaAttributes: {},
 
-        // sample table
-        samples: [],
+            // dataset metadata
+            datasetMetadata: {},
+            metadataTable: [],
 
-        // sample groups
-        sampleGroups: [],   // ["sample_type", "age", ...]
-        selectedSampleGroup: "sample_type",
-      }
+            // sample table
+            samples: [],    // [{'sample_id':'7283_GSM1977399', 'cell_type':'', ...}, ...]
+        }
     },
 
     methods: {
         plotPCA() {
-            this.$axios.get("/" + this.datasetId + ".pca.json").then(res => {
-                // First collect sample ids based on selectedSampleGroup
-                let sampleIds = {};     // {"HSC":["GSM1977407", ...], ...}
-                for (let i=0; i<this.samples.length; i++) {
-                    let sampleId = this.samples[i]["sample_id"];
-                    let value = this.samples[i][this.selectedSampleGroup];
-                    if (!(value in sampleIds))
-                        sampleIds[value] = [];
-                    sampleIds[value].push(sampleId);
-                }
-
-                // Create a plotly trace for each key in sampleIds
-                let traces = [];
-                let groupItems = Object.keys(sampleIds);
-                groupItems.sort();
-                for (let i=0; i<groupItems.length; i++) {
-                    let x = res.data.coords[0];
-                    let y = res.data.coords[1];
-                    x = x.filter((item,j) => sampleIds[groupItems[i]].indexOf(res.data.index[j])!=-1);
-                    y = y.filter((item,j) => sampleIds[groupItems[i]].indexOf(res.data.index[j])!=-1);
-                    let name = groupItems[i] + " (" + x.length + ")";
-                    traces.push({x: x, y: y, mode: 'markers', type: 'scatter' , name:name});
-                }
-                let layout = {title: "PCA of log normalised values"}
-                Plotly.newPlot('plotDiv', traces, layout);
-            });
+            // First collect sample ids based on selectedSampleGroup
+            // sample id coming from samples table is in datasetId_sampleId format, and pca features don't have the datasetId
+            // component, so we remove this part.
+            let self = this;
+            let sampleIds = {};     // {"HSC":["GSM1977407", ...], ...}
+            for (let i=0; i<self.samples.length; i++) {
+                let sampleId = self.samples[i]["sample_id"].split("_")[1];
+                let value = self.samples[i][self.selectedSampleGroup];
+                if (!(value in sampleIds))
+                    sampleIds[value] = [];
+                sampleIds[value].push(sampleId);
+            }
+            
+            // Create a plotly trace for each key in sampleIds
+            let traces = [];
+            let groupItems = Object.keys(sampleIds);
+            groupItems.sort();
+            for (let i=0; i<groupItems.length; i++) {
+                let x = sampleIds[groupItems[i]].map(item => self.pcaCoords['0'][item]);
+                let y = sampleIds[groupItems[i]].map(item => self.pcaCoords['1'][item]);
+                let name = groupItems[i] + " (" + x.length + ")";
+                traces.push({x: x, y: y, mode: 'markers', type: 'scatter' , name:name});
+            }
+            let layout = {margin: {t:20, l:0, r:0, b:0},};
+            Plotly.newPlot('pcaPlotDiv', traces, layout);
         }
     },
 
     mounted() {
         // Fetch dataset metadata and sample metada from API server and populate local variables
-        this.$axios.get("/api/datasets/" + this.datasetId + "/metadata", {headers: {"Access-Control-Allow-Origin": "*"}}).then(res => {
+        this.$axios.get("/api/datasets/" + this.datasetId + "/metadata").then(res => {
             this.datasetMetadata = res.data;
+            // leave out these fields
             this.datasetMetadata.displayName = this.datasetMetadata.name.split("_")[0] + " (" + this.datasetMetadata.name.split("_")[1] + ")";
             this.metadataTable = [];
-            let hideKeys = ["name", "displayName"]; // don't show these in the table
+            let hideKeys = ["name", "displayName","private","status"]; // don't show these in the table
             for (let key in this.datasetMetadata)
                 if (hideKeys.indexOf(key)==-1)
                     this.metadataTable.push({'key': key, 'value': this.datasetMetadata[key]});
 
             this.breadcrumb.push({text: this.datasetMetadata.displayName, active: true});
         });
-        this.$axios.get("/api/datasets/" + this.datasetId + "/samples", {headers: {"Access-Control-Allow-Origin": "*"}}).then(res => {
+        this.$axios.get("/api/datasets/" + this.datasetId + "/samples").then(res => {
             this.samples = res.data;
-            this.sampleGroups = Object.keys(this.samples[0]);
+
+            // Remove any sample group with one or less values, as these aren't useful for traces on the PCA
+            let sampleGroupValues = {};
+            for (let i=0; i<this.samples.length; i++) {
+                for (let key in this.samples[i]) {
+                    if (!(key in sampleGroupValues))
+                        sampleGroupValues[key] = [];
+                    if (sampleGroupValues[key].indexOf(this.samples[i][key])==-1)
+                        sampleGroupValues[key].push(this.samples[i][key]);
+                }
+            }
+            this.sampleGroups = Object.keys(sampleGroupValues).filter(item => sampleGroupValues[item].length>1 && sampleGroupValues[item].length<this.samples.length);
+            if (this.sampleGroups.length==0) // shouldn't happen, but if we have this
+                this.sampleGroups = ["cell_type"];
+            this.sampleGroups.sort();
+            this.selectedSampleGroup = this.sampleGroups[0];
 
             // PCA should be plotted after sample table construction
-            this.plotPCA();
+            this.$axios.get("/api/datasets/" + this.datasetId + "/pca?orient=dict").then(res => {
+                this.pcaCoords = res.data["coordinates"];
+                this.plotPCA();
+            });
         })
     }
 }

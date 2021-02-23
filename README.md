@@ -107,3 +107,10 @@ export default {
     ],
 };
 ```
+
+Local resource in static/ can be accessed this way using axios:
+```
+this.$axios.get("/7283.pca.json").then(res => {
+    console.log(res);
+});
+```

@@ -5,7 +5,7 @@
         <h3 class="mb-2">Integrated Atlas: {{atlasType}}
             <small><b-link v-b-tooltip.hover title="Background and more information" @click="showInfo=true"><b-icon-info-circle></b-icon-info-circle></b-link></small>
         </h3>
-
+        <b-container class="text-center">
         <b-form inline class="mt-3">
             <b-form-select v-model="selectedPlotBy" class="col-md-2 bg-light" @change="changePlotBy">
                 <b-form-select-option value="sample type">plot by sample type</b-form-select-option>
@@ -28,6 +28,7 @@
                 <b-form-select-option value="find dataset">find dataset</b-form-select-option>
             </b-form-select>
         </b-form>
+        </b-container>
     </div>
 
     <b-row class="small">
@@ -138,7 +139,7 @@ export default {
     },
 
     computed: {
-        plotFunctions: function() {
+        plotFunctions() {
             if (this.showTwoPlots)
                 return ["toggle 3d/2d", "hide sample colour plot", "gene expression box plot"];
             else
@@ -147,7 +148,7 @@ export default {
 
         // For a long list of sample types, it's good to place a gap between groups of them as a visual aid.
         // This returns the items where breaks should occur.
-        sampleTypeBreakPoint: function() {
+        sampleTypeBreakPoint() {
             let itemsWithBreaks = {}
             for (let i=0; i<this.colourBy.length; i++) {
                 let key = this.colourBy[i];

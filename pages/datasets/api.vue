@@ -1,6 +1,7 @@
 <template>
+<div>
+<Breadcrumb :breadcrumb="breadcrumb"/>
 <b-container class="pt-4">
-    <b-breadcrumb :items="breadcrumb"></b-breadcrumb>
     <b-row>
       <b-col class="col-12 col-sm-12 col-md-6 col-lg-3 col-xl-3">
         <PageSidebar :sidebarType="'datasets'" :activeItem="'api'" />
@@ -58,6 +59,7 @@
       </b-col>
     </b-row>
 </b-container>
+</div>
 </template>
 
 <script>

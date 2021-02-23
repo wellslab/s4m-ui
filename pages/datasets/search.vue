@@ -1,6 +1,7 @@
 <template>
+<div>
+<Breadcrumb :breadcrumb="breadcrumb"/>
 <b-container class="pt-4">
-    <b-breadcrumb :items="breadcrumb"></b-breadcrumb>
     <b-tabs content-class="mt-3">
         <b-tab title="Dataset search" active class="text-center">
             <DatasetSearch />
@@ -10,6 +11,7 @@
         </b-tab>
     </b-tabs>
 </b-container>
+</div>
 </template>
 
 <script>

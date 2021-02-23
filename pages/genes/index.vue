@@ -1,10 +1,12 @@
 <template>
+<div>
+<Breadcrumb :breadcrumb="breadcrumb"/>
 <b-container class="pt-4">
-    <b-breadcrumb :items="breadcrumb"></b-breadcrumb>
     <h5>Gene search</h5>
     <p>Search for a gene here
     </p>
 </b-container>
+</div>
 </template>
 
 <script>

@@ -1,6 +1,7 @@
 <template>
+<div>
+<Breadcrumb :breadcrumb="breadcrumb"/>
 <b-container class="pt-4">
-    <b-breadcrumb :items="breadcrumb"></b-breadcrumb>
     <h5 class="text-center"><b-link href="#">
         {{dataset.displayName}} : {{gene.displayName}}</b-link>
     </h5>
@@ -19,6 +20,7 @@
         <div id="plotDiv" style="width:800px; height:600px; margin:auto"></div>
     </div>
 </b-container>
+</div>
 </template>
 
 <script>

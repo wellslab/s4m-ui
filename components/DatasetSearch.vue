@@ -16,18 +16,22 @@
             </b-list-group>
         </b-card>
     </b-col>
+
     <b-col class="col-12 col-sm-12 col-md-6 col-lg-9 col-xl-9">
         <h5>Search for datasets and filter</h5>
         <p>showing {{currentPage*perPage - perPage + 1}} - {{currentPage*perPage>table.length? table.length : currentPage*perPage}} of {{table.length}} entries</p>
         <div style="height:700px; overflow:auto;">
         <b-table id="mainTable" hover small sticky-header head-variant="light" :items="table" :fields="tableColumns"
          :per-page="perPage" :current-page="currentPage">
+            <template #cell(display_name)="row">
+                <b-link :to="'/datasets/view?id=' + row.item.dataset_id" v-b-tooltip.hover title="Go to the page showing details for this dataset">{{row.value}}</b-link>
+            </template>
             <template #cell(more)="row">
                 <b-link v-if="row.item.pubmed_id!=''" :href="'https://pubmed.ncbi.nlm.nih.gov/' + row.item.pubmed_id" target="_blank"
                         v-b-tooltip.hover title="Go to pubmed entry">pubmed</b-link>
             </template>
             <template #cell()="row">
-                <span v-b-tooltip.hover :title=row.value>{{row.value}}</span>
+                <span>{{row.value}}</span>
             </template>
         </b-table>
         <b-pagination v-model="currentPage" :total-rows="rows" :per-page="perPage" aria-controls="mainTable" 
