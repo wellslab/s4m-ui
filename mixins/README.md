@@ -1,0 +1,1 @@
+Mixins represent utility functions that components can use. See https://medium.com/@seyijosh44/how-to-use-mixins-in-nuxt-js-826724fa251.

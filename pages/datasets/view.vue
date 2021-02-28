@@ -68,10 +68,13 @@
 </template>
 
 <script>
+import data_functions from "~/mixins/data_functions.js"
+
 export default {
     head: {
       script: [ { src: 'https://cdn.plot.ly/plotly-latest.min.js' } ],
     },
+    mixins: [data_functions],
 
     data() {
         return {
@@ -105,14 +108,7 @@ export default {
             // sample id coming from samples table is in datasetId_sampleId format, and pca features don't have the datasetId
             // component, so we remove this part.
             let self = this;
-            let sampleIds = {};     // {"HSC":["GSM1977407", ...], ...}
-            for (let i=0; i<self.samples.length; i++) {
-                let sampleId = self.samples[i]["sample_id"].split("_")[1];
-                let value = self.samples[i][self.selectedSampleGroup];
-                if (!(value in sampleIds))
-                    sampleIds[value] = [];
-                sampleIds[value].push(sampleId);
-            }
+            let sampleIds = self._sampleIdsFromSampleGroup(self.samples, self.selectedSampleGroup);
             
             // Create a plotly trace for each key in sampleIds
             let traces = [];
@@ -133,10 +129,11 @@ export default {
         // Fetch dataset metadata and sample metada from API server and populate local variables
         this.$axios.get("/api/datasets/" + this.datasetId + "/metadata").then(res => {
             this.datasetMetadata = res.data;
-            // leave out these fields
             this.datasetMetadata.displayName = this.datasetMetadata.name.split("_")[0] + " (" + this.datasetMetadata.name.split("_")[1] + ")";
+
+            // construct metadataTable, leaving out some fields we don't need to show
             this.metadataTable = [];
-            let hideKeys = ["name", "displayName","private","status"]; // don't show these in the table
+            let hideKeys = ["name", "displayName","private","status"];
             for (let key in this.datasetMetadata)
                 if (hideKeys.indexOf(key)==-1)
                     this.metadataTable.push({'key': key, 'value': this.datasetMetadata[key]});
@@ -145,21 +142,7 @@ export default {
         });
         this.$axios.get("/api/datasets/" + this.datasetId + "/samples").then(res => {
             this.samples = res.data;
-
-            // Remove any sample group with one or less values, as these aren't useful for traces on the PCA
-            let sampleGroupValues = {};
-            for (let i=0; i<this.samples.length; i++) {
-                for (let key in this.samples[i]) {
-                    if (!(key in sampleGroupValues))
-                        sampleGroupValues[key] = [];
-                    if (sampleGroupValues[key].indexOf(this.samples[i][key])==-1)
-                        sampleGroupValues[key].push(this.samples[i][key]);
-                }
-            }
-            this.sampleGroups = Object.keys(sampleGroupValues).filter(item => sampleGroupValues[item].length>1 && sampleGroupValues[item].length<this.samples.length);
-            if (this.sampleGroups.length==0) // shouldn't happen, but if we have this
-                this.sampleGroups = ["cell_type"];
-            this.sampleGroups.sort();
+            this.sampleGroups = this._sampleGroupsForPlotlyTrace(this.samples);
             this.selectedSampleGroup = this.sampleGroups[0];
 
             // PCA should be plotted after sample table construction

@@ -1,7 +1,7 @@
 <template>
 <b-navbar toggleable="lg" type="dark" variant="dark" class="nav-fill w-100">
   <b-container>
-    <b-navbar-brand to="/"><img src="/img/StemformaticsLogo_REV_RGB_300px.png" alt="Stemformatics Logo"></b-navbar-brand>
+    <b-navbar-brand to="/"><b-img src="/img/StemformaticsLogo_REV_RGB_300px.png" alt="Stemformatics Logo"></b-img></b-navbar-brand>
     <b-navbar-toggle target="nav-collapse"></b-navbar-toggle>
     <b-collapse id="nav-collapse" is-nav>
       <!-- Right aligned nav items -->

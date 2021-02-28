@@ -1,52 +1,23 @@
 <template>
+<div>
+<Breadcrumb :breadcrumb="breadcrumb"/>
 <b-container class="pt-4">
-  <b-row>
-    <b-col md="4">
-    <b-card class="text-center p-4">
-      <img src="/img/DatasetsIcon.png"/>
-      <h5 class="mt-3"><a href="/samples" class="card-link">Datasets</a></h5>
-      <b-card-text class="mt-3">
-        Explore hundreds of datasets in our system by cell type, tissue of origin and more.
-      </b-card-text>
-    </b-card>
-    </b-col>
-
-    <b-col md="4">
-    <b-card class="text-center p-4">
-      <img src="/img/DatasetsIcon.png"/>
-      <h5 class="mt-3"><a href="/samples" class="card-link">Altases</a></h5>
-      <b-card-text class="mt-3">
-        Explore hundreds of datasets in our system by cell type, tissue of origin and more.
-      </b-card-text>
-    </b-card>
-    </b-col>
-
-    <b-col md="4">
-    <b-card class="text-center p-4">
-      <img src="/img/DatasetsIcon.png"/>
-      <h5 class="mt-3"><a href="/samples" class="card-link">Genes</a></h5>
-      <b-card-text class="mt-3">
-        Explore hundreds of datasets in our system by cell type, tissue of origin and more.
-      </b-card-text>
-    </b-card>
-    </b-col>
-  </b-row>
+  <h4>Welcome to Stemformatics</h4>
 </b-container>
+</div>
 </template>
 
 <script>
 export default {
-    methods: {
-    },
-    mounted() {
+    data() {
+      return {
+        breadcrumb: [
+          { text: 'Home', active: true },
+        ],
+      }
     }
 }
 </script>
 
 <style>
-.card-header {
-  color:#EE255F !important;
-  background-color:transparent !important;
-  font-weight:600 !important;
-}
 </style>

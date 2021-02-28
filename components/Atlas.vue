@@ -356,7 +356,7 @@ export default {
         getPossibleGenes: function() {
             let self = this;
             if (self.selectedGene.length<=1) return;    // ignore 1 or less characters entered
-            self.$axios.get('/api/atlases/' + self.atlasType + '/possible-genes?queryString=' + self.selectedGene)
+            self.$axios.get('/api/atlases/' + self.atlasType + '/possible-genes?query_string=' + self.selectedGene)
                 .then(function (response) {
                     if (response.data.length>0)
                         self.possibleGenes = response.data;
@@ -372,7 +372,7 @@ export default {
             if (matchingGenes.length>0) {
                 let geneId = matchingGenes[0].ensembl;
                 self.loading = true;
-                self.$axios.get('/api/atlases/' + self.atlasType + '/expression-values?orient=records&geneId=' + geneId)
+                self.$axios.get('/api/atlases/' + self.atlasType + '/expression-values?orient=records&gene_id=' + geneId)
                     .then(function (response) {
                         if (response.data.length>0) {
                             // response.data would looke like [{column:value, ...}]
