@@ -1,3 +1,4 @@
+// Convenience functions here for manipulating data, which may be used commonly across the application.
 export default {
     methods: {
         _sampleGroupDictionary(sampleTable) {
@@ -39,6 +40,7 @@ export default {
                 sampleIds[value].push(sampleId);
             }
             return sampleIds;
-        }
+        },
+
     }
 }

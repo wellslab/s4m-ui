@@ -3,10 +3,10 @@
     <!-- Area for controls. -->
     <div class="text-center mt-3">
         <h3 class="mb-2">Integrated Atlas: {{atlasType}}
-            <small><b-link v-b-tooltip.hover title="Background and more information" @click="showInfo=true"><b-icon-info-circle></b-icon-info-circle></b-link></small>
+            <small><b-link v-b-tooltip.hover.right title="Background and more information" v-b-toggle.sidebar><b-icon-info-circle></b-icon-info-circle></b-link></small>
         </h3>
         <b-container class="text-center">
-        <b-form inline class="mt-3">
+        <b-form inline class="mt-3 justify-content-center">
             <b-form-select v-model="selectedPlotBy" class="col-md-2 bg-light" @change="changePlotBy">
                 <b-form-select-option value="sample type">plot by sample type</b-form-select-option>
                 <b-form-select-option value="gene expression">plot by gene expression</b-form-select-option>
@@ -57,9 +57,16 @@
         </b-col>
     </b-row>
     
-    <b-modal v-model="showInfo" ok-only>
-        <PageSidebar :sidebarType="'datasets'" :activeItem="'api'" />
-    </b-modal>
+<b-sidebar id="sidebar" title="Help and more info" shadow>
+  <div class="px-3 py-2">
+      <p>Stemformatics integrated atlas provides a way to visualise multiple datasets together on a single PCA plot.
+          Read more about it at our <b-link to='/atlas/about'>about atlas</b-link> page. Each atlas page is full of
+          features:
+      </p>
+      <p>feature 1...
+      </p>
+  </div>
+</b-sidebar>
 
 </div>
 </template>
@@ -370,6 +377,7 @@ export default {
                 self.selectedGene = geneSymbol;
             let matchingGenes = self.possibleGenes.filter(item => item.symbol==self.selectedGene);
             if (matchingGenes.length>0) {
+                console.log(matchingGenes);
                 let geneId = matchingGenes[0].ensembl;
                 self.loading = true;
                 self.$axios.get('/api/atlases/' + self.atlasType + '/expression-values?orient=records&gene_id=' + geneId)
@@ -414,6 +422,9 @@ export default {
         this.$axios.get("/api/atlases/" + this.atlasType + "/samples?orient=dict").then(res => {
             this.sampleTable = res.data;
             this.colourBy = Object.keys(this.sampleTable);   // ["Cell Type", "Sample Source", ...]
+            if (this.atlasType=='dc')
+                this.colourBy = ['cell_type', 'activation_status', 'sample_source', 'platform_category', 'tissue_of_origin'];
+            this.selectedColourBy = this.colourBy[0];
 
             // Fetch colours and ordering
             this.$axios.get("/api/atlases/" + this.atlasType + "/colours-and-ordering").then(res2 => {

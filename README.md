@@ -74,6 +74,11 @@ To get query parameters that was used to call the page:
 atlasType: this.$route.query.type==null? "myeloid": this.$route.query.type,  // default type if none specified
 ```
 
+To go to a particular url/route, use $router.push. Can pass query parameters using query. Can pass arrays there using JSON.stringify
+```
+let datasetIds = [...]  // some array
+this.$router.push({path: "/datasets/search", query: {datasetId: JSON.stringify(datasetIds)}});
+```
 
 Used this function to just convert tsv files into {col: {rowId: val, ...}, ...} format
 ```

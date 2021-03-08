@@ -16,7 +16,7 @@
           <b-dropdown-item to="/about/team">Contact us</b-dropdown-item>
         </b-dropdown>
         <b-dropdown text="Datasets" variant="dark" class="ml-4">
-          <b-dropdown-item to="/datasets/api">Explore datasets</b-dropdown-item>
+          <b-dropdown-item to="/datasets/explore">Explore data</b-dropdown-item>
           <b-dropdown-item to="/datasets/search">Search and filter</b-dropdown-item>
           <b-dropdown-item to="/datasets/view">View a dataset</b-dropdown-item>
           <b-dropdown-item to="/datasets/api">API access</b-dropdown-item>
@@ -25,6 +25,7 @@
         <b-dropdown text="Atlases" variant="dark" class="ml-4">
           <b-dropdown-item to="/atlas/myeloid">Myeloid atlas</b-dropdown-item>
           <b-dropdown-item to="/atlas/blood">Blood atlas</b-dropdown-item>
+          <b-dropdown-item to="/atlas/dc">DC atlas</b-dropdown-item>
           <b-dropdown-item to="/atlas/about">About atlases</b-dropdown-item>
         </b-dropdown>
         <b-dropdown text="Genes" variant="dark" class="ml-4">
@@ -45,4 +46,7 @@ export default {
 </script>
 
 <style>
+.btn-dark:hover, .btn-dark:focus, .open>.dropdown-toggle.btn-dark {
+  background-color: #EE255F;
+}
 </style>
