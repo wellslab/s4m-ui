@@ -17,14 +17,14 @@
           <pre><code>
   # python example
   import pandas, requests, json
-  r = requests.get('https://api.stemformatics.org/dataset/2000/metadata')
+  r = requests.get('https://api.stemformatics.org/datasets/2000/metadata')
   df = pandas.DataFrame.from_records(r.data)
   display(df)
 
   # R example
   library(httr)
   library(jsonlite)
-  response = GET("https://api.stemformatics.org/dataset/2000/metadata")
+  response = GET("https://api.stemformatics.org/datasets/2000/metadata")
   print(content(response))
           </code></pre>        
 
