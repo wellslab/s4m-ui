@@ -46,8 +46,12 @@ $ npm install bootstrap-vue
 #$ npm install node-sass
 $ npm add @nuxtjs/axios 
 # $ npm install plotly.js-dist  # Not sure how to make plotly work this way - currently just loading cdn into header
+$ npm install pm2 -g  # see https://nuxtjs.org/docs/2.x/deployment/deployment-pm2/
 
+# uninstalling
 $ npm uninstall argon-dashboard
+
+# audit for finding vulnerabilities
 $ npm audit
 
 # serve with hot reload at localhost:3000
@@ -56,6 +60,10 @@ $ npm run dev
 # build for production and launch server
 $ npm run build
 $ npm run start
+
+# or to run forever (better for stable prod env)
+$ npm run build
+$ pm2 start
 
 # generate static project (see scripts section under package.json - running npm run generate is equivalent to nuxt generate for example)
 $ npm run generate

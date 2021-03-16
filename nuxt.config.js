@@ -48,21 +48,20 @@ export default {
 
   axios: {
     proxy: true,
-    baseURL: 'http://0.0.0.0:5002',
   },
   
   proxy: {
     '/api': {
-      // target: 'http://127.0.0.1:5000',
-      target: 'http://api-dev.stemformatics.org',
-      pathRewrite: {
-        '^/api' : ''
-        },
-      },
+      target: 'http://127.0.0.1:5000',  // works as long as api server runs on the same localhost
+      pathRewrite: {'^/api' : ''},
+    },
   },
   
   // Build Configuration (https://go.nuxtjs.dev/config-build)
   build: {
+    babel: {  // https://github.com/bootstrap-vue/bootstrap-vue/issues/5627
+      compact: true
+    }
   },
 
 }
