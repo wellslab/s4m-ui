@@ -26,6 +26,7 @@ export default {
 
   // Modules for dev and build (recommended) (https://go.nuxtjs.dev/config-modules)
   buildModules: [
+    '@nuxtjs/google-analytics'
   ],
 
   // Modules (https://go.nuxtjs.dev/config-modules)
@@ -55,6 +56,12 @@ export default {
       target: 'http://127.0.0.1:5000',  // works as long as api server runs on the same localhost
       pathRewrite: {'^/api' : ''},
     },
+  },
+  
+  publicRuntimeConfig: {
+    googleAnalytics: {
+      id: process.env.GOOGLE_ANALYTICS_ID
+    }
   },
   
   // Build Configuration (https://go.nuxtjs.dev/config-build)

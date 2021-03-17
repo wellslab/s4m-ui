@@ -42,11 +42,13 @@ $ conda install nodejs
 # install dependencies
 $ npm install nuxt
 $ npm install bootstrap-vue
+$ npm add @nuxtjs/axios
+$ npm install pm2 -g  # see https://nuxtjs.org/docs/2.x/deployment/deployment-pm2/
+$ npm install --save-dev @nuxtjs/google-analytics  # see https://google-analytics.nuxtjs.org/setup
+
 #$ npm install sass-loader 
 #$ npm install node-sass
-$ npm add @nuxtjs/axios 
 # $ npm install plotly.js-dist  # Not sure how to make plotly work this way - currently just loading cdn into header
-$ npm install pm2 -g  # see https://nuxtjs.org/docs/2.x/deployment/deployment-pm2/
 
 # uninstalling
 $ npm uninstall argon-dashboard
@@ -126,4 +128,10 @@ Local resource in static/ can be accessed this way using axios:
 this.$axios.get("/7283.pca.json").then(res => {
     console.log(res);
 });
+```
+
+https://code.visualstudio.com/docs/setup/linux#_visual-studio-code-is-unable-to-watch-for-file-changes-in-this-large-workspace-error-enospc
+```
+$ sudo vi /etc/sysctl.conf
+$ sudo sysctl -p
 ```
