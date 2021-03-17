@@ -2,8 +2,8 @@
 <div>
 <Breadcrumb :breadcrumb="breadcrumb"/>
 <b-container class="pt-4">
-  <b-tabs content-class="mt-3" v-model="tabIndex">
-      <b-tab title="Search">
+<b-tabs content-class="mt-3" v-model="tabIndex">
+    <b-tab title="Search">
         <h3 class="text-center">Search datasets and samples</h3>
         <b-form-group class="mt-3" label-cols-md="5" content-cols-md="4" label-align-md="right" label="Search for a term or select from a pre-defined list below">
           <b-input-group>
@@ -15,80 +15,90 @@
         </b-form-group>
 
         <b-card-group deck>
-          <b-card title="iPSC Derived Samples" img-src="/img/StemCells.png" img-alt="Image" img-top>
-            <b-card-text>
-              Show datasets containing samples whose parental cell type has been designated as iPSC. 
-            </b-card-text>
-            <template #footer>
-              <b-button href="#" @click="showDataset('iPSC')">Show</b-button>
-            </template>
-          </b-card>
+            <b-card no-body img-src="/img/StemCells.png" img-alt="Stem cells image" img-top>
+                <b-card-body>
+                    <b-link @click="showDataset('iPSC')"><h4>iPSC Derived Samples</h4></b-link>
+                    <b-card-text>
+                        Show datasets containing samples whose parental cell type has been designated as iPSC. 
+                    </b-card-text>
+                </b-card-body>
+            </b-card>
 
-          <b-card title="Atlas Datasets" img-src="/img/AtlasScreenshot2.png" img-alt="Image" img-top>
-            <b-card-text>
-              Explore the datasets which have been used to contruct our integrated atlases. 
-            </b-card-text>
-            <template #footer class="border-top-0">
-              <b-button href="#" @click="showDataset('atlas')">Show</b-button>
-            </template>
-          </b-card>
+            <b-card no-body img-src="/img/AtlasScreenshot2.png" img-alt="Atlas image" img-top>
+                <b-card-body class="border-top border-gray-200">
+                    <b-link @click="showDataset('atlas')"><h4>Atlas Datasets</h4></b-link>
+                    <b-card-text>
+                        Explore the datasets which have been used to contruct our integrated atlases. 
+                    </b-card-text>
+                </b-card-body>
+            </b-card>
 
-          <b-card title="DC Datasets" img-src="/img/DendriticCell.png" img-alt="Image" img-top>
-            <b-card-text>
-              Explore the datasets which contain dendritic cells.
-            </b-card-text>
-            <template #footer>
-              <b-button href="#" @click="showDataset('dc')">Show</b-button>
-            </template>
-          </b-card>
+            <b-card no-body img-src="/img/DendriticCell.png" img-alt="Image" img-top>
+                <b-card-body>
+                    <b-link @click="showDataset('dc')"><h4>DC Datasets</h4></b-link>
+                    <b-card-text>
+                        Explore the datasets which contain dendritic cells. 
+                    </b-card-text>
+                </b-card-body>
+            </b-card>
         </b-card-group>
-      </b-tab>
+    </b-tab>
 
-      <b-tab title="Advanced search" class="text-center">
-      </b-tab>
+    <b-tab title="Advanced search" class="text-center">
+        <h4>Coming soon</h4>
+    </b-tab>
       
-      <b-tab title="Search results" class="text-center">
+    <b-tab title="Search results" class="text-center">
         <h3 v-b-tooltip.hover :title="datasetDescription">{{datasetName}}</h3>
-        <b-row class="my-2">
-            <b-col class="col-md-9">
+        <b-row class="my-2" align-h="between">
+            <b-col class="col-md-7">
                 showing {{currentPage*perPage - perPage + 1}} - {{currentPage*perPage>filteredRows.length? filteredRows.length : currentPage*perPage}} of {{filteredRows.length}} entries
             </b-col>
-        <b-col class="col-md-3">
-        <b-form-input v-model="refineSearchString" type="search" placeholder="refine search"></b-form-input>
-        </b-col>
+            <b-col class="col-md-2 text-right pr-0">
+                <b-button size="sm" class="h-100" variant="dark" v-b-modal.column-selector>columns</b-button>
+            </b-col>
+            <b-col class="col-md-3 pl-1">
+                <b-form-input v-model="refineSearchString" type="search" placeholder="refine search"></b-form-input>
+            </b-col>
         </b-row>
+        <b-modal id="column-selector">
+            <ul class="list-unstyled">
+                <li>Title</li>
+                <li>Samples</li>
+            </ul>
+        </b-modal>
         <div style="height:700px; overflow:auto;">
-        <b-table id="mainTable" hover small sticky-header head-variant="light" :items="filteredRows" :fields="tableColumns"
-        :per-page="perPage" :current-page="currentPage" :filter-included-fields="tableColumnsForFilter" 
-        class="border-left">
-            <template v-slot:head(platform_type)="">
-                <b-form-select size="sm" v-model="selectedColumnValue.platform_type">
-                    <option :value="undefined">[Platform Type]</option>
-                    <option :value="option" v-for="option in columnValues.platform_type" :key="option">{{option}}</option>
-                </b-form-select>
-            </template>
-            <template v-slot:head(project)="">
-                <b-form-select size="sm" v-model="selectedColumnValue.project">
-                    <option :value="undefined">[Project]</option>
-                    <option :value="option" v-for="option in columnValues.project" :key="option">{{option}}</option>
-                </b-form-select>
-            </template>
-            <template #cell(display_name)="row">
-                <b-link :to="'/datasets/view?id=' + row.item.dataset_id" v-b-tooltip.hover title="Go to the page showing details for this dataset">{{row.value}}</b-link>
-            </template>
-            <template #cell(more)="row">
-                <b-link v-if="row.item.pubmed_id!=''" :href="'https://pubmed.ncbi.nlm.nih.gov/' + row.item.pubmed_id" target="_blank"
-                        v-b-tooltip.hover title="Go to pubmed entry">pubmed</b-link>
-            </template>
-            <template #cell()="row">
-                <span v-b-tooltip.hover :title="row.value">{{row.value}}</span>
-            </template>
-        </b-table>
-        <b-pagination v-model="currentPage" :total-rows="filteredRows.length" :per-page="perPage" aria-controls="mainTable" 
+            <b-table id="mainTable" hover small sticky-header head-variant="light" :items="filteredRows" :fields="tableColumns"
+            :per-page="perPage" :current-page="currentPage" :filter-included-fields="tableColumnsForFilter" class="border-left">
+                <template v-slot:head(platform_type)="">
+                    <b-form-select size="sm" v-model="selectedColumnValue.platform_type">
+                        <option :value="undefined">[Platform Type]</option>
+                        <option :value="option" v-for="option in columnValues.platform_type" :key="option">{{option}}</option>
+                    </b-form-select>
+                </template>
+                <template v-slot:head(project)="">
+                    <b-form-select size="sm" v-model="selectedColumnValue.project">
+                        <option :value="undefined">[Project]</option>
+                        <option :value="option" v-for="option in columnValues.project" :key="option">{{option}}</option>
+                    </b-form-select>
+                </template>
+                <template #cell(display_name)="row">
+                    <b-link :to="'/datasets/view?id=' + row.item.dataset_id" 
+                            v-b-tooltip.hover.right title="Go to the page showing details for this dataset">{{row.value}}</b-link>
+                </template>
+                <template #cell(more)="row">
+                    <b-link v-if="row.item.pubmed_id!=''" :href="'https://pubmed.ncbi.nlm.nih.gov/' + row.item.pubmed_id" target="_blank"
+                            v-b-tooltip.hover.left title="Go to pubmed entry">pubmed</b-link>
+                </template>
+                <template #cell()="row">
+                    <span v-b-tooltip.hover :title="row.value">{{row.value}}</span>
+                </template>
+            </b-table>
+            <b-pagination v-model="currentPage" :total-rows="filteredRows.length" :per-page="perPage" aria-controls="mainTable" 
                     first-text="First" last-text="Last" align="center" size="sm"></b-pagination>
         </div>
-      </b-tab>
-    </b-tabs>
+    </b-tab>
+</b-tabs>
 </b-container>
 </div>
 </template>

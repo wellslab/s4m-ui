@@ -46,7 +46,4 @@ export default {
 </script>
 
 <style>
-.btn-dark:hover, .btn-dark:focus, .open>.dropdown-toggle.btn-dark {
-  background-color: #EE255F;
-}
 </style>

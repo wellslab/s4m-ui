@@ -7,20 +7,22 @@
   </h3>
   <b-form-select v-model="selectedDataType" class="col-md-3 bg-light mt-3 mb-3" @change="showSunburst">
       <b-form-select-option value="samples">parental to final cell type</b-form-select-option>
-      <b-form-select-option value="datasets">dataset metadata</b-form-select-option>
+      <b-form-select-option value="datasets">tissue to cell type</b-form-select-option>
   </b-form-select>
   <div id="plotDiv" style="height:500px"></div>
 </b-container>
 
 <b-sidebar id="sidebar" title="Help and more info" shadow>
   <div class="px-3 py-2">
-      <p>Visual Data Explorer is a sunburst plot which shows a snapshot of a subset of the data in Stemformatics, 
-        where a hierarchical relationship may exist. For "parental to final cell type", the cell types in the 
-        centre represent samples from the atlases which were differentiated into the cell types in the outer ring. 
-        ...</p>
-      <p>Click on an item in the centre to toggle expand/contract. Clicking on an item will also show details about that
+    <p>Visual Data Explorer is a sunburst plot which shows a snapshot of a subset of the data in Stemformatics, 
+        where a hierarchical relationship may exist.</p>
+    <p>For "parental to final cell type", the cell types in the centre represent samples from the atlases which 
+      were differentiated into the cell types in the outer ring.</p>
+    <p>For "tissue to cell type", tissue of origin is in the centre, while cell type is in the outer ring.</p>
+    <hr/>
+    <p>Click on an item in the centre to toggle expand/contract. Clicking on an item will also show details about that
         item, and you can go to other pages by clicking on these details. Note that you can also drag this info overlay.
-      </p>
+    </p>
   </div>
 </b-sidebar>
 

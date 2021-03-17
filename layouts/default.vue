@@ -56,4 +56,13 @@ export default {
   @import '~bootstrap-vue/src/index.scss';
 </style>
 
+<style>
+a:hover {
+  text-decoration: none;
+  color: #EE255F;
+}
+.btn-dark:hover, .open>.dropdown-toggle.btn-dark {
+  background-color: #EE255F;
+}
+</style>
 
