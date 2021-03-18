@@ -17,7 +17,7 @@
         <b-card-group deck>
             <b-card no-body img-src="/img/StemCells.png" img-alt="Stem cells image" img-top>
                 <b-card-body>
-                    <b-link @click="showDataset('iPSC')"><h4>iPSC Derived Samples</h4></b-link>
+                    <b-link @click="showTable('iPSC')"><h4>iPSC Derived Samples</h4></b-link>
                     <b-card-text>
                         Show datasets containing samples whose parental cell type has been designated as iPSC. 
                     </b-card-text>
@@ -26,7 +26,7 @@
 
             <b-card no-body img-src="/img/AtlasScreenshot2.png" img-alt="Atlas image" img-top>
                 <b-card-body class="border-top border-gray-200">
-                    <b-link @click="showDataset('atlas')"><h4>Atlas Datasets</h4></b-link>
+                    <b-link @click="showTable('atlas')"><h4>Atlas Datasets</h4></b-link>
                     <b-card-text>
                         Explore the datasets which have been used to contruct our integrated atlases. 
                     </b-card-text>
@@ -35,7 +35,7 @@
 
             <b-card no-body img-src="/img/DendriticCell.png" img-alt="Image" img-top>
                 <b-card-body>
-                    <b-link @click="showDataset('dc')"><h4>DC Datasets</h4></b-link>
+                    <b-link @click="showTable('dc')"><h4>DC Datasets</h4></b-link>
                     <b-card-text>
                         Explore the datasets which contain dendritic cells. 
                     </b-card-text>
@@ -49,7 +49,7 @@
     </b-tab>
       
     <b-tab title="Search results" class="text-center">
-        <h3 v-b-tooltip.hover :title="datasetDescription">{{datasetName}}</h3>
+        <h3 v-b-tooltip.hover :title="tableDescription">{{tableName}}</h3>
         <b-row class="my-2" align-h="between">
             <b-col class="col-md-7">
                 showing {{currentPage*perPage - perPage + 1}} - {{currentPage*perPage>filteredRows.length? filteredRows.length : currentPage*perPage}} of {{filteredRows.length}} entries
@@ -58,15 +58,16 @@
                 <b-button size="sm" class="h-100" variant="dark" v-b-modal.column-selector>columns</b-button>
             </b-col>
             <b-col class="col-md-3 pl-1">
-                <b-form-input v-model="refineSearchString" type="search" placeholder="refine search"></b-form-input>
+                <b-form-input v-model="refineSearchString" type="search" placeholder="refine search (coming soon)"></b-form-input>
             </b-col>
         </b-row>
-        <b-modal id="column-selector">
-            <ul class="list-unstyled">
-                <li>Title</li>
-                <li>Samples</li>
-            </ul>
+        <b-modal id="column-selector" title="Select columns to show in the table (max 7)" @ok="setColumnsToShow(1)" @cancel="setColumnsToShow(0)">
+            <b-form-group>
+                <b-form-checkbox-group v-model="selectedTableColumns" :options="allTableColumns" name="selectedColumns" value-field="key" text-field="label" stacked>
+                </b-form-checkbox-group>
+            </b-form-group>
         </b-modal>
+
         <div style="height:700px; overflow:auto;">
             <b-table id="mainTable" hover small sticky-header head-variant="light" :items="filteredRows" :fields="tableColumns"
             :per-page="perPage" :current-page="currentPage" :filter-included-fields="tableColumnsForFilter" class="border-left">
@@ -91,7 +92,7 @@
                             v-b-tooltip.hover.left title="Go to pubmed entry">pubmed</b-link>
                 </template>
                 <template #cell()="row">
-                    <span v-b-tooltip.hover :title="row.value">{{row.value}}</span>
+                    <span v-b-tooltip.hover.right :title="row.value">{{row.value}}</span>
                 </template>
             </b-table>
             <b-pagination v-model="currentPage" :total-rows="filteredRows.length" :per-page="perPage" aria-controls="mainTable" 
@@ -105,7 +106,6 @@
 
 <script>
 export default {
-
     data() {
         return {
             breadcrumb: [
@@ -117,44 +117,60 @@ export default {
             refineSearchString: null,
 
             table: [],
-            tableColumns: [{key:"display_name", label:"Name", sortable:true},
-                           {key:"title", sortable:true, class:"truncate"},
-                           {key:"samples", sortable:true},
-                           {key:"cell_type", label:"Cell Types", sortable:true, class:"truncate"},
-                           {key:"project", sortable:true},
-                           {key:"platform_type", sortable:true},
-                           "more",],
+            // These are not actually all table columns fetched from API but these are available for user to choose from
+            allTableColumns: [{key:"display_name", label:"Name", sortable:true},
+                              {key:"title", label:"Title", sortable:true, class:"truncate"},
+                              {key:"authors", label:"Authors", sortable:true, class:"truncate"},
+                              {key:"description", label:"Description", class:"truncate"},
+                              {key:"dataset_id", label:"Dataset Id", sortable:true},
+                              {key:"name", label:"Short Name", sortable:true, class:"truncate"},
+                              {key:"accession", label:"Accession", sortable:true, class:"truncate"},
+                              {key:"samples", label:"Samples", sortable:true},
+                              {key:"cell_type", label:"Cell Types", sortable:true, class:"truncate"},
+                              {key:"project", label:"Project", sortable:true},
+                              {key:"platform", label:"Platform", sortable:true, class:"truncate"},
+                              {key:"platform_type", label:"Platform Type", sortable:true},
+                              {key:"version", label:"Dataset Version", sortable:true},
+                              {key:"more", label:"more"}],
+            // selectedTableColumns supports user-selection via dialog OK/Cancel, hence is different from computed tableColumns 
+            selectedTableColumns: ['display_name','title','samples','cell_type','project','platform_type','more'],   
             tableColumnsForFilter: ["display_name", "title", "cell_type"],
-            selectedColumnValue: {project:undefined, platform_type:undefined},
             currentPage: 1,
             perPage: 20,
             
+            // column based filters
             filters: [{'name':'platform_type','display':'Platform type', 'values':[], 'counts':[], 'selected':null},
-                      {'name':'projects', 'display':'Project', 'values':['myeloid_atlas','blood_atlas','dc_atlas'], 'counts':[], 'selected':null}],
-            // should really get this dynamically rather than hard code here
+                      {'name':'projects', 'display':'Project', 'values':[], 'counts':[], 'selected':null}],
+            selectedColumnValue: {project:undefined, platform_type:undefined},
         }
     },
 
     computed: {
-        // Values in store
+        // Values in store (auto sync)
         tabIndex: {
             get () { return this.$store.getters['datasets_search/getTabIndex'] },
             set (value) { this.$store.commit('datasets_search/setTabIndex', value) }
         },
 
-        datasetName: {
-            get () { return this.$store.getters['datasets_search/getDatasetName'] },
-            set (value) { this.$store.commit('datasets_search/setDatasetName', value) }
+        tableName: {
+            get () { return this.$store.getters['datasets_search/getTableName'] },
+            set (value) { this.$store.commit('datasets_search/setTableName', value) }
         },
 
-        datasetDescription: {
-            get () { return this.$store.getters['datasets_search/getDatasetDescription'] },
-            set (value) { this.$store.commit('datasets_search/setDatasetDescription', value) }
+        tableDescription: {
+            get () { return this.$store.getters['datasets_search/getTableDescription'] },
+            set (value) { this.$store.commit('datasets_search/setTableDescription', value) }
         },
 
         datasetIds: {
             get () { return this.$store.getters['datasets_search/getDatasetIds'] },
             set (value) { this.$store.commit('datasets_search/setDatasetIds', value) }
+        },
+
+        // This is a subset of allTableColumns, and defines which columns are currently shown
+        tableColumns: {
+            get () { return this.$store.getters['datasets_search/getTableColumns'] },
+            set (value) { this.$store.commit('datasets_search/setTableColumns', value) }
         },
 
         // Return a list of unique values in each column which will be used for filtering
@@ -168,6 +184,7 @@ export default {
             return options;
         },
 
+        // Array of table rows to use after filtering has been applied
         filteredRows() {
             return this.table.filter(row => {
                 let keep = true;
@@ -180,19 +197,25 @@ export default {
     },
 
     methods: {
+        // Searching or selecting a pre-defined dataset will query the API server for matching dataset info
+        // which will be used to popluate the table. The dataset ids from this query are also stored persistently
+        // (see computed values that interact with store), so that we can come back to this page from elsewhere
+        // and see the same table.
+
         // Free text search
         search() {
             this.$axios.get("/api/search?query_string=" + this.searchString).then(res => {
-                this.datasetName = 'Search Results [' + this.searchString + ']';
-                this.datasetDescription = 'Results of a free text search.';
-                this.datasetIds = res.data.map(item => item.dataset_id);
-                this.setupTable();
+                this.tableName = 'Search Results [' + this.searchString + ']';
+                this.tableDescription = 'Results of a free text search.';
+                this.setupTable(res.data);
                 this.tabIndex = 2;
             });
         },
 
-        // Show the dataset given by name (eg. atlas)
-        showDataset(name) {
+        // Show the table given by name (eg. atlas). Makes a query to api and returns data to use in the table.
+        // Currently both dc and iPSC tables are just making a simple query for text search - hence not very precise.
+        // Atlas table is a bit better as it looks for datasets with project field.
+        showTable(name) {
             let queryString = "";
             let dsName = "";
             let description = "";
@@ -213,33 +236,49 @@ export default {
             }
 
             this.$axios.get("/api/search?" + queryString).then(res => {
-                this.datasetName = dsName;
-                this.datasetDescription = description;
-                this.datasetIds = res.data.map(item => item.dataset_id);
-                this.setupTable();
+                this.tableName = dsName;
+                this.tableDescription = description;
+                this.setupTable(res.data);
                 this.tabIndex = 2;
             });
         },
 
-        // Main function to set up the table of datasets.
-        setupTable() {
-            let self = this;
-            let query = self.datasetIds.map(item => 'dataset_id=' + item);
-
-            self.$axios.get("/api/search?" + query.join('&')).then(res => {
-                self.table = res.data;
-                self.table.forEach(row => {
-                    row['project'] = row.projects.join(',');
-                })
-                //self.setFilterCounts();
-            });
+        // Main function to set up the table of datasets, given table data. Also sets datasetIds.
+        setupTable(tableData) {
+            this.datasetIds = tableData.map(item => item.dataset_id);
+            this.table = tableData;
+            this.table.forEach(row => {
+                row['project'] = row.projects.join(',');
+            })
         },
+
+        setColumnsToShow(state) {
+            let change = false;
+            if (state==1) {
+                if (this.selectedTableColumns.length<2) 
+                    this.$bvModal.msgBoxOk('Select at least 2 columns');
+                else if (this.selectedTableColumns.length>7)
+                    this.$bvModal.msgBoxOk('Select at most 7 columns');
+                else
+                    change = true;
+            }
+            if (change)
+                this.tableColumns = this.allTableColumns.filter(item => this.selectedTableColumns.indexOf(item.key)!=-1);
+            else // return selectedTableColumns to previous state
+                this.selectedTableColumns = this.tableColumns.map(item => item.key);
+        }
     },
   
     mounted() {
-        this.$axios.get("/api/values/datasets/platform_type").then(res => {
-            this.filters[0].values = res.data;
-            this.setupTable();
+        if (this.tableColumns==null || this.tableColumns.length==0) { // set initial set of table columns to show
+            this.tableColumns = this.selectedTableColumns.map(col => this.allTableColumns.filter(item => item.key==col)[0]);
+        }
+
+        // Fetch any stored dataset ids and use these to query API to get table data
+        let query = this.datasetIds.map(item => 'dataset_id=' + item);
+        if (query.length==0) return;
+        this.$axios.get("/api/search?" + query.join('&')).then(res => {
+            this.setupTable(res.data);
         });
     }
 }
