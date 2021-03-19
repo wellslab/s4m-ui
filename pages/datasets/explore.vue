@@ -116,8 +116,8 @@ export default {
       // Go to the results section of dataset search page, based on the sample ids clicked
       gotoDatasetSearchPage() {
         // Separate dataset ids from sample ids, save this in storage, then call search results page
-        this.$store.commit('datasets_search/setDatasetName', 'Datasets with ' + this.clickedItem.display + ' [Visual Data Explorer]');
-        this.$store.commit('datasets_search/setDatasetDescription', 'Datasets containing ' + this.clickedItem.display + ' coming from Visual Data Explorer');
+        this.$store.commit('datasets_search/setTableName', 'Datasets with ' + this.clickedItem.display + ' [Visual Data Explorer]');
+        this.$store.commit('datasets_search/setTableDescription', 'Datasets containing ' + this.clickedItem.display + ' coming from Visual Data Explorer');
         this.$store.commit('datasets_search/setDatasetIds', this.datasetIds);
         this.$store.commit('datasets_search/setTabIndex', 2);
         this.$router.push({path: "/datasets/search"});

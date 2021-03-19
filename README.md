@@ -1,29 +1,5 @@
 # Page list
 
-## Home
-- Landing page to show some data at the high level, to appeal to biologists and to show the kind of data we have
-
-## About
-- Description of site
-- Team
-- How to cite
-- Description of data processing
-- Privacy Notice, Disclaimer
-- Funding + Collaborators
-- Contact
-
-## Datasets
-- Explore samples and datasets with interactive visualisation
-- Table with filter options (similar to shopping cart)
-- View each dataset in detail, with interactive PCA available
-- How to use API to access data
-- Details on sample annotation, ontologies used
-
-## Atlas
-- Toggle different atlases types, similar to current page
-- Description of methods behind the atlas
-- Projection vignette
-
 ## Genes
 - Gene search (table)
 - Gene expression profile
@@ -76,6 +52,17 @@ For detailed explanation on how things work, check out [Nuxt.js docs](https://nu
 
 Open source svg icons:
 https://remixicon.com/
+
+Google analytics
+https://stackoverflow.com/questions/64612031/setup-google-analytics-4-in-nuxt-js
+https://matteo-gabriele.gitbook.io/vue-gtag/
+
+Vue timeline
+https://github.com/x10sv/bs-vue-timeline
+https://codesandbox.io/s/github/AngelinCalu/bs-vue-timeline-demo?file=/src/components/Experience.vue
+
+pm2 logs
+https://pm2.keymetrics.io/docs/usage/log-management/
 
 ## Temporary clipboard
 
