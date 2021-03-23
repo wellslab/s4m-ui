@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@coreui/coreui": "^3.4.0",
+    "@nuxtjs/auth": "^4.9.1",
     "@nuxtjs/axios": "^5.12.5",
     "bootstrap": "^4.6.0",
     "bootstrap-vue": "^2.21.2",

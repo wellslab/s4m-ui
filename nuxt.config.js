@@ -31,10 +31,9 @@ export default {
 
   // Modules (https://go.nuxtjs.dev/config-modules)
   modules: [
-    // https://go.nuxtjs.dev/bootstrap
     'bootstrap-vue/nuxt',
     '@nuxtjs/axios',
-    '@nuxtjs/proxy'
+    '@nuxtjs/auth'
   ],
   
   bootstrapVue: {
@@ -55,6 +54,24 @@ export default {
     '/api': {
       target: 'http://127.0.0.1:5000',  // works as long as api server runs on the same localhost
       pathRewrite: {'^/api' : ''},
+    },
+  },
+  
+  auth: {
+    strategies: {
+      local: {
+        endpoints: {
+          login: { url:'/api/auth/login', method:'post', propertyName:'token'},
+          logout: { url:'/api/auth/logout', method:'delete'},
+          user: { url:'/api/auth/user', method:'get', propertyName:false}  // propertyName:false is very important!
+        }
+      }
+    },
+    redirect: {
+      login: '/datasets/governance',
+      logout: '/datasets/governance',
+      callback: '/datasets/governance',
+      home: '/datasets/governance'
     },
   },
   

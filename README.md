@@ -19,6 +19,7 @@ $ conda install nodejs
 $ npm install nuxt
 $ npm install bootstrap-vue
 $ npm add @nuxtjs/axios
+$ npm add @nuxtjs/auth
 $ npm install pm2 -g  # see https://nuxtjs.org/docs/2.x/deployment/deployment-pm2/
 $ npm install --save-dev @nuxtjs/google-analytics  # see https://google-analytics.nuxtjs.org/setup
 
@@ -121,4 +122,16 @@ https://code.visualstudio.com/docs/setup/linux#_visual-studio-code-is-unable-to-
 ```
 $ sudo vi /etc/sysctl.conf
 $ sudo sysctl -p
+```
+
+How to fetch html from axios get request and turn it into a file download
+```
+this.$axios.get('/api/governance/' + datasetId + '/qchtml?type=multiqc', {responseType:'blob'}).then(res => {
+    const url = window.URL.createObjectURL(new Blob([res.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'file.html');
+    document.body.appendChild(link);
+    link.click();
+})
 ```
