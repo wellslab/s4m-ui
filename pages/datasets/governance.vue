@@ -22,10 +22,21 @@
             <b-tab title="Dataset detail">
                 <h4 class="my-3">Dataset {{selectedDataset==null? '':selectedDataset.dataset_id}} 
                     ({{selectedDataset==null? '': selectedDataset.name}})</h4>
-                <p>History</p>
-                <p><b-link href='#' @click="getHtmlReport('multiqc')">MultiQC</b-link></p>
-                <p>QC: Piccard</p>
-                <p><b-link href='#' @click="showPCA">QC: PCAc</b-link></p>
+                <b-button-group>
+                    <b-select v-model="selectedDatasetDetail" @change="showSelectedDatasetDetail">
+                        <b-select-option value="History">History</b-select-option>
+                        <b-select-option value="PCA">PCA</b-select-option>
+                    </b-select>
+                    <b-button @click="getHtmlReport('multiqc')" class="mx-1">MultiQC</b-button>
+                    <b-button>Piccard</b-button>
+                </b-button-group>
+
+                <div v-if="selectedDatasetDetail=='History'" class="overflow-auto text-center mt-3">
+                    <p>History of data processing</p>
+                </div>
+                <div v-if="selectedDatasetDetail=='PCA'" class="overflow-auto text-center">
+                    <div id="pcaPlotDiv" style="width:800px; height:600px; margin:auto"></div>
+                </div>
             </b-tab>
         </b-tabs>
         <b-modal id='token-modal' ok-only>
@@ -51,7 +62,14 @@
 // But I was having trouble with this property: either it was set to false after login + page reload (https://github.com/nuxt-community/auth-module/issues/53)
 // or that it wasn't working at all even after a login (still false). Setting propertyName to false in nuxt.config.js fixed this issue.
 // Without this, I believe that property isn't accessing api to get the value to refresh.
+import data_functions from "~/mixins/data_functions.js"
+
 export default {
+    head: {
+      script: [ { src: 'https://cdn.plot.ly/plotly-latest.min.js' } ],
+    },
+    mixins: [data_functions],
+
     data() {
       return {
         breadcrumb: [
@@ -65,7 +83,10 @@ export default {
 
         datasets: [],
         selectedDataset: null,
-        tabIndex: 0
+        tabIndex: 0,
+        selectedDatasetDetail: "History",
+
+        pcaCoords: {}
       }
     },
     
@@ -96,7 +117,7 @@ export default {
 
         getHtmlReport(reportType) {
             this.$axios.get('/api/governance/' + this.selectedDataset.dataset_id + 
-                            '/qchtml?type=' + reportType, ).then(res => {
+                            '/html?type=' + reportType, ).then(res => {
                 var newWindow = window.open('',this.selectedDataset.dataset_id + ': MultiQC Report');
                 newWindow.document.write(res.data);
             }).catch(error => {
@@ -104,8 +125,27 @@ export default {
             })
         },
 
-        showPCA() {
-            
+        plotPCA() {
+            let sampleIds = Object.keys(this.pcaCoords['0']);
+            let x = sampleIds.map(item => this.pcaCoords['0'][item]);
+            let y = sampleIds.map(item => this.pcaCoords['1'][item]);
+            let traces = [{x:x, y:y, mode: 'markers', type: 'scatter'}];
+            let layout = {margin: {t:20, l:0, r:0, b:0},};
+            Plotly.newPlot('pcaPlotDiv', traces, layout);
+        },
+
+        showSelectedDatasetDetail() {
+            if (this.selectedDatasetDetail=="PCA") {
+                this.$axios.get('/api/governance/' + this.selectedDataset.dataset_id + '/pca').then(res => {
+                    this.pcaCoords = res.data.pca;
+                    this.plotPCA()
+                    this.$axios.get('/api/datasets/' + this.selectedDataset.dataset_id + '/samples').then(res2 => {
+                        console.log(res2.data);
+                    })
+                }).catch(error => {
+                    this.$bvModal.msgBoxOk(error.response.data.message);
+                });
+            }
         }
     },
 

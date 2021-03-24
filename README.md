@@ -21,7 +21,7 @@ $ npm install bootstrap-vue
 $ npm add @nuxtjs/axios
 $ npm add @nuxtjs/auth
 $ npm install pm2 -g  # see https://nuxtjs.org/docs/2.x/deployment/deployment-pm2/
-$ npm install --save-dev @nuxtjs/google-analytics  # see https://google-analytics.nuxtjs.org/setup
+$ npm install @nuxtjs/google-analytics  # see https://google-analytics.nuxtjs.org/setup
 
 #$ npm install sass-loader 
 #$ npm install node-sass
@@ -32,6 +32,12 @@ $ npm uninstall argon-dashboard
 
 # audit for finding vulnerabilities
 $ npm audit
+
+# After a major update of node, there can be incompatibilties between the various dependencies.
+# This happened after nodejs upgrade. Eventually this helped: https://stackoverflow.com/questions/66082397/typeerror-this-getoptions-is-not-a-function
+$ npm uninstall sass-loader
+$ npm install sass-loader@^10.1.1
+# (note that package.json automatically updates when you install a package)
 
 # serve with hot reload at localhost:3000
 $ npm run dev
