@@ -5,30 +5,32 @@
         <h3 class="mb-2">Integrated Atlas: {{atlasType}}
             <small><b-link v-b-tooltip.hover.right title="Background and more information" v-b-toggle.sidebar><b-icon-info-circle></b-icon-info-circle></b-link></small>
         </h3>
-        <b-container class="text-center">
-        <b-form inline class="mt-3 justify-content-center">
-            <b-form-select v-model="selectedPlotBy" class="col-md-2 bg-light" @change="changePlotBy">
+
+        <b-form inline class="justify-content-center mt-3">
+            <b-form-select v-model="selectedPlotBy" class="col-md-2 bg-light m-1" @change="changePlotBy">
                 <b-form-select-option value="sample type">plot by sample type</b-form-select-option>
                 <b-form-select-option value="gene expression">plot by gene expression</b-form-select-option>
             </b-form-select>
-            <b-form-input v-if="selectedPlotBy=='gene expression'" v-model="selectedGene" list="possible-genes-datalist" @keyup="getPossibleGenes" @keyup.enter="showGeneExpression(selectedGene)"
-                placeholder="[gene symbol]" v-b-tooltip.hover title="tooltip.selectedGene" class="ml-2"></b-form-input>
+            <b-form-input v-if="selectedPlotBy=='gene expression'" v-model="selectedGene" list="possible-genes-datalist" 
+                @keyup="getPossibleGenes" @keyup.enter="showGeneExpression(selectedGene)"
+                placeholder="[gene symbol]" v-b-tooltip.hover :title="tooltip.selectedGene" class="col-md-2 m-1"></b-form-input>
             <b-form-datalist id="possible-genes-datalist">
                 <option v-for="gene in possibleGenes" :key="gene.ensembl">{{gene.symbol}}</option>
             </b-form-datalist>
-            <b-button v-if="selectedPlotBy=='gene expression'" @click="showGeneExpression(selectedGene)" class="mr-2">go</b-button>
-            <b-form-select v-model="selectedPlotFunction" @change="selectPlotFunction" class="col-md-2 bg-light">
-                <b-form-select-option value="" selected>plot functions</b-form-select-option>
-                <b-form-select-option value="toggle 3d/2d">toggle 3d/2d</b-form-select-option>
-                <b-form-select-option value="show sample colour plot">show sample colour plot</b-form-select-option>
-            </b-form-select>
-            <b-form-select v-model="selectedTool" @change="selectTool" class="col-md-2 bg-light">
-                <b-form-select-option value="" selected>tools</b-form-select-option>
-                <b-form-select-option value="download data/plots">download data/plots</b-form-select-option>
-                <b-form-select-option value="find dataset">find dataset</b-form-select-option>
-            </b-form-select>
+            <b-button v-if="selectedPlotBy=='gene expression'" @click="showGeneExpression(selectedGene)" variant="dark" class="m-1">go</b-button>
+            <b-dropdown right text="plot functions" class="col-md-2 px-0 m-1" variant="secondary">
+                <b-dropdown-item @click="selectPlotFunction('toggle')">toggle 3d/2d</b-dropdown-item>
+                <b-dropdown-item v-if="showTwoPlots">hide sample colour plot</b-dropdown-item>
+                <b-dropdown-item v-else>show sample colour plot</b-dropdown-item>
+            </b-dropdown>
+            <b-dropdown right text="tools" class="col-md-2 px-0 m-1">
+                <b-dropdown-item>download data/plots</b-dropdown-item>
+                <b-dropdown-item>find dataset</b-dropdown-item>
+                <b-dropdown-item v-b-modal.projectDataModal>project other data</b-dropdown-item>
+                <b-dropdown-divider></b-dropdown-divider>
+                <b-dropdown-item>Item 3</b-dropdown-item>
+            </b-dropdown>
         </b-form>
-        </b-container>
     </div>
 
     <b-row class="small">
@@ -68,6 +70,10 @@
   </div>
 </b-sidebar>
 
+<b-modal id="projectDataModal" title="Project other data" hide-footer>
+    <AtlasDataUpload :atlas-type="atlasType" @project-data="projectData" @close="$bvModal.hide('projectDataModal')"></AtlasDataUpload>
+</b-modal>
+
 </div>
 </template>
 
@@ -93,21 +99,19 @@ export default {
     data() {
       return {
         
-        coords: {},         // {col: {row: val, ...}}
-        sampleIds: [],      // ['sample1', ...]
-        sampleTable: {},    // {'celltype':{'sample1':'HPC', ...}, ...}
+        coords: {},         // {"0":{"6638_GSM868879":5.72,"6638_GSM868880":5.511, ...}, ...}
+        sampleIds: [],      // ["6638_GSM868879","6638_GSM868880", ...]
+        sampleTable: {},    // {'celltype':{'6638_GSM868879':'HPC', ...}, ...}
 
         selectedPlotBy: "sample type",  // one of ["sample type", "gene expression"]
         is3d: true, // whether plot is in 3d or 2d
-        selectedPlotFunction: "",   // chosen from dropdown - see html
-        selectedTool: "",   // chosen from dropdown - see html
 
         colourBy: [],   // ["Cell Type", "Sample Source", ...]
         selectedColourBy: "Cell Type",
 
         sampleTypeColoursOriginal: {},    // colours may change, so we keep original colours stored here
         sampleTypeColours: {},    // note this may be empty - then use default plotly colours
-        sampleTypeOrdering: {},  // may be empty - then use alphabetical ordering
+        sampleTypeOrdering: {},  // {"Sample Source":["in vivo","ex vivo",...], ...}
 
         // gene expression related
         selectedGene: "",
@@ -127,12 +131,39 @@ export default {
         legends: [],
         loading: true,
         showInfo: false,
-        
+
+        // variables used by the find dataset div which can be used to show a table of datasets
+        datasetInfo: {
+            allData: [], // [{"datasetId":7268,"author":"Abud","year":"2017","pubmedId":"28426964","platform":"RNAseq","numberOfSamples":43},...]
+            sampleIdsMatchingDatasets: [],    // sample ids returned by the search
+            show: false,
+            selectedDatasetInfo: "",
+        },
+
+        // variables used by the sample info div which is shown when a sample is double-clicked
+        sampleInfo: {
+            allData: {}, // {'GSM2064216;6731': {'Sample Type': 'Clec4e-/- microglia I/R', 'FACS profile': '', ...}, ...}
+            show: false,
+            shownData: [],
+            sampleId: null,
+            lastClickTime: 0,
+            mouseX: 0,
+            mouseY: 0,
+            divX: 0,
+            divY: 0
+        },
+
+         // upload data dialog
+        uploadData: {
+            projectedSampleIds: [],  // record sample ids which have been projected
+            name: null, // name of the dataset used for projection - will be the prefix for projected samples
+        },
+       
         // tooltip texts
         tooltip: {atlasType: "<p class='tooltiptext'>show information about this page</p>",
                   atlasToggle: "<p class='tooltiptext'>toggle atlas</p>",
-                  selectedGene: "<div class='tooltiptext'><p>Select a gene from suggestions and press go to show its expression.</p>" +
-                                "<p>The genes with grey font colours were filtered out before creating this PCA.</p></div>",
+                  selectedGene: "Select a gene from suggestions and press go to show its expression." +
+                                "The genes with grey font colours were filtered out before creating this PCA.",
                   geneExpressionPlot: "<p class='tooltiptext'>This plot shows rank normalised values of the gene in the atlas as "+
                                       "either a violin or a box plot. The values are in the range [0,1].</p>" +
                                       "<p class='tooltiptext'>You can drag this plot overlay by grabbing it near the title.</p>",
@@ -146,13 +177,6 @@ export default {
     },
 
     computed: {
-        plotFunctions() {
-            if (this.showTwoPlots)
-                return ["toggle 3d/2d", "hide sample colour plot", "gene expression box plot"];
-            else
-                return ["toggle 3d/2d", "show sample colour plot", "gene expression box plot"];
-        },
-
         // For a long list of sample types, it's good to place a gap between groups of them as a visual aid.
         // This returns the items where breaks should occur.
         sampleTypeBreakPoint() {
@@ -171,6 +195,57 @@ export default {
     },
 
     methods: {
+        // Colours for sample groups may not be pre-defined, and samples groups also may be created dynamically (eg. custom sample group).
+        // Hence run this function to ensure all sample group colours have been populated.
+        updateSampleTypeColours: function() {
+            let self = this;
+
+            // If colours weren't specified we set them here from this list
+            let exampleColours = ['#64edbc', '#6495ed', '#ed6495', '#edbc64', '#8b8b00', '#008b00', '#8b008b', '#00008b', 
+                                    '#708090', '#908070', '#907080', '#709080', '#008080', '#008000', '#800000', '#bca68f', 
+                                    '#bc8fa6', '#bc8f8f', '#008160', '#816000', '#600081', '#ff1493', '#14ff80'];
+            for (let i=0; i<self.colourBy.length; i++) {
+                if (!(self.colourBy[i] in self.sampleTypeColours)) {
+                    self.sampleTypeColours[self.colourBy[i]] = {}
+
+                    let column = self.sampleTable[self.colourBy[i]]; // dict of selected column from sampleTable
+                    let availableValues = [];  // will store the unique values in this column
+                    for (let sampleId in column) {
+                        if (column[sampleId]=="") continue; // skip null valued rows
+                        if (availableValues.indexOf(column[sampleId])==-1) {    // first time seen
+                            availableValues.push(column[sampleId]);
+                        }
+                    }
+
+                    for (let j=0; j<availableValues.length; j++)
+                        self.sampleTypeColours[self.colourBy[i]][availableValues[j]] = exampleColours[j % exampleColours.length];
+                }
+            }
+        },
+
+        // Some sample groups may come without sample type ordering, but this is used throughout
+        // the page, so this function will define this based on alphabetical ordering.
+        updateSampleTypeOrdering: function() {
+            let self = this;
+            for (let i=0; i<self.colourBy.length; i++) {
+                if (!(self.colourBy[i] in self.sampleTypeOrdering)) {
+                    self.sampleTypeOrdering[self.colourBy[i]] = {}
+
+                    let column = self.sampleTable[self.colourBy[i]]; // dict of selected column from sampleTable
+                    let availableValues = [];  // will store the unique values in this column
+                    for (let sampleId in column) {
+                        if (column[sampleId]=="") continue; // skip null valued rows
+                        if (availableValues.indexOf(column[sampleId])==-1) {    // first time seen
+                            availableValues.push(column[sampleId]);
+                        }
+                    }
+
+                    for (let j=0; j<availableValues.length; j++)
+                        self.sampleTypeOrdering[self.colourBy[i]] = availableValues;
+                }
+            }
+        },
+        
         // Run before sample group plot to populate the legends array, and when a legend is clicked to show/hide a trace
         updateLegends(clickedLegendIndex) {
             let self = this;
@@ -219,7 +294,7 @@ export default {
             if (type==null) type = "sample type";
 
             // work out title based on type
-            var title = "Coloured by " + this.selectedColourBy;
+            let title = "Coloured by " + this.selectedColourBy;
             if (type=="gene expression")
                 title = "Rank normalised expression of " + this.selectedGene;
             if (this.showTwoPlots)  // title interferes with hover icons and too busy anyway
@@ -290,8 +365,10 @@ export default {
                     trace.z = legend.sampleIds.map(item => self.coords['2'][item]);
                     trace.text = legend.sampleIds.map(item => hovertext[item]);
                     trace.name = legend.value;
-                    trace.marker.color = legend.sampleIds.map(item => legend.colour);
-                    trace.marker.symbol = legend.sampleIds.map(item => "circle");
+                    trace.marker.color = legend.sampleIds.map(item => 
+                        self.datasetInfo.sampleIdsMatchingDatasets.indexOf(item)!=-1? "black": legend.colour);
+                    trace.marker.symbol = legend.sampleIds.map(item => 
+                        self.uploadData.projectedSampleIds.indexOf(item)==-1? "circle" : "diamond-open");
                     trace.sampleIds = legend.sampleIds;
                     traces.push(trace);
                 }
@@ -403,18 +480,60 @@ export default {
                 if (this.selectedGene!="") this.updatePlot();
         },
 
-        selectPlotFunction() {
-            if (this.selectedPlotFunction=="toggle 3d/2d") {    // choose the other 
+        selectPlotFunction(selected) {
+            if (selected=="toggle") {    // choose the other 
                 this.is3d = !this.is3d;
                 this.mainPlot();
             }
-            this.selectedPlotFunction = "";
         },
 
-        selectTool() {
-            this.selectedTool = "";
-        },
+        // ------------ Data projection methods ---------------
+        projectData(projectionData) {
+            // Map a particular sample field from test data to all of the sample fields in the atlas.
+            // projectionData needs to have following objects (examples)
+            // name: "notta"
+            // samples: [{"Sample Type":"CMP_71+_BAH+","Parental cell type":"CMP"}, ...]
+            // coords: [{'x':8.03,'y':0,'z':1.2}, ...]
+            // combinedCoords: {'index':[], 'columns':[], 'data':[]}
+            // sampleIds: ['notta_GSM1977399',...]
+            // column: 'Sample Type'
+            let column = projectionData.column;
 
+            // This is a list of projected items that will be displayed in the legend. ["Ang_iPSC","Ang_HSC","Ang_iPSC",...]
+            // Note that this list is same length as projected sample ids. Also these don't change when colour by changes.
+            let sampleTypes = projectionData.samples.map(item => projectionData.name + "_" + item[column]);
+
+            // Create some dataset attributes needed
+            var datasetAttributes = {"datasetId":'0000', "author":"[author]", "year":"[year]"};
+            
+            // Now add projected points to all relevant data variables. Note that we should be able to
+            // remove these points later - for now, reload page.
+            //this.addProjectedPoints(projectionData.name, projectionData.coords, projectionData.sampleIds, sampleTypes, datasetAttributes);
+            let self = this;
+            self.uploadData.name = projectionData.name;
+            for (let item in self.coords) { // update coordinates to include projected coordinates
+                for (let i=0; i<projectionData.coords.length; i++)
+                    self.coords[item][projectionData.sampleIds[i]] = projectionData.coords[i][item];
+            }
+            for (let item in self.colourBy) {   // update sampleTypeOrdering
+                if (item in self.sampleTypeOrdering)
+                    self.sampleTypeOrdering[item].push("");
+            }
+            for (let i=0; i<sampleTypes.length; i++) {
+                self.uploadData.projectedSampleIds.push(projectionData.sampleIds[i]);
+                for (let item in self.sampleTable) {
+                    self.sampleTable[item][projectionData.sampleIds[i]] = sampleTypes[i];
+                    self.sampleTypeColours[item][sampleTypes[i]] = "green";
+                    self.sampleTypeOrdering[item].push(sampleTypes[i]);
+                }
+            }
+            for (var i=0; i<projectionData.sampleIds.length; i++)
+                self.sampleIds.push(projectionData.sampleIds[i]);
+
+            self.datasetInfo.allData.push(datasetAttributes);            
+            self.updateLegends();
+            self.updatePlot();
+        }
     },
 
     mounted() {
@@ -431,6 +550,8 @@ export default {
                 this.sampleTypeColoursOriginal = res2.data.colours;
                 this.sampleTypeColours = res2.data.colours;
                 this.sampleTypeOrdering = res2.data.ordering;
+                this.updateSampleTypeColours();
+                this.updateSampleTypeOrdering();
 
                 // Fetch coordinates
                 this.$axios.get("/api/atlases/" + this.atlasType + "/coordinates?orient=dict").then(res3 => {
@@ -450,5 +571,8 @@ export default {
 .js-plotly-plot .plotly .modebar {
     left: 40%;
     transform: translateX(-40%);
+}
+.btn-dark:hover, .open>.dropdown-toggle.btn-dark {
+  background-color: #EE255F;
 }
 </style>
