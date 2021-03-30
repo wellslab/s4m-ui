@@ -541,8 +541,6 @@ export default {
         this.$axios.get("/api/atlases/" + this.atlasType + "/samples?orient=dict").then(res => {
             this.sampleTable = res.data;
             this.colourBy = Object.keys(this.sampleTable);   // ["Cell Type", "Sample Source", ...]
-            if (this.atlasType=='dc')
-                this.colourBy = ['cell_type', 'activation_status', 'sample_source', 'platform_category', 'tissue_of_origin'];
             this.selectedColourBy = this.colourBy[0];
 
             // Fetch colours and ordering
