@@ -204,7 +204,7 @@ export default {
 
         // Free text search
         search() {
-            this.$axios.get("/api/search?query_string=" + this.searchString).then(res => {
+            this.$axios.get("/api/search/datasets?query_string=" + this.searchString).then(res => {
                 this.tableName = 'Search Results [' + this.searchString + ']';
                 this.tableDescription = 'Results of a free text search.';
                 this.setupTable(res.data);
@@ -235,7 +235,7 @@ export default {
                 description = "All datasets containing term 'induced pluripotent'"
             }
 
-            this.$axios.get("/api/search?" + queryString).then(res => {
+            this.$axios.get("/api/search/datasets?" + queryString).then(res => {
                 this.tableName = dsName;
                 this.tableDescription = description;
                 this.setupTable(res.data);
@@ -277,7 +277,7 @@ export default {
         // Fetch any stored dataset ids and use these to query API to get table data
         let query = this.datasetIds.map(item => 'dataset_id=' + item);
         if (query.length==0) return;
-        this.$axios.get("/api/search?" + query.join('&')).then(res => {
+        this.$axios.get("/api/search/datasets?" + query.join('&')).then(res => {
             this.setupTable(res.data);
         });
     }

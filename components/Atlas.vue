@@ -33,7 +33,7 @@
         </b-form>
     </div>
 
-    <b-row class="small">
+    <b-row class="small" @mousemove="updateMousePosition">
         <b-col col md="9">
             <div class="overflow-auto text-center">
                 <div v-if="loading" class="pl-5 pt-5"><b-spinner label="Loading..." variant="secondary"></b-spinner></div>
@@ -73,6 +73,22 @@
 <b-modal id="projectDataModal" title="Project other data" hide-footer>
     <AtlasDataUpload :atlas-type="atlasType" @project-data="projectData" @close="$bvModal.hide('projectDataModal')"></AtlasDataUpload>
 </b-modal>
+
+<!-- Sample info modal -->
+<div v-if="sampleInfo.show" class="sampleInfo" :style="{top:sampleInfoDivPosition('y'), left:sampleInfoDivPosition('x')}">
+    <div style="background-color:#EE255F;" class="p-2">
+        <span v-b-tooltip.hover title="Details of last double-clicked sample" class="text-white">Sample Info</span>
+        <b-link href="#" @click="sampleInfo.show=false" class="float-right font-weight-bold text-white">X</b-link>
+    </div>
+    <ul class="list-unstyled p-2">
+        <li v-for="item in sampleInfo.shownData" :key="item.key">
+        <span class="font-weight-bold">{{item.key}}</span><br/>
+        <span class="ml-1">
+            <b-link v-if="item.key=='dataset'" :href="'/datasets/view?id='+item.datasetId" target="_blank">{{item.value}}</b-link>
+            <span v-else>{{item.value}}</span>
+        </span>
+    </li></ul>
+</div>
 
 </div>
 </template>
@@ -134,7 +150,7 @@ export default {
 
         // variables used by the find dataset div which can be used to show a table of datasets
         datasetInfo: {
-            allData: [], // [{"datasetId":7268,"author":"Abud","year":"2017","pubmedId":"28426964","platform":"RNAseq","numberOfSamples":43},...]
+            allData: [], // [{"dataset_id":7268,"author":"Abud","pubmed_id":"28426964","platform":"RNAseq",...},...]
             sampleIdsMatchingDatasets: [],    // sample ids returned by the search
             show: false,
             selectedDatasetInfo: "",
@@ -142,7 +158,7 @@ export default {
 
         // variables used by the sample info div which is shown when a sample is double-clicked
         sampleInfo: {
-            allData: {}, // {'GSM2064216;6731': {'Sample Type': 'Clec4e-/- microglia I/R', 'FACS profile': '', ...}, ...}
+            allData: {}, // {'6731_GSM2064216': {'Cell Type': 'Clec4e-/- microglia I/R', 'FACS profile': '', ...}, ...}
             show: false,
             shownData: [],
             sampleId: null,
@@ -401,12 +417,18 @@ export default {
         },
         
         mainPlot() {
-            var div = document.getElementById('mainPlotDiv');
+            let self = this;
+            let div = document.getElementById(self.mainPlotDiv);
             Plotly.newPlot(div, this.traces(), this.layout(this.selectedPlotBy));
+        
+            // Set up double click event, where sampleInfo.shownData is populated with info about the sample double clicked.
+            // Note that plotly doesn't really have double click event detection, so we're going to measure the interval between
+            // two single clicks if it's on the sample id.
+            div.on('plotly_click', function(data) { self.handlePlotlyClick(data); });
         },
 
         // Function to update the plot
-        updatePlot: function() {
+        updatePlot() {
             let self = this;
             let div = document.getElementById(self.rightPlotDiv);
 
@@ -435,9 +457,61 @@ export default {
 
         },
         
+        // ------------ sampleInfo methods ---------------
+        // Should run when user clicks on a point in the plot. Since there's no double-click event detection in plotly
+        // we measure the time interval between clicks to define double click.
+        handlePlotlyClick(data, plotBy) {
+            let self = this;
+            if (plotBy==null) plotBy = self.selectedPlotBy;
+            let sampleId = plotBy=="sample type"? self.traces()[data.points[0].curveNumber].sampleIds[data.points[0].pointNumber] : self.sampleIds[data.points[0].pointNumber];
+            
+            if (self.sampleInfo.sampleId==sampleId && performance.now() - self.sampleInfo.lastClickTime < 600) {   
+                // same sample id clicked and its internval since last click is short enough to define as double-click
+                self.sampleInfo.shownData = [];
+                for (let i=0; i<self.colourBy.length; i++)
+                    self.sampleInfo.shownData.push({'key':self.colourBy[i], 'value':self.sampleTable[self.colourBy[i]][sampleId]});
+                for (let key in self.sampleInfo.allData[sampleId])
+                    if (self.sampleInfo.allData[sampleId][key]!="")
+                        self.sampleInfo.shownData.push({'key':key, 'value':self.sampleInfo.allData[sampleId][key]});
+                // Last key is 'dataset', which will have dataset id value, but display will be author and year
+                let datasetId = sampleId.split("_")[0];
+                let matchingDataset = self.datasetInfo.allData.filter(item => item.dataset_id==parseInt(datasetId));
+
+                // For projected points, they don't have the same sample id structure so we can't matching dataset this way
+                // We can fetch last value but note that this won't work after multiple projections.
+                if (matchingDataset.length==0) { // assume this is because we clicked on a projected point and they exist
+                    matchingDataset = [self.datasetInfo.allData[self.datasetInfo.allData.length-1]];
+                    datasetId = matchingDataset[0].dataset_id;
+                }
+                self.sampleInfo.shownData.push({'key':'dataset', 
+                                                'value':matchingDataset[0].display_name, 
+                                                'datasetId':datasetId});
+                self.sampleInfo.divX = self.sampleInfo.mouseX;
+                self.sampleInfo.divY = self.sampleInfo.mouseY;
+                self.sampleInfo.show = true;
+            } else {   // set this as last sampleId clicked, and record time
+                self.sampleInfo.sampleId = sampleId;
+                self.sampleInfo.lastClickTime = performance.now();
+                self.sampleInfo.shownData = [];
+                self.sampleInfo.show = false;
+            }
+        },
+
+        // In order to know where to show the sampleInfoDiv on double-click, we need to keep track
+        // of mouse position and save this.
+        updateMousePosition(event) {
+            this.sampleInfo.mouseX = event.clientX;
+            this.sampleInfo.mouseY = event.clientY;
+        },
+
+        // Return the position where the sample info div should appear - just a wrapper for sampleInfo.divX and divY
+        sampleInfoDivPosition(axis) {            
+            return axis=='x'? this.sampleInfo.divX + 20 + "px" : this.sampleInfo.divY + "px";
+        },
+
         // ------------ Gene expression related methods ---------------
         // Show autocomplete on gene expression by fetching all possible entries
-        getPossibleGenes: function() {
+        getPossibleGenes() {
             let self = this;
             if (self.selectedGene.length<=1) return;    // ignore 1 or less characters entered
             self.$axios.get('/api/atlases/' + self.atlasType + '/possible-genes?query_string=' + self.selectedGene)
@@ -448,7 +522,7 @@ export default {
         },
         
         // Show gene expression - fetch values from server and save them, then run updatePlot
-        showGeneExpression: function(geneSymbol) {
+        showGeneExpression(geneSymbol) {
             let self = this;
             if (geneSymbol!=null)
                 self.selectedGene = geneSymbol;
@@ -473,7 +547,7 @@ export default {
         },
 
         // Run when plotBy changes between "sample type" and "gene expression"
-        changePlotBy: function() {
+        changePlotBy() {
             if (this.selectedPlotBy=="sample type") // going back to sample type after showing expression
                 this.updatePlot();
             else    // going to gene expression after showing sample type - update only if previously an expression was shown
@@ -520,11 +594,13 @@ export default {
                     self.sampleTypeOrdering[item].push("");
             }
             for (let i=0; i<sampleTypes.length; i++) {
+                self.sampleInfo.allData[sampleIds[i]] = {};
                 self.uploadData.projectedSampleIds.push(projectionData.sampleIds[i]);
                 for (let item in self.sampleTable) {
                     self.sampleTable[item][projectionData.sampleIds[i]] = sampleTypes[i];
                     self.sampleTypeColours[item][sampleTypes[i]] = "green";
                     self.sampleTypeOrdering[item].push(sampleTypes[i]);
+                    self.sampleInfo.allData[sampleIds[i]][item] = sampleTypes[i];
                 }
             }
             for (var i=0; i<projectionData.sampleIds.length; i++)
@@ -539,7 +615,7 @@ export default {
     mounted() {
         // Fetch sample table
         this.$axios.get("/api/atlases/" + this.atlasType + "/samples?orient=dict").then(res => {
-            this.sampleTable = res.data;
+            this.sampleTable = res.data;    // {col: {row:val}}
             this.colourBy = Object.keys(this.sampleTable);   // ["Cell Type", "Sample Source", ...]
             this.selectedColourBy = this.colourBy[0];
 
@@ -555,6 +631,23 @@ export default {
                 this.$axios.get("/api/atlases/" + this.atlasType + "/coordinates?orient=dict").then(res3 => {
                     this.coords = res3.data;
                     this.sampleIds = Object.keys(this.coords[Object.keys(this.coords)[0]]);
+
+                    // Construct sampleInfo.allData - can't construct just from sampleTable, since we want to include
+                    // other sample metadata fields, not available from atlas sample table.
+                    let datasetIds = this.sampleIds.map(item => item.split("_")[0]);
+                    datasetIds = Array.from(new Set(datasetIds));   // unique values only
+                    datasetIds = datasetIds.map(item => "dataset_id=" + item);  // create query string
+                    this.$axios.get("/api/search/samples?orient=index&field=cell_type&field=facs_profile&limit=1200&" + datasetIds.join("&")).then(res4 => {
+                        this.sampleIds.forEach(sampleId => {
+                            this.sampleInfo.allData[sampleId] = res4.data[sampleId];
+                        });
+                    });
+
+                    // Construct datasetInfo.allData by fetching from api
+                    this.$axios.get("/api/search/datasets?projects=" + this.atlasType + "_atlas").then(res5 => {
+                        this.datasetInfo.allData = res5.data;
+                    });
+
                     this.loading = false;
                     this.updateLegends();
                     this.mainPlot();
@@ -572,5 +665,15 @@ export default {
 }
 .btn-dark:hover, .open>.dropdown-toggle.btn-dark {
   background-color: #EE255F;
+}
+div.sampleInfo {
+    position: absolute;
+    background:#f0f0f0; 
+    font-size: 14px;
+    opacity: 0.9;
+    max-width: 300px;
+}
+div.sampleInfo li {
+    margin-top: 5px;
 }
 </style>

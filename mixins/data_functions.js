@@ -19,7 +19,7 @@ export default {
 
         _sampleGroupsForPlotlyTrace(sampleTable) {
             // Return an array of sample groups which can be used for plotly trace (eg. ['cell_type','tissue_of_origin',...]),
-            // give sampleTable, which is in record form ([{'sample_id':'s1', 'cell_type':'T Cell',...}, ...]).
+            // given sampleTable, which is in record form ([{'sample_id':'s1', 'cell_type':'T Cell',...}, ...]).
             // This function remove any sample group with one or less values, as these aren't useful for plotly traces.
             let sgd = this._sampleGroupDictionary(sampleTable);
             let sampleGroups = Object.keys(sgd).filter(item => sgd[item].length>1 && sgd[item].length<sampleTable.length);

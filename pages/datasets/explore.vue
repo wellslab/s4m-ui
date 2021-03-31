@@ -89,7 +89,7 @@ export default {
       showSunburst() {
         let self = this;
         let query = self.selectedDataType=='samples'? 'format=sunburst1&projects=atlas' : 'format=sunburst2&projects=atlas';
-        self.$axios.get("/api/search?" + query).then(res => {
+        self.$axios.get("/api/search/datasets?" + query).then(res => {
             self.sunburst = res.data;
             self.plot();
             let plotDiv = document.getElementById("plotDiv");
