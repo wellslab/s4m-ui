@@ -25,14 +25,13 @@
             </b-dropdown>
             <b-dropdown right text="tools" class="col-md-2 px-0 m-1">
                 <b-dropdown-item>download data/plots</b-dropdown-item>
-                <b-dropdown-item>find dataset</b-dropdown-item>
+                <b-dropdown-item @click="datasetInfo.show=true">find dataset</b-dropdown-item>
                 <b-dropdown-item v-b-modal.projectDataModal>project other data</b-dropdown-item>
-                <b-dropdown-divider></b-dropdown-divider>
-                <b-dropdown-item>Item 3</b-dropdown-item>
             </b-dropdown>
         </b-form>
     </div>
 
+    <!-- Plot and legend area -->
     <b-row class="small" @mousemove="updateMousePosition">
         <b-col col md="9">
             <div class="overflow-auto text-center">
@@ -48,10 +47,11 @@
                 <b-form-select v-model="selectedColourBy" :options="colourBy" @change="updateLegends(); updatePlot()" 
                     data-step="1" data-intro="Colour each sample by a sample group here.">
                 </b-form-select>
-                <ul class="mt-3" data-step="2" data-intro="Click on a legend to show/hide samples in the plot." style="list-style-type:none; padding:0">
+                <ul class="mt-3 list-unstyled p-0" data-step="2" data-intro="Click on a legend to show/hide samples in the plot.">
                     <li v-for="(legend,i) in legends" :style="sampleTypeBreakPoint[selectedColourBy].indexOf(legend.value)!=-1? 'margin-top:10px' : ''" :key="legend.value">
                     <b-link href="#" @click="updateLegends(i); updatePlot();" style="font-size:13px;">
-                    <b-icon-circle-fill :style="{'color': legend.colour}" scale="0.6"></b-icon-circle-fill>
+                    <b-icon-circle-fill v-if="uploadData.projectedSampleIds.indexOf(legend.sampleIds[0])==-1" :style="{'color': legend.colour}" scale="0.6"></b-icon-circle-fill>
+                    <b-icon-diamond v-if="uploadData.projectedSampleIds.indexOf(legend.sampleIds[0])!=-1" :style="{'color': legend.colour}" scale="0.6"></b-icon-diamond>
                     <span :style="legend.visible? 'color:black' : 'color:#a7a7a7'">{{legend.value}} ({{legend.number}})</span>
                     </b-link>
                 </li></ul>
@@ -70,21 +70,43 @@
   </div>
 </b-sidebar>
 
+<!-- Projecting data (draggable) -->
 <b-modal id="projectDataModal" title="Project other data" hide-footer>
     <AtlasDataUpload :atlas-type="atlasType" @project-data="projectData" @close="$bvModal.hide('projectDataModal')"></AtlasDataUpload>
 </b-modal>
 
-<!-- Sample info modal -->
+<!-- Find dataset div (draggable) -->
+<draggable-div v-show="datasetInfo.show" class="border border-light bg-light" style="width:350px; opacity:0.95">
+    <div slot="header" class="card-header bg-dark" title="Drag me around by this area">
+        <span class="text-white">Find dataset</span>
+        <b-link href="#" @click="datasetInfo.show=false" class="float-right font-weight-bold text-white">X</b-link>
+    </div>
+    <div slot="main">
+        <div class="card-body">
+            <p>All the datasets which were used for the construction of this atlas are shown below. 
+            Hover over the name to highlight matching samples in the plot. You can drag this box by its top area.</p>
+            <div style="height:300px; overflow:auto;">
+                <ul class="list-unstyled">
+                    <li v-for="item in datasetInfo.allData" :key="item.dataset_id">
+                        <b-link href="#" @mouseover="highlightDatasets(item.dataset_id)" @mouseleave="clearHighlight">{{item.display_name}}</b-link>
+                        ({{item.sampleIds.length}} samples)
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</draggable-div>
+
+<!-- Sample info div -->
 <div v-if="sampleInfo.show" class="sampleInfo" :style="{top:sampleInfoDivPosition('y'), left:sampleInfoDivPosition('x')}">
     <div style="background-color:#EE255F;" class="p-2">
         <span v-b-tooltip.hover title="Details of last double-clicked sample" class="text-white">Sample Info</span>
         <b-link href="#" @click="sampleInfo.show=false" class="float-right font-weight-bold text-white">X</b-link>
     </div>
-    <ul class="list-unstyled p-2">
-        <li v-for="item in sampleInfo.shownData" :key="item.key">
+    <ul class="list-unstyled p-2"><li v-for="item in sampleInfo.shownData" :key="item.key">
         <span class="font-weight-bold">{{item.key}}</span><br/>
         <span class="ml-1">
-            <b-link v-if="item.key=='dataset'" :href="'/datasets/view?id='+item.datasetId" target="_blank">{{item.value}}</b-link>
+            <b-link v-if="item.key=='dataset' && ('datasetId' in item)" :href="'/datasets/view?id='+item.datasetId" target="_blank">{{item.value}}</b-link>
             <span v-else>{{item.value}}</span>
         </span>
     </li></ul>
@@ -104,12 +126,6 @@ export default {
       script: [ { src: 'https://cdn.plot.ly/plotly-latest.min.js' } ],
     },
 
-    // loading: {
-    //     color: 'blue',
-    //     height: '5px',
-    //     throttle: 0,
-    // },
-
     props: ["atlasType"],
 
     data() {
@@ -123,18 +139,16 @@ export default {
         is3d: true, // whether plot is in 3d or 2d
 
         colourBy: [],   // ["Cell Type", "Sample Source", ...]
-        selectedColourBy: "Cell Type",
+        selectedColourBy: "Cell Type",  // overwrite at mounted()
 
         sampleTypeColoursOriginal: {},    // colours may change, so we keep original colours stored here
-        sampleTypeColours: {},    // note this may be empty - then use default plotly colours
+        sampleTypeColours: {},    // {"Sample Source":{"in vivo":"#8b8b00",...}, ...}
         sampleTypeOrdering: {},  // {"Sample Source":["in vivo","ex vivo",...], ...}
 
         // gene expression related
         selectedGene: "",
         possibleGenes: [],  // gene ids and symbols used to populate the autocomplete field
         geneExpression: [], // flat list of values, in same order as sampleIds, to be fetched when requested
-
-        sampleIdsMatchingDatasets: [],    // sample ids returned by the search
 
         // plotly requires id of div where it will plot, so set them as vars here
         mainPlotDiv: "mainPlotDiv",
@@ -151,7 +165,6 @@ export default {
         // variables used by the find dataset div which can be used to show a table of datasets
         datasetInfo: {
             allData: [], // [{"dataset_id":7268,"author":"Abud","pubmed_id":"28426964","platform":"RNAseq",...},...]
-            sampleIdsMatchingDatasets: [],    // sample ids returned by the search
             show: false,
             selectedDatasetInfo: "",
         },
@@ -169,25 +182,24 @@ export default {
             divY: 0
         },
 
-         // upload data dialog
+         // upload data modal
         uploadData: {
             projectedSampleIds: [],  // record sample ids which have been projected
             name: null, // name of the dataset used for projection - will be the prefix for projected samples
         },
        
         // tooltip texts
-        tooltip: {atlasType: "<p class='tooltiptext'>show information about this page</p>",
-                  atlasToggle: "<p class='tooltiptext'>toggle atlas</p>",
+        tooltip: {atlasType: "show information about this page",
+                  atlasToggle: "toggle atlas",
                   selectedGene: "Select a gene from suggestions and press go to show its expression." +
                                 "The genes with grey font colours were filtered out before creating this PCA.",
-                  geneExpressionPlot: "<p class='tooltiptext'>This plot shows rank normalised values of the gene in the atlas as "+
-                                      "either a violin or a box plot. The values are in the range [0,1].</p>" +
-                                      "<p class='tooltiptext'>You can drag this plot overlay by grabbing it near the title.</p>",
-                  close: "<p class='tooltiptext'>close dialog</p>",
-                  editLegend: "<p class='tooltiptext'>Edit colours of points</p>",
-                  showProjectionFunctions: "<p class='tooltiptext'>Show nearest neighbours of projected points.</p>",
-                  projectionFunctions: "<p class='tooltiptext'>You can drag this plot overlay by grabbing it near the title..</p>",
-                  customSampleGroup: "<p class='tooltiptext'>You can drag this dialog overlay by grabbing it near the title..</p>",
+                  geneExpressionPlot: "This plot shows rank normalised values of the gene in the atlas as "+
+                                      "either a violin or a box plot. The values are in the range [0,1]." +
+                                      "You can drag this plot overlay by grabbing it near the title.",
+                  editLegend: "Edit colours of points",
+                  showProjectionFunctions: "Show nearest neighbours of projected points.",
+                  projectionFunctions: "You can drag this plot overlay by grabbing it near the title.",
+                  customSampleGroup: "You can drag this dialog overlay by grabbing it near the title.",
                   },
       }
     },
@@ -196,16 +208,16 @@ export default {
         // For a long list of sample types, it's good to place a gap between groups of them as a visual aid.
         // This returns the items where breaks should occur.
         sampleTypeBreakPoint() {
-            let itemsWithBreaks = {}
-            for (let i=0; i<this.colourBy.length; i++) {
-                let key = this.colourBy[i];
+            let itemsWithBreaks = {};
+            this.colourBy.forEach(key => {
                 itemsWithBreaks[key] = [];
-                if (!(key in this.sampleTypeOrdering)) continue;
-                for (let j=1; j<this.sampleTypeOrdering[key].length; j++) {
-                    if (this.sampleTypeOrdering[key][j-1]=="")
-                        itemsWithBreaks[key].push(this.sampleTypeOrdering[key][j]);
+                if (key in this.sampleTypeOrdering) {
+                    for (let j=1; j<this.sampleTypeOrdering[key].length; j++) {
+                        if (this.sampleTypeOrdering[key][j-1]=="")
+                            itemsWithBreaks[key].push(this.sampleTypeOrdering[key][j]);
+                    }
                 }
-            }
+            });
             return itemsWithBreaks;
         },
     },
@@ -286,36 +298,21 @@ export default {
             });
 
             let legends = [];
-            for (let i=0; i<availableValues.length; i++) {
-                // Work out the colour for this trace. This is either from sampleTypeColours or from following list
-                let exampleColours = ['#64edbc', '#6495ed', '#ed6495', '#edbc64', '#8b8b00', '#008b00', '#8b008b', '#00008b', '#708090', '#908070', '#907080', '#709080', '#008080', '#008000', '#800000', '#bca68f', '#bc8fa6', '#bc8f8f', '#008160', '#816000', '#600081', '#ff1493', '#14ff80'];
-                let colour = (self.selectedColourBy in self.sampleTypeColours && availableValues[i] in self.sampleTypeColours[self.selectedColourBy])?
-                        self.sampleTypeColours[self.selectedColourBy][availableValues[i]] : exampleColours[i % exampleColours.length];
-                let legend  = {'value': availableValues[i], 
-                               'number': sampleIds[availableValues[i]].length,
-                               'sampleIds': sampleIds[availableValues[i]],
-                               'colour': colour};
-                legend.visible = (self.legends.length==availableValues.length && self.legends[i].value==availableValues[i])? self.legends[i].visible : true;
+            availableValues.forEach((value,i) => {
+                let legend  = {'value': value, 
+                               'number': sampleIds[value].length,
+                               'sampleIds': sampleIds[value],
+                               'colour': self.sampleTypeColours[self.selectedColourBy][value]};
+                legend.visible = (self.legends.length==availableValues.length && self.legends[i].value==value)? self.legends[i].visible : true;
                 if (clickedLegendIndex==i)
                     legend.visible = !legend.visible;
                 legends.push(legend);
-            }
+            });
             self.legends = legends;
         },
         
         // Layout dict used by plotly - can control size, camera, etc.
-        // type should be either "sample type" or "gene expression" (null defaults to sample type) 
-        // - this changes the title of the plot
-        layout(type) {
-            if (type==null) type = "sample type";
-
-            // work out title based on type
-            let title = "Coloured by " + this.selectedColourBy;
-            if (type=="gene expression")
-                title = "Rank normalised expression of " + this.selectedGene;
-            if (this.showTwoPlots)  // title interferes with hover icons and too busy anyway
-                title = "";
-
+        layout() {
             return { 
                 showlegend: false,
                 height: 500,   // height of the plot in pixels
@@ -334,7 +331,7 @@ export default {
         },
         
         // Return a list of traces to use for plots.
-        traces: function(type="sample type") {
+        traces(type="sample type") {
             let self = this;	// this refers to the Vue instance, and it's safer to map it to another variable
 
             // Define elements common to all traces and return them - if we simply define a variable here, it will
@@ -381,8 +378,8 @@ export default {
                     trace.z = legend.sampleIds.map(item => self.coords['2'][item]);
                     trace.text = legend.sampleIds.map(item => hovertext[item]);
                     trace.name = legend.value;
-                    trace.marker.color = legend.sampleIds.map(item => 
-                        self.datasetInfo.sampleIdsMatchingDatasets.indexOf(item)!=-1? "black": legend.colour);
+                    // For colours, use array instead of single value so we can control them individually later if needed
+                    trace.marker.color = legend.sampleIds.map(item => legend.colour);  
                     trace.marker.symbol = legend.sampleIds.map(item => 
                         self.uploadData.projectedSampleIds.indexOf(item)==-1? "circle" : "diamond-open");
                     trace.sampleIds = legend.sampleIds;
@@ -394,9 +391,7 @@ export default {
                 trace.y = self.sampleIds.map(item => self.coords['1'][item]);
                 trace.z = self.sampleIds.map(item => self.coords['2'][item]);
                 trace.text = self.sampleIds.map(item => hovertext[item]);
-                // If 
-                trace.marker.color = self.geneExpression.map((item,i) => 
-                     self.sampleIdsMatchingDatasets.indexOf(self.sampleIds[i])!=-1? "black": item);
+                trace.marker.color = self.geneExpression;
                 trace.marker.colorbar = { title: self.selectedGene };
                 if (self.showTwoPlots) {    
                     // It's possible that some traces are hidden from rightPlotDiv, in which case we want to match that here.
@@ -454,7 +449,6 @@ export default {
             }
             // always update mainPlotDiv
             Plotly.react(self.mainPlotDiv, self.traces(self.selectedPlotBy), self.layout(self.selectedPlotBy));
-
         },
         
         // ------------ sampleInfo methods ---------------
@@ -463,29 +457,38 @@ export default {
         handlePlotlyClick(data, plotBy) {
             let self = this;
             if (plotBy==null) plotBy = self.selectedPlotBy;
+            // Fetch sampleId of clicked point
             let sampleId = plotBy=="sample type"? self.traces()[data.points[0].curveNumber].sampleIds[data.points[0].pointNumber] : self.sampleIds[data.points[0].pointNumber];
             
             if (self.sampleInfo.sampleId==sampleId && performance.now() - self.sampleInfo.lastClickTime < 600) {   
                 // same sample id clicked and its internval since last click is short enough to define as double-click
-                self.sampleInfo.shownData = [];
-                for (let i=0; i<self.colourBy.length; i++)
-                    self.sampleInfo.shownData.push({'key':self.colourBy[i], 'value':self.sampleTable[self.colourBy[i]][sampleId]});
-                for (let key in self.sampleInfo.allData[sampleId])
-                    if (self.sampleInfo.allData[sampleId][key]!="")
-                        self.sampleInfo.shownData.push({'key':key, 'value':self.sampleInfo.allData[sampleId][key]});
-                // Last key is 'dataset', which will have dataset id value, but display will be author and year
-                let datasetId = sampleId.split("_")[0];
-                let matchingDataset = self.datasetInfo.allData.filter(item => item.dataset_id==parseInt(datasetId));
 
-                // For projected points, they don't have the same sample id structure so we can't matching dataset this way
-                // We can fetch last value but note that this won't work after multiple projections.
-                if (matchingDataset.length==0) { // assume this is because we clicked on a projected point and they exist
-                    matchingDataset = [self.datasetInfo.allData[self.datasetInfo.allData.length-1]];
-                    datasetId = matchingDataset[0].dataset_id;
+                // Useful to know if this is a projected sample or not
+                let isProjectedSample = self.uploadData.projectedSampleIds.indexOf(sampleId)!=-1;
+
+                // Update sampleInfo.shownData, which is used to render the content of sample info for the clicked point.
+                if (isProjectedSample) {  // provide a simpler set of info
+                    self.sampleInfo.shownData = [{key:'Projected Sample', value:sampleId},
+                                                 {key:'dataset', value:self.uploadData.name}];
+                } else {
+                    // First populate the info coming from sampleTable (these are atlas specific sample annotations)
+                    self.sampleInfo.shownData = [];
+                    self.colourBy.forEach(item => {
+                        self.sampleInfo.shownData.push({'key':item, 'value':self.sampleTable[item][sampleId]});
+                    });
+                    // Now populate the info coming from sample metadata
+                    for (let key in self.sampleInfo.allData[sampleId])
+                        if (self.sampleInfo.allData[sampleId][key]!="")
+                            self.sampleInfo.shownData.push({'key':key, 'value':self.sampleInfo.allData[sampleId][key]});
+                    // Last key is 'dataset', which will have dataset id as value. We can get datasetId from sampleId
+                    // but have to get its display name from datasetInfo.allData.
+                    let datasetId = sampleId.split("_")[0];
+                    let matchingDataset = self.datasetInfo.allData.filter(item => parseInt(item.dataset_id)==parseInt(datasetId));
+                    self.sampleInfo.shownData.push({'key':'dataset', 
+                                                    'value':matchingDataset[0].display_name, 
+                                                    'datasetId':datasetId});
                 }
-                self.sampleInfo.shownData.push({'key':'dataset', 
-                                                'value':matchingDataset[0].display_name, 
-                                                'datasetId':datasetId});
+
                 self.sampleInfo.divX = self.sampleInfo.mouseX;
                 self.sampleInfo.divY = self.sampleInfo.mouseY;
                 self.sampleInfo.show = true;
@@ -507,6 +510,29 @@ export default {
         // Return the position where the sample info div should appear - just a wrapper for sampleInfo.divX and divY
         sampleInfoDivPosition(axis) {            
             return axis=='x'? this.sampleInfo.divX + 20 + "px" : this.sampleInfo.divY + "px";
+        },
+
+        // ------------ datasetInfo methods ---------------
+        // Should run when user hovers on the dataset in datasetInfo dialog, to highlight samples with matching dataset id
+        highlightDatasets(datasetId) {            
+            // Find samples with matching datasetId and hightlight these in the plot
+            let sampleIds = this.datasetInfo.allData.filter(item => String(item.dataset_id)==String(datasetId))[0].sampleIds;
+            
+            // Each trace has sampleIds property, which holds sampleIds, so we can use this
+            let traces = document.getElementById(this.mainPlotDiv).data; // we could also use self.traces()
+            traces.forEach((trace,index) => {
+                let update = {'marker': trace.marker};
+                update['marker']['color'] = trace.marker.color.map((item,i) => 
+                    sampleIds.indexOf(trace.sampleIds[i])==-1? item: 'black');
+                Plotly.restyle(this.mainPlotDiv, update, [index]);
+            })
+        },
+
+        // Clear the highlighted datasets
+        clearHighlight() {
+            this.traces().forEach((trace,index) => {
+                Plotly.restyle(this.mainPlotDiv, {'marker': trace.marker}, [index]);
+            })
         },
 
         // ------------ Gene expression related methods ---------------
@@ -578,7 +604,7 @@ export default {
             let sampleTypes = projectionData.samples.map(item => projectionData.name + "_" + item[column]);
 
             // Create some dataset attributes needed
-            var datasetAttributes = {"datasetId":'0000', "author":"[author]", "year":"[year]"};
+            var datasetAttributes = {"dataset_id":'0000', "display_name":"[Projected Data]", "sampleIds":projectionData.sampleIds};
             
             // Now add projected points to all relevant data variables. Note that we should be able to
             // remove these points later - for now, reload page.
@@ -589,18 +615,21 @@ export default {
                 for (let i=0; i<projectionData.coords.length; i++)
                     self.coords[item][projectionData.sampleIds[i]] = projectionData.coords[i][item];
             }
-            for (let item in self.colourBy) {   // update sampleTypeOrdering
+            self.colourBy.forEach(item => {   // add a breakpoint in sampleTypeOrdering
                 if (item in self.sampleTypeOrdering)
                     self.sampleTypeOrdering[item].push("");
-            }
-            for (let i=0; i<sampleTypes.length; i++) {
-                self.sampleInfo.allData[sampleIds[i]] = {};
-                self.uploadData.projectedSampleIds.push(projectionData.sampleIds[i]);
+            });
+
+            // update sampleInfo.allData, sampleTable, sampleTypeColours and sampleTypeOrdering
+            for (let i=0; i<sampleTypes.length; i++) {  
+                let sampleId = projectionData.sampleIds[i];
+                self.sampleInfo.allData[sampleId] = {};
+                self.uploadData.projectedSampleIds.push(sampleId);
                 for (let item in self.sampleTable) {
-                    self.sampleTable[item][projectionData.sampleIds[i]] = sampleTypes[i];
+                    self.sampleTable[item][sampleId] = sampleTypes[i];
                     self.sampleTypeColours[item][sampleTypes[i]] = "green";
                     self.sampleTypeOrdering[item].push(sampleTypes[i]);
-                    self.sampleInfo.allData[sampleIds[i]][item] = sampleTypes[i];
+                    self.sampleInfo.allData[sampleId][item] = sampleTypes[i];
                 }
             }
             for (var i=0; i<projectionData.sampleIds.length; i++)
@@ -645,7 +674,18 @@ export default {
 
                     // Construct datasetInfo.allData by fetching from api
                     this.$axios.get("/api/search/datasets?projects=" + this.atlasType + "_atlas").then(res5 => {
-                        this.datasetInfo.allData = res5.data;
+                        // We only need some keys (trick from https://stackoverflow.com/questions/17781472/how-to-get-a-subset-of-a-javascript-objects-properties)
+                        this.datasetInfo.allData = res5.data.map(item => 
+                            (({ dataset_id, display_name, name}) => ({ dataset_id, display_name, name }))(item)
+                        );
+                        
+                        // Might as well sort on display name
+                        this.datasetInfo.allData.sort((a,b) => a.display_name < b.display_name? -1 : 1);
+                        
+                        // Add sampleIds used for each dataset
+                        this.datasetInfo.allData.forEach(item => {
+                            item.sampleIds = this.sampleIds.filter(sampleId => sampleId.split("_")[0]==String(item.dataset_id))
+                        });
                     });
 
                     this.loading = false;
