@@ -53,8 +53,8 @@
             This can give you some idea about the transcriptional distance of those samples to those in the atlas.
             To do this, you need to provide two files: expression matrix and samples. Both files need to be tab separated text files.
             Row ids of the expression file must be Ensembl ids. 
-            You can download example <b-link href="http://data.stemformatics.org/files/notta_expression.tsv">expression matrix</b-link> and
-            <b-link href="http://data.stemformatics.org/files/notta_samples.tsv">sample description</b-link> files, if you want to examine the exact format.
+            You can download example <b-link href="https://data.stemformatics.org/files/notta_expression.tsv">expression matrix</b-link> and
+            <b-link href="https://data.stemformatics.org/files/notta_samples.tsv">sample description</b-link> files, if you want to examine the exact format.
             Check out the <b-link href="/Stemformatics_atlas_projection_vignette.html" target="_blank">vignette</b-link> 
             provided for more detail on projections, including how to project single cell RNA-Seq data.</p>
 

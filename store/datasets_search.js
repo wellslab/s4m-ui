@@ -1,3 +1,4 @@
+// Stored states for the datasets/search page
 export const state = () => ({
     tabIndex: 0,
     tableName: 'Search Results',

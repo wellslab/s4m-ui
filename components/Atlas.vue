@@ -3,7 +3,10 @@
     <!-- Area for controls. -->
     <div class="text-center mt-3">
         <h3 class="mb-2">Integrated Atlas: {{atlasType}}
-            <small><b-link v-b-tooltip.hover.right title="Background and more information" v-b-toggle.sidebar><b-icon-info-circle></b-icon-info-circle></b-link></small>
+            <small>
+                <b-link v-b-tooltip.hover.right title="Background and more information" v-b-toggle.sidebar><b-icon-info-circle></b-icon-info-circle></b-link>
+                <b-spinner v-if="loading" label="Loading..." variant="secondary" style="width:1.5rem; height:1.5rem;"></b-spinner>
+            </small>
         </h3>
 
         <b-form inline class="justify-content-center mt-3">
@@ -20,8 +23,9 @@
             <b-button v-if="selectedPlotBy=='gene expression'" @click="showGeneExpression(selectedGene)" variant="dark" class="m-1">go</b-button>
             <b-dropdown right text="plot functions" class="col-md-2 px-0 m-1" variant="secondary">
                 <b-dropdown-item @click="selectPlotFunction('toggle')">toggle 3d/2d</b-dropdown-item>
-                <b-dropdown-item v-if="showTwoPlots">hide sample colour plot</b-dropdown-item>
-                <b-dropdown-item v-else>show sample colour plot</b-dropdown-item>
+                <b-dropdown-item v-if="showTwoPlots" @click="selectPlotFunction('hide')">hide sample colour plot</b-dropdown-item>
+                <b-dropdown-item v-else @click="selectPlotFunction('show')">show sample colour plot</b-dropdown-item>
+                <b-dropdown-item @click="selectPlotFunction('gene')">gene expression box plot</b-dropdown-item>
             </b-dropdown>
             <b-dropdown right text="tools" class="col-md-2 px-0 m-1">
                 <b-dropdown-item>download data/plots</b-dropdown-item>
@@ -32,30 +36,27 @@
     </div>
 
     <!-- Plot and legend area -->
-    <b-row class="small" @mousemove="updateMousePosition">
-        <b-col col md="9">
-            <div class="overflow-auto text-center">
-                <div v-if="loading" class="pl-5 pt-5"><b-spinner label="Loading..." variant="secondary"></b-spinner></div>
-                <div id="mainPlotDiv" style="overflow:auto; display:inline-block;"></div>
-                <div id="rightPlotDiv" style="overflow:auto; display:inline-block;"></div>
-            </div>
+    <b-row class="small justify-content-center" @mousemove="updateMousePosition">
+        <b-col col :md="showTwoPlots? 4: 9" class="overflow-auto text-center">
+            <div id="mainPlotDiv"></div>
         </b-col>
-        <b-col>
+        <b-col v-show="showTwoPlots" col md="4" class="overflow-auto text-center">
+            <div id="rightPlotDiv"></div>
+        </b-col>
+        <b-col v-if="showTwoPlots || selectedPlotBy=='sample type' || geneExpression.length==0" md="3">
             <!-- Legend area, only shown if selectedPlot is sample type. -->
-            <div v-if="showTwoPlots || selectedPlotBy=='sample type'">
-                colour by: 
-                <b-form-select v-model="selectedColourBy" :options="colourBy" @change="updateLegends(); updatePlot()" 
-                    data-step="1" data-intro="Colour each sample by a sample group here.">
-                </b-form-select>
-                <ul class="mt-3 list-unstyled p-0" data-step="2" data-intro="Click on a legend to show/hide samples in the plot.">
-                    <li v-for="(legend,i) in legends" :style="sampleTypeBreakPoint[selectedColourBy].indexOf(legend.value)!=-1? 'margin-top:10px' : ''" :key="legend.value">
-                    <b-link href="#" @click="updateLegends(i); updatePlot();" style="font-size:13px;">
-                    <b-icon-circle-fill v-if="uploadData.projectedSampleIds.indexOf(legend.sampleIds[0])==-1" :style="{'color': legend.colour}" scale="0.6"></b-icon-circle-fill>
-                    <b-icon-diamond v-if="uploadData.projectedSampleIds.indexOf(legend.sampleIds[0])!=-1" :style="{'color': legend.colour}" scale="0.6"></b-icon-diamond>
-                    <span :style="legend.visible? 'color:black' : 'color:#a7a7a7'">{{legend.value}} ({{legend.number}})</span>
-                    </b-link>
-                </li></ul>
-            </div>
+            colour by: 
+            <b-form-select v-model="selectedColourBy" :options="colourBy" @change="updateLegends(); updatePlot()" 
+                data-step="1" data-intro="Colour each sample by a sample group here.">
+            </b-form-select>
+            <ul class="mt-3 list-unstyled p-0" data-step="2" data-intro="Click on a legend to show/hide samples in the plot.">
+                <li v-for="(legend,i) in legends" :style="sampleTypeBreakPoint[selectedColourBy].indexOf(legend.value)!=-1? 'margin-top:10px' : ''" :key="legend.value">
+                <b-link href="#" @click="updateLegends(i); updatePlot();" style="font-size:13px;">
+                <b-icon-circle-fill v-if="uploadData.projectedSampleIds.indexOf(legend.sampleIds[0])==-1" :style="{'color': legend.colour}" scale="0.6"></b-icon-circle-fill>
+                <b-icon-diamond v-if="uploadData.projectedSampleIds.indexOf(legend.sampleIds[0])!=-1" :style="{'color': legend.colour}" scale="0.6"></b-icon-diamond>
+                <span :style="legend.visible? 'color:black' : 'color:#a7a7a7'">{{legend.value}} ({{legend.number}})</span>
+                </b-link>
+            </li></ul>
         </b-col>
     </b-row>
     
@@ -70,7 +71,7 @@
   </div>
 </b-sidebar>
 
-<!-- Projecting data (draggable) -->
+<!-- Projecting data (modal) -->
 <b-modal id="projectDataModal" title="Project other data" hide-footer>
     <AtlasDataUpload :atlas-type="atlasType" @project-data="projectData" @close="$bvModal.hide('projectDataModal')"></AtlasDataUpload>
 </b-modal>
@@ -94,6 +95,29 @@
                 </ul>
             </div>
         </div>
+    </div>
+</draggable-div>
+
+<!-- Gene expression scatter plot div (draggable) -->
+<draggable-div v-show="geneExpressionDialog.show" class="border border-light bg-light shadow">
+    <div slot="header" class="card-header bg-dark" title="Drag me around by this area">
+        <span class="text-white">Gene expression as violin or box plot</span>
+        <b-link href="#" @click="geneExpressionDialog.show=false" class="float-right font-weight-bold text-white">X</b-link>
+    </div>
+    <div slot="main" class="card-body text-center bg-white">
+        <h4>gene: {{selectedGene}}</h4>
+        <b-form inline class="justify-content-center">group by 
+            <b-form-select v-model="geneExpressionDialog.selectedSampleGroup" @change="geneExpressionScatterPlot">
+                <option v-for="item in colourBy" :key="item">{{item}}</option>
+            </b-form-select>
+            <b-form-select v-model="geneExpressionDialog.selectedPlotType" @change="geneExpressionScatterPlot" class="ml-2">
+                <option v-for="item in geneExpressionDialog.plotTypes" :key="item">{{item}}</option>
+            </b-form-select>
+            <b-form-select v-model="geneExpressionDialog.showPoints" @change="geneExpressionScatterPlot">
+                <option :value="false">hide points</option><option :value="true">show points</option>
+            </b-form-select>
+        </b-form>
+        <div id="geneExpressionScatterPlotDiv" class="mt-2"></div>
     </div>
 </draggable-div>
 
@@ -123,85 +147,95 @@ Vue.use(BootstrapVueIcons)
 
 export default {
     head: {
-      script: [ { src: 'https://cdn.plot.ly/plotly-latest.min.js' } ],
+        script: [ { src: 'https://cdn.plot.ly/plotly-latest.min.js' } ],
     },
 
     props: ["atlasType"],
 
     data() {
-      return {
+        return {
         
-        coords: {},         // {"0":{"6638_GSM868879":5.72,"6638_GSM868880":5.511, ...}, ...}
-        sampleIds: [],      // ["6638_GSM868879","6638_GSM868880", ...]
-        sampleTable: {},    // {'celltype':{'6638_GSM868879':'HPC', ...}, ...}
+            coords: {},         // {"0":{"6638_GSM868879":5.72,"6638_GSM868880":5.511, ...}, ...}
+            sampleIds: [],      // ["6638_GSM868879","6638_GSM868880", ...]
+            sampleTable: {},    // {'celltype':{'6638_GSM868879':'HPC', ...}, ...}
 
-        selectedPlotBy: "sample type",  // one of ["sample type", "gene expression"]
-        is3d: true, // whether plot is in 3d or 2d
+            selectedPlotBy: "sample type",  // one of ["sample type", "gene expression"]
+            is3d: true, // whether plot is in 3d or 2d
 
-        colourBy: [],   // ["Cell Type", "Sample Source", ...]
-        selectedColourBy: "Cell Type",  // overwrite at mounted()
+            colourBy: [],   // ["Cell Type", "Sample Source", ...]
+            selectedColourBy: "Cell Type",  // overwrite at mounted()
 
-        sampleTypeColoursOriginal: {},    // colours may change, so we keep original colours stored here
-        sampleTypeColours: {},    // {"Sample Source":{"in vivo":"#8b8b00",...}, ...}
-        sampleTypeOrdering: {},  // {"Sample Source":["in vivo","ex vivo",...], ...}
+            sampleTypeColoursOriginal: {},    // colours may change, so we keep original colours stored here
+            sampleTypeColours: {},    // {"Sample Source":{"in vivo":"#8b8b00",...}, ...}
+            sampleTypeOrdering: {},  // {"Sample Source":["in vivo","ex vivo",...], ...}
 
-        // gene expression related
-        selectedGene: "",
-        possibleGenes: [],  // gene ids and symbols used to populate the autocomplete field
-        geneExpression: [], // flat list of values, in same order as sampleIds, to be fetched when requested
+            // gene expression related
+            selectedGene: "",
+            possibleGenes: [],  // gene ids and symbols used to populate the autocomplete field
+            geneExpression: [], // flat list of values, in same order as sampleIds, to be fetched when requested
 
-        // plotly requires id of div where it will plot, so set them as vars here
-        mainPlotDiv: "mainPlotDiv",
-        rightPlotDiv: "rightPlotDiv",
+            // plotly requires id of div where it will plot, so set them as vars here
+            mainPlotDiv: "mainPlotDiv",
+            rightPlotDiv: "rightPlotDiv",
 
-        // default camera angle for a 3d plot in plotly
-        camera: {up: {x:0, y:0, z:1}, center: {x:0, y:0, z:0}, eye: {x:1.25, y:1.25, z:1.25}},
-        showTwoPlots: false,
+            // default camera angle for a 3d plot in plotly
+            camera: {up: {x:0, y:0, z:1}, center: {x:0, y:0, z:0}, eye: {x:1.25, y:1.25, z:1.25}},
+            showTwoPlots: false,
 
-        legends: [],
-        loading: true,
-        showInfo: false,
+            legends: [],
+            loading: true,
+            showInfo: false,
 
-        // variables used by the find dataset div which can be used to show a table of datasets
-        datasetInfo: {
-            allData: [], // [{"dataset_id":7268,"author":"Abud","pubmed_id":"28426964","platform":"RNAseq",...},...]
-            show: false,
-            selectedDatasetInfo: "",
-        },
+            // variables used by the find dataset div which can be used to show a table of datasets
+            datasetInfo: {
+                allData: [], // [{"dataset_id":7268,"author":"Abud","pubmed_id":"28426964","platform":"RNAseq",...},...]
+                show: false,
+                selectedDatasetInfo: "",
+            },
 
-        // variables used by the sample info div which is shown when a sample is double-clicked
-        sampleInfo: {
-            allData: {}, // {'6731_GSM2064216': {'Cell Type': 'Clec4e-/- microglia I/R', 'FACS profile': '', ...}, ...}
-            show: false,
-            shownData: [],
-            sampleId: null,
-            lastClickTime: 0,
-            mouseX: 0,
-            mouseY: 0,
-            divX: 0,
-            divY: 0
-        },
+            // variables used by the sample info div which is shown when a sample is double-clicked
+            sampleInfo: {
+                allData: {}, // {'6731_GSM2064216': {'Cell Type': 'Clec4e-/- microglia I/R', 'FACS profile': '', ...}, ...}
+                show: false,
+                shownData: [],
+                sampleId: null,
+                lastClickTime: 0,
+                mouseX: 0,
+                mouseY: 0,
+                divX: 0,
+                divY: 0
+            },
 
-         // upload data modal
-        uploadData: {
-            projectedSampleIds: [],  // record sample ids which have been projected
-            name: null, // name of the dataset used for projection - will be the prefix for projected samples
-        },
-       
-        // tooltip texts
-        tooltip: {atlasType: "show information about this page",
-                  atlasToggle: "toggle atlas",
-                  selectedGene: "Select a gene from suggestions and press go to show its expression." +
-                                "The genes with grey font colours were filtered out before creating this PCA.",
-                  geneExpressionPlot: "This plot shows rank normalised values of the gene in the atlas as "+
-                                      "either a violin or a box plot. The values are in the range [0,1]." +
-                                      "You can drag this plot overlay by grabbing it near the title.",
-                  editLegend: "Edit colours of points",
-                  showProjectionFunctions: "Show nearest neighbours of projected points.",
-                  projectionFunctions: "You can drag this plot overlay by grabbing it near the title.",
-                  customSampleGroup: "You can drag this dialog overlay by grabbing it near the title.",
-                  },
-      }
+            // upload data modal
+            uploadData: {
+                projectedSampleIds: [],  // record sample ids which have been projected
+                name: null, // name of the dataset used for projection - will be the prefix for projected samples
+            },
+        
+            // gene expression (scatter plot) dialog
+            geneExpressionDialog: {
+                show: false,
+                geneExpression: [],
+                selectedSampleGroup: null,
+                plotTypes: ["violin", "box"],
+                selectedPlotType: "violin",
+                showPoints: false,
+            },
+
+            // tooltip texts
+            tooltip: {atlasType: "show information about this page",
+                    atlasToggle: "toggle atlas",
+                    selectedGene: "Select a gene from suggestions and press go to show its expression." +
+                                    "The genes with grey font colours were filtered out before creating this PCA.",
+                    geneExpressionPlot: "This plot shows rank normalised values of the gene in the atlas as "+
+                                        "either a violin or a box plot. The values are in the range [0,1]." +
+                                        "You can drag this plot overlay by grabbing it near the title.",
+                    editLegend: "Edit colours of points",
+                    showProjectionFunctions: "Show nearest neighbours of projected points.",
+                    projectionFunctions: "You can drag this plot overlay by grabbing it near the title.",
+                    customSampleGroup: "You can drag this dialog overlay by grabbing it near the title.",
+            },
+        }
     },
 
     computed: {
@@ -223,87 +257,60 @@ export default {
     },
 
     methods: {
+        // ------------ Data wrangling methods ---------------
+        // Return an object of sample ids (array), keyed on sample group item. eg. {'HPC':['6638_GSM868879',...], ...}
+        sampleIdsFromSampleGroup(sampleGroup) {
+            let tableCol = this.sampleTable[sampleGroup];   // {'6638_GSM868879':'HPC', ...}
+            let sampleIds = {};
+            for (const [sampleId, value] of Object.entries(tableCol)) {
+                if (!(value in sampleIds)) sampleIds[value] = [];
+                sampleIds[value].push(sampleId)
+            }
+            return sampleIds;
+        },
+
         // Colours for sample groups may not be pre-defined, and samples groups also may be created dynamically (eg. custom sample group).
         // Hence run this function to ensure all sample group colours have been populated.
-        updateSampleTypeColours: function() {
-            let self = this;
-
+        updateSampleTypeColours() {
             // If colours weren't specified we set them here from this list
             let exampleColours = ['#64edbc', '#6495ed', '#ed6495', '#edbc64', '#8b8b00', '#008b00', '#8b008b', '#00008b', 
-                                    '#708090', '#908070', '#907080', '#709080', '#008080', '#008000', '#800000', '#bca68f', 
-                                    '#bc8fa6', '#bc8f8f', '#008160', '#816000', '#600081', '#ff1493', '#14ff80'];
-            for (let i=0; i<self.colourBy.length; i++) {
-                if (!(self.colourBy[i] in self.sampleTypeColours)) {
-                    self.sampleTypeColours[self.colourBy[i]] = {}
-
-                    let column = self.sampleTable[self.colourBy[i]]; // dict of selected column from sampleTable
-                    let availableValues = [];  // will store the unique values in this column
-                    for (let sampleId in column) {
-                        if (column[sampleId]=="") continue; // skip null valued rows
-                        if (availableValues.indexOf(column[sampleId])==-1) {    // first time seen
-                            availableValues.push(column[sampleId]);
-                        }
-                    }
-
-                    for (let j=0; j<availableValues.length; j++)
-                        self.sampleTypeColours[self.colourBy[i]][availableValues[j]] = exampleColours[j % exampleColours.length];
+                                  '#708090', '#908070', '#907080', '#709080', '#008080', '#008000', '#800000', '#bca68f', 
+                                  '#bc8fa6', '#bc8f8f', '#008160', '#816000', '#600081', '#ff1493', '#14ff80'];
+            this.colourBy.forEach(sampleGroup => {
+                if (!(sampleGroup in this.sampleTypeColours)) {
+                    this.sampleTypeColours[sampleGroup] = {};
+                    Object.keys(this.sampleIdsFromSampleGroup(sampleGroup)).forEach((sampleGroupItem, i) => {
+                        this.sampleTypeColours[sampleGroup][sampleGroupItem] = exampleColours[i % exampleColours.length];
+                    });
                 }
-            }
+            });
         },
 
         // Some sample groups may come without sample type ordering, but this is used throughout
         // the page, so this function will define this based on alphabetical ordering.
-        updateSampleTypeOrdering: function() {
-            let self = this;
-            for (let i=0; i<self.colourBy.length; i++) {
-                if (!(self.colourBy[i] in self.sampleTypeOrdering)) {
-                    self.sampleTypeOrdering[self.colourBy[i]] = {}
-
-                    let column = self.sampleTable[self.colourBy[i]]; // dict of selected column from sampleTable
-                    let availableValues = [];  // will store the unique values in this column
-                    for (let sampleId in column) {
-                        if (column[sampleId]=="") continue; // skip null valued rows
-                        if (availableValues.indexOf(column[sampleId])==-1) {    // first time seen
-                            availableValues.push(column[sampleId]);
-                        }
-                    }
-
-                    for (let j=0; j<availableValues.length; j++)
-                        self.sampleTypeOrdering[self.colourBy[i]] = availableValues;
+        updateSampleTypeOrdering() {
+            this.colourBy.forEach(sampleGroup => {
+                if (!(sampleGroup in this.sampleTypeOrdering)) {
+                    let sampleGroupItems = Object.keys(this.sampleIdsFromSampleGroup(sampleGroup));
+                    sampleGroupItems.sort();
+                    this.sampleTypeOrdering[sampleGroup] = sampleGroupItems;
                 }
-            }
+            });
         },
         
         // Run before sample group plot to populate the legends array, and when a legend is clicked to show/hide a trace
         updateLegends(clickedLegendIndex) {
             let self = this;
-
-            // Work out what values are available for selected colour by:
-            let column = self.sampleTable[self.selectedColourBy]; // dict of selected column from sampleTable
-            let availableValues = [];  // will store the unique values in this column
-            let sampleIds = {}; // dict to store list of matching sample ids for each item of availableValues
-            for (let sampleId in column) {
-                if (column[sampleId]=="") continue; // skip null valued rows
-                if (availableValues.indexOf(column[sampleId])==-1) {    // first time seen
-                    availableValues.push(column[sampleId]);
-                    sampleIds[column[sampleId]] = [];
-                }
-                sampleIds[column[sampleId]].push(sampleId);
-            }
-
-            // Now we order these based on sampleTypeOrdering if this is available
-            let ordering = self.selectedColourBy in self.sampleTypeOrdering? self.sampleTypeOrdering[self.selectedColourBy] : null;
-            availableValues.sort(function(a, b) {
-                return ordering==null? a>b : ordering.indexOf(a) - ordering.indexOf(b);
-            });
+            let sampleIds = self.sampleIdsFromSampleGroup(self.selectedColourBy);
+            let sampleGroupItems = self.sampleTypeOrdering[self.selectedColourBy].filter(item => item!="");
 
             let legends = [];
-            availableValues.forEach((value,i) => {
+            sampleGroupItems.forEach((value,i) => {
                 let legend  = {'value': value, 
                                'number': sampleIds[value].length,
                                'sampleIds': sampleIds[value],
                                'colour': self.sampleTypeColours[self.selectedColourBy][value]};
-                legend.visible = (self.legends.length==availableValues.length && self.legends[i].value==value)? self.legends[i].visible : true;
+                legend.visible = (self.legends.length==sampleGroupItems.length && self.legends[i].value==value)? self.legends[i].visible : true;
                 if (clickedLegendIndex==i)
                     legend.visible = !legend.visible;
                 legends.push(legend);
@@ -311,6 +318,7 @@ export default {
             self.legends = legends;
         },
         
+        // ------------ Plot related methods ---------------
         // Layout dict used by plotly - can control size, camera, etc.
         layout() {
             return { 
@@ -416,6 +424,14 @@ export default {
             let div = document.getElementById(self.mainPlotDiv);
             Plotly.newPlot(div, this.traces(), this.layout(this.selectedPlotBy));
         
+            // set up synchronisation with rightPlotDiv by listening for events on mainPlotDiv
+            div.on('plotly_relayout',
+                function(eventdata) { 
+                    self.camera = eventdata["scene.camera"];    // update camera values with this
+                    if (self.showTwoPlots)
+                        Plotly.react(self.rightPlotDiv, self.traces(), self.layout());
+            });
+
             // Set up double click event, where sampleInfo.shownData is populated with info about the sample double clicked.
             // Note that plotly doesn't really have double click event detection, so we're going to measure the interval between
             // two single clicks if it's on the sample id.
@@ -431,7 +447,7 @@ export default {
                 self.showTwoPlots = false;
 
             if (self.showTwoPlots) {
-                if (div.layout==null) {    // no plot yet - we plot both and set up sync
+                if (div==null || div.layout==null) {    // no plot yet - we plot both and set up sync
                     self.mainPlot();
                     Plotly.newPlot(div, self.traces(), self.layout());
                     div.on('plotly_relayout',
@@ -444,11 +460,49 @@ export default {
                 } else  // there's already a plot in rightPlotDiv, so just update it
                     Plotly.react(div, self.traces(), self.layout());
             } else {
-                if (div.layout!=null)   // showing only one plot but rightPlotDiv contains a plot, so purge it
+                if (div!=null && div.layout!=null)   // showing only one plot but rightPlotDiv contains a plot, so purge it
                     Plotly.purge(div);
             }
             // always update mainPlotDiv
             Plotly.react(self.mainPlotDiv, self.traces(self.selectedPlotBy), self.layout(self.selectedPlotBy));
+        },
+        
+        // ------------ Control related methods ---------------
+        // Runs when plotBy changes between "sample type" and "gene expression"
+        changePlotBy() {
+            if (this.selectedPlotBy=="sample type") // going back to sample type after showing expression
+                this.updatePlot();
+            else    // going to gene expression after showing sample type - update only if previously an expression was shown
+                if (this.selectedGene!="") this.updatePlot();
+        },
+
+        // Runs when user selects an item from plot functions dropdown
+        selectPlotFunction(selected) {
+            if (selected=="toggle") {    // choose the other 
+                this.is3d = !this.is3d;
+                this.updatePlot();
+            }
+            else if (selected=="show") {    // show sample colour plot side by side
+                if (this.geneExpression.length==0) {    // no gene selected so can't show two plots
+                    alert("Use this function to show the plot by sample type side by side after you are seeing expression plot.");
+                }
+                else {
+                    this.showTwoPlots = true;
+                    this.updatePlot();
+                }
+            }
+            else if (selected=="hide") {    // hide currently showing sample colour plot
+                this.showTwoPlots = false;
+                this.updatePlot();
+            }
+            else if (selected=="gene") {    // show gene expression scatter plot
+                if (this.geneExpression.length==0)  // no gene selected so can't show scatter plot
+                    alert("Use this function to show gene expression as a violin/box plot after selecting a gene (plot by gene expression).");
+                else
+                    this.geneExpressionDialog.show = true;
+                    this.geneExpressionDialog.selectedSampleGroup = this.selectedColourBy;
+                    this.geneExpressionScatterPlot();
+            }
         },
         
         // ------------ sampleInfo methods ---------------
@@ -554,7 +608,6 @@ export default {
                 self.selectedGene = geneSymbol;
             let matchingGenes = self.possibleGenes.filter(item => item.symbol==self.selectedGene);
             if (matchingGenes.length>0) {
-                console.log(matchingGenes);
                 let geneId = matchingGenes[0].ensembl;
                 self.loading = true;
                 self.$axios.get('/api/atlases/' + self.atlasType + '/expression-values?orient=records&gene_id=' + geneId)
@@ -572,19 +625,42 @@ export default {
                 alert("No expression values exist in this atlas for the specified gene");
         },
 
-        // Run when plotBy changes between "sample type" and "gene expression"
-        changePlotBy() {
-            if (this.selectedPlotBy=="sample type") // going back to sample type after showing expression
-                this.updatePlot();
-            else    // going to gene expression after showing sample type - update only if previously an expression was shown
-                if (this.selectedGene!="") this.updatePlot();
-        },
+        // Plot gene expression scatter plot
+        geneExpressionScatterPlot() {
+            let self = this;
+            let selectedSampleGroup = self.geneExpressionDialog.selectedSampleGroup;
+            let traces = [];
+            let sampleIds = self.sampleIdsFromSampleGroup(selectedSampleGroup);
+            let orderedSampleGroupItems = self.sampleTypeOrdering[selectedSampleGroup].filter(item => item!="");
 
-        selectPlotFunction(selected) {
-            if (selected=="toggle") {    // choose the other 
-                this.is3d = !this.is3d;
-                this.mainPlot();
-            }
+            orderedSampleGroupItems.forEach(sampleGroupItem => {
+                let trace = {
+                    type: self.geneExpressionDialog.selectedPlotType,
+                    y: self.geneExpression.filter(function(item,i) { return sampleIds[sampleGroupItem].indexOf(self.sampleIds[i])!=-1}),
+                    box: { visible: true },
+                    line: { width: 1, color: 'black' },
+                    meanline: { visible: true },
+                    name: sampleGroupItem,
+                    x0: sampleGroupItem,
+                    showlegend: false,
+                    hoverinfo: "y",
+                };
+                if (selectedSampleGroup in self.sampleTypeColours && 
+                        sampleGroupItem in self.sampleTypeColours[selectedSampleGroup]) {
+                    trace['marker'] = {'color': self.sampleTypeColours[selectedSampleGroup][sampleGroupItem]};
+                    trace['fillcolor'] = self.sampleTypeColours[selectedSampleGroup][sampleGroupItem];
+                }
+
+                // Trace elements specific to plot type
+                if (self.geneExpressionDialog.selectedPlotType=="violin") {
+                    trace.points =  self.geneExpressionDialog.showPoints? 'all': false;
+                } else {
+                    trace.boxpoints = self.geneExpressionDialog.showPoints? 'all': false;
+                }
+                traces.push(trace);
+            });
+            let layout = {  title: "",  margin: {t:10, l:20, r:0, b:0}, xaxis: {automargin: true}, };
+            Plotly.newPlot("geneExpressionScatterPlotDiv", traces, layout);
         },
 
         // ------------ Data projection methods ---------------

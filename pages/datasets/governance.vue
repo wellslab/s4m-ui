@@ -62,13 +62,11 @@
 // But I was having trouble with this property: either it was set to false after login + page reload (https://github.com/nuxt-community/auth-module/issues/53)
 // or that it wasn't working at all even after a login (still false). Setting propertyName to false in nuxt.config.js fixed this issue.
 // Without this, I believe that property isn't accessing api to get the value to refresh.
-import data_functions from "~/mixins/data_functions.js"
 
 export default {
     head: {
       script: [ { src: 'https://cdn.plot.ly/plotly-latest.min.js' } ],
     },
-    mixins: [data_functions],
 
     data() {
       return {

@@ -84,9 +84,6 @@ export default {
                 { text: 'View a dataset', active: true }
             ],
 
-            // You can get url parameters this way eg: /datasets/view?id=2000
-            datasetId: this.$route.query.id==null? 7283: this.$route.query.id,
-
             // pca plot
             sampleGroups: [],   // ["sample_type", "age", ...]
             selectedSampleGroup: "",
@@ -99,6 +96,14 @@ export default {
 
             // sample table
             samples: [],    // [{'sample_id':'7283_GSM1977399', 'cell_type':'', ...}, ...]
+        }
+    },
+
+    computed: {
+        // Values in store (auto sync)
+        datasetId: {    // try to get it from url first, then try the store
+            get () { return this.$store.getters['datasets_view/getDatasetId'] },
+            set (value) { this.$store.commit('datasets_view/setDatasetId', value) }
         }
     },
 
@@ -126,6 +131,10 @@ export default {
     },
 
     mounted() {
+        // Set datasetId if coming from query
+        if (this.$route.query.id!=null)
+            this.datasetId = this.$route.query.id;
+            
         // Fetch dataset metadata and sample metada from API server and populate local variables
         this.$axios.get("/api/datasets/" + this.datasetId + "/metadata").then(res => {
             this.datasetMetadata = res.data;
