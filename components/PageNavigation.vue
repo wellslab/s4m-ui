@@ -7,13 +7,13 @@
       <!-- Right aligned nav items -->
       <b-navbar-nav class="ml-auto">
         <b-dropdown text="About" variant="dark" class="ml-4">
-          <b-dropdown-item to="/about/team">About Stemformatics</b-dropdown-item>
+          <b-dropdown-item to="/about">About Stemformatics</b-dropdown-item>
           <b-dropdown-item to="/about/team">Team</b-dropdown-item>
-          <b-dropdown-item to="/about/team">How to cite us</b-dropdown-item>
-          <b-dropdown-item to="/about/team">About data processing</b-dropdown-item>
-          <b-dropdown-item to="/about/team">Privacy and disclaimer</b-dropdown-item>
-          <b-dropdown-item to="/about/team">Funding and collaborators</b-dropdown-item>
-          <b-dropdown-item to="/about/team">Contact us</b-dropdown-item>
+          <b-dropdown-item to="/about/cite">How to cite us</b-dropdown-item>
+          <b-dropdown-item to="/about">About data processing</b-dropdown-item>
+          <b-dropdown-item to="/about">Privacy and disclaimer</b-dropdown-item>
+          <b-dropdown-item to="/about">Funding and collaborators</b-dropdown-item>
+          <b-dropdown-item to="/about">Contact us</b-dropdown-item>
         </b-dropdown>
         <b-dropdown text="Datasets" variant="dark" class="ml-4">
           <b-dropdown-item to="/datasets/explore">Explore data</b-dropdown-item>

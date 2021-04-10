@@ -2,9 +2,9 @@
 <div>
     <nav v-if="sidebarType=='about'">
         <b-list-group>
-        <b-list-group-item href="#">About Stemformatics</b-list-group-item>
-        <b-list-group-item :class="{current: activeItem=='team'}" href="#">Team</b-list-group-item>
-        <b-list-group-item href="#">How to cite us</b-list-group-item>
+        <b-list-group-item :class="{current: activeItem=='about'}" href="/about">About Stemformatics</b-list-group-item>
+        <b-list-group-item :class="{current: activeItem=='team'}" href="/about/team">Team</b-list-group-item>
+        <b-list-group-item :class="{current: activeItem=='cite'}" href="/about/cite">How to cite us</b-list-group-item>
         <b-list-group-item href="#">About data processing</b-list-group-item>
         <b-list-group-item href="#">Privacy and disclaimer</b-list-group-item>
         <b-list-group-item href="#">Funding and collaborators</b-list-group-item>

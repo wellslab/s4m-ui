@@ -58,9 +58,8 @@
                 </b-link>
                 <small>Tools</small>
             </h4>
-            <p class="text-center">Description of how this dataset was processed and key QC decisions made.</p>
-            <p class="text-center">Download expression data.</p>
-            <p class="text-center">(use accordion here)</p>
+            <p>Description of how this dataset was processed and key QC decisions made: coming...</p>
+            <p>Download expression data.</p>
         </b-tab>
     </b-tabs>
 </b-container>
@@ -156,6 +155,7 @@ export default {
 
             // PCA should be plotted after sample table construction
             this.$axios.get("/api/datasets/" + this.datasetId + "/pca?orient=dict").then(res => {
+                console.log(res.data.coordinates);
                 this.pcaCoords = res.data["coordinates"];
                 this.plotPCA();
             });

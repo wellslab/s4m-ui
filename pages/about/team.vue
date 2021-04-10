@@ -24,7 +24,7 @@ export default {
       return {
         breadcrumb: [
           { text: 'Home', to: '/' },
-          { text: 'About', active: true },
+          { text: 'About', to: '/about' },
           { text: 'Team', active: true }
         ],
       }
