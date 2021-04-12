@@ -54,8 +54,7 @@
             
         </div>
 
-        <p><b-link href="#" ><b-icon-chevron-right></b-icon-chevron-right> /dataset/{dataset_id}/samples</b-link></p>
-
+        <p>More to come...</p>
       </b-col>
     </b-row>
 </b-container>

@@ -1,32 +1,29 @@
 <template>
 <div>
 <Breadcrumb :breadcrumb="breadcrumb"/>
-<b-container class="pt-4">
-    <b-tabs content-class="mt-3">
-        <b-tab title="Overview" active class="text-center">
-            <h4>
-                <b-link to="/datasets/search" v-b-tooltip.hover title="Use the search page under Datasets menu to change dataset">
-                    {{datasetMetadata.displayName}}:
-                </b-link>
-                <small>PCA of log normalised values</small>
-            </h4>
-            <div class="col-md-3" style="display:inline-table">
-                <label for="sampleGroupSelect" style="display:table-cell">colour by:</label>
-                <b-form-select id="sampleGroupSelect" size="sm" v-model="selectedSampleGroup" :options="sampleGroups" @change="plotPCA()"></b-form-select>
+<b-container>
+    <div class="text-center">
+    <h3 class="my-3">
+        <b-link to="/datasets/search" v-b-tooltip.hover.bottom title="Use the search page under Datasets menu to change dataset">
+            {{datasetMetadata.displayName}}
+        </b-link>
+    </h3>
+    </div>
+    <b-card no-body>
+    <b-tabs card pills align="center">
+        <b-tab title="Overview" active>
+            <div class="col-md-7 m-auto text-center">
+                <p>{{datasetMetadata.title}}</p>
+                <b-form inline class="justify-content-center mt-4">
+                    PCA of log normalised expression, coloured by 
+                    <b-form-select size="sm" v-model="selectedSampleGroup" :options="sampleGroups" @change="plotPCA()" class="ml-1"></b-form-select>
+                </b-form>
             </div>
-            <div class="overflow-auto text-center">
-                <div id="pcaPlotDiv" style="width:800px; height:600px; margin:auto"></div>
-            </div>
+            <div id="pcaPlotDiv" class="text-center"></div>
         </b-tab>
 
         <b-tab title="Details">
-            <h4 class="text-center">
-                <b-link to="/datasets/search" v-b-tooltip.hover title="Use the search page under Datasets menu to change dataset">
-                    {{datasetMetadata.displayName}}:
-                </b-link>
-                <small>Dataset Details</small>
-            </h4>
-            <b-table-simple hover small class="small">
+            <b-table-simple hover small>
                 <b-tbody>
                     <b-tr v-for="row in metadataTable" :key="row.description">
                         <b-td>{{row.key}}</b-td>
@@ -42,26 +39,44 @@
         </b-tab>
 
         <b-tab title="Samples">
-            <h4 class="text-center">
-                <b-link to="/datasets/search" v-b-tooltip.hover title="Use the search page under Datasets menu to change dataset">
-                    {{datasetMetadata.displayName}}:
-                </b-link>
-                <small>Sample Table</small>
-            </h4>
-            <b-table hover small sticky-header="500px" :items="samples" class="small"></b-table>
+            <p class="text-center">
+                {{samples.length}} samples
+                <b-dropdown text="project onto">
+                    <b-dropdown-item @click="projectData('myeloid')">Myeloid atlas</b-dropdown-item>
+                    <b-dropdown-item @click="projectData('blood')">Blood atlas</b-dropdown-item>
+                    <b-dropdown-item @click="projectData('dc')">DC atlas</b-dropdown-item>
+                </b-dropdown>
+            </p>
+            <b-table hover sticky-header="500px" :items="samples" class="small mt-2"></b-table>
         </b-tab>
 
-        <b-tab title="Tools">
-            <h4 class="text-center">
-                <b-link to="/datasets/search" v-b-tooltip.hover title="Use the search page under Datasets menu to change dataset">
-                    {{datasetMetadata.displayName}}:
-                </b-link>
-                <small>Tools</small>
-            </h4>
-            <p>Description of how this dataset was processed and key QC decisions made: coming...</p>
-            <p>Download expression data.</p>
+        <b-tab title="Genes">
+            Coming soon: Show interesting genes for this dataset - most variable genes across cell types, markers genes for cell types, etc.
+        </b-tab>
+
+        <b-tab title="Download">
+            <p>Download files for this dataset in tab-separated text format here.</p>
+            <p><b-link :href="'http://127.0.0.1:5000/datasets/' + datasetMetadata.dataset_id + '/samples?as_file=true'">Sample table</b-link></p>
+            Expression files
+            <ul v-if="datasetMetadata.platform_type=='RNASeq'">
+                <li><b-link :href="'http://127.0.0.1:5000/datasets/' + datasetMetadata.dataset_id + '/expression?as_file=true'">
+                    raw counts file summarised at Ensembl gene id (unnormalised)</b-link></li>
+                <li><b-link :href="'http://127.0.0.1:5000/datasets/' + datasetMetadata.dataset_id + '/expression?as_file=true&key=cpm'">
+                    cpm (counts per million) file with Ensembl gene ids</b-link></li>
+            </ul>
+            <ul v-if="datasetMetadata.platform_type=='Microarray'">
+                <li><b-link :href="'http://127.0.0.1:5000/datasets/' + datasetMetadata.dataset_id + '/expression?as_file=true'">
+                    normalised expression values at probe id (background corrected)</b-link></li>
+                <li><b-link :href="'http://127.0.0.1:5000/datasets/' + datasetMetadata.dataset_id + '/expression?as_file=true&key=genes'">
+                    log normalised expression values at gene id (highest value of probe used for each gene)</b-link></li>
+            </ul>
+        </b-tab>
+
+        <b-tab title="History">
+            <p>Description of how this dataset was processed and key QC decisions made: coming soon...</p>
         </b-tab>
     </b-tabs>
+    </b-card>
 </b-container>
 </div>
 </template>
@@ -103,7 +118,7 @@ export default {
         datasetId: {    // try to get it from url first, then try the store
             get () { return this.$store.getters['datasets_view/getDatasetId'] },
             set (value) { this.$store.commit('datasets_view/setDatasetId', value) }
-        }
+        },
     },
 
     methods: {
@@ -121,11 +136,16 @@ export default {
             for (let i=0; i<groupItems.length; i++) {
                 let x = sampleIds[groupItems[i]].map(item => self.pcaCoords['0'][item]);
                 let y = sampleIds[groupItems[i]].map(item => self.pcaCoords['1'][item]);
+                let z = sampleIds[groupItems[i]].map(item => self.pcaCoords['2'][item]);
                 let name = groupItems[i] + " (" + x.length + ")";
-                traces.push({x: x, y: y, mode: 'markers', type: 'scatter' , name:name});
+                traces.push({x:x, y:y, z:z, mode:'markers', type:'scatter3d' , name:name});
             }
-            let layout = {margin: {t:20, l:0, r:0, b:0},};
+            let layout = {margin: {t:20, l:0, r:0, b:0}, scene:{xaxis:{title:'PC1'}, yaxis:{title:'PC2'}, zaxis:{title:'PC3'}}};
             Plotly.newPlot('pcaPlotDiv', traces, layout);
+        },
+
+        projectData(atlasType) {
+            alert("Coming soon!");
         }
     },
 
@@ -138,6 +158,15 @@ export default {
         this.$axios.get("/api/datasets/" + this.datasetId + "/metadata").then(res => {
             this.datasetMetadata = res.data;
             this.datasetMetadata.displayName = this.datasetMetadata.name.split("_")[0] + " (" + this.datasetMetadata.name.split("_")[1] + ")";
+            
+            // Create a shorter version of authors
+            let authors = this.datasetMetadata.authors.split(', ');
+            if (authors.length>3) {
+                authors = authors.splice(0,3);
+                authors.push('et.al.');
+                this.datasetMetadata.authorsShort = authors.join(', ');
+            } else
+                this.datasetMetadata.authorsShort = this.datasetMetadata.authors;
 
             // construct metadataTable, leaving out some fields we don't need to show
             this.metadataTable = [];
@@ -150,12 +179,13 @@ export default {
         });
         this.$axios.get("/api/datasets/" + this.datasetId + "/samples").then(res => {
             this.samples = res.data;
-            this.sampleGroups = this._sampleGroupsForPlotlyTrace(this.samples);
+            // don't include these in sample groups
+            const hideKeys = ["sample_description","external_source_id"];
+            this.sampleGroups = this._sampleGroupsForPlotlyTrace(this.samples).filter(item => hideKeys.indexOf(item)==-1);
             this.selectedSampleGroup = this.sampleGroups[0];
 
             // PCA should be plotted after sample table construction
             this.$axios.get("/api/datasets/" + this.datasetId + "/pca?orient=dict").then(res => {
-                console.log(res.data.coordinates);
                 this.pcaCoords = res.data["coordinates"];
                 this.plotPCA();
             });
@@ -165,4 +195,8 @@ export default {
 </script>
 
 <style>
+.nav-pills .nav-link.active, .nav-pills .show > .nav-link {
+    color: #000;
+    background-color: #dee2e6;
+}
 </style>
