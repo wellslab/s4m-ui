@@ -113,9 +113,7 @@
             <b-form-select v-model="geneExpressionDialog.selectedPlotType" @change="geneExpressionScatterPlot" class="ml-2">
                 <option v-for="item in geneExpressionDialog.plotTypes" :key="item">{{item}}</option>
             </b-form-select>
-            <b-form-select v-model="geneExpressionDialog.showPoints" @change="geneExpressionScatterPlot">
-                <option :value="false">hide points</option><option :value="true">show points</option>
-            </b-form-select>
+            <b-form-checkbox v-model="geneExpressionDialog.showPoints" @change="geneExpressionScatterPlot" class="ml-1">show points</b-form-checkbox>
         </b-form>
         <div id="geneExpressionScatterPlotDiv" class="mt-2"></div>
     </div>
@@ -644,6 +642,8 @@ export default {
                     x0: sampleGroupItem,
                     showlegend: false,
                     hoverinfo: "y",
+                    points: self.geneExpressionDialog.showPoints? 'all': false, // works for violin
+                    boxpoints: self.geneExpressionDialog.showPoints? 'all': false,  // works for boxplot
                 };
                 if (selectedSampleGroup in self.sampleTypeColours && 
                         sampleGroupItem in self.sampleTypeColours[selectedSampleGroup]) {
@@ -651,12 +651,6 @@ export default {
                     trace['fillcolor'] = self.sampleTypeColours[selectedSampleGroup][sampleGroupItem];
                 }
 
-                // Trace elements specific to plot type
-                if (self.geneExpressionDialog.selectedPlotType=="violin") {
-                    trace.points =  self.geneExpressionDialog.showPoints? 'all': false;
-                } else {
-                    trace.boxpoints = self.geneExpressionDialog.showPoints? 'all': false;
-                }
                 traces.push(trace);
             });
             let layout = {  title: "",  margin: {t:10, l:20, r:0, b:0}, xaxis: {automargin: true}, };

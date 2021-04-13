@@ -29,9 +29,8 @@
           <b-dropdown-item to="/atlas/about">About atlases</b-dropdown-item>
         </b-dropdown>
         <b-dropdown text="Genes" variant="dark" class="ml-4">
-          <b-dropdown-item to="/genes/">Search</b-dropdown-item>
-          <b-dropdown-item to="/genes/expression">Expression profile</b-dropdown-item>
-          <b-dropdown-item to="/genes/expression">Gene vs gene</b-dropdown-item>
+          <b-dropdown-item to="/genes/">Discover</b-dropdown-item>
+          <b-dropdown-item>More coming soon</b-dropdown-item>
         </b-dropdown>
       </b-navbar-nav>
     </b-collapse>
