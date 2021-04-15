@@ -10,10 +10,10 @@
           <b-dropdown-item to="/about">About Stemformatics</b-dropdown-item>
           <b-dropdown-item to="/about/team">Team</b-dropdown-item>
           <b-dropdown-item to="/about/cite">How to cite us</b-dropdown-item>
-          <b-dropdown-item to="/about">About data processing</b-dropdown-item>
-          <b-dropdown-item to="/about">Privacy and disclaimer</b-dropdown-item>
-          <b-dropdown-item to="/about">Funding and collaborators</b-dropdown-item>
-          <b-dropdown-item to="/about">Contact us</b-dropdown-item>
+          <b-dropdown-item to="/about/processing">About data processing</b-dropdown-item>
+          <b-dropdown-item to="/about/privacy">Privacy and disclaimer</b-dropdown-item>
+          <b-dropdown-item to="/about/funding">Funding and collaborators</b-dropdown-item>
+          <b-dropdown-item to="/about/contact">Contact us</b-dropdown-item>
         </b-dropdown>
         <b-dropdown text="Datasets" variant="dark" class="ml-4">
           <b-dropdown-item to="/datasets/explore">Explore data</b-dropdown-item>

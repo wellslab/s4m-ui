@@ -1,7 +1,7 @@
 <template>
 <div>
     <!-- Area for controls. -->
-    <div class="text-center mt-3">
+    <div class="text-center mt-2">
         <h3 class="mb-2">Integrated Atlas: {{atlasType}}
             <small>
                 <b-link v-b-tooltip.hover.right title="Background and more information" v-b-toggle.sidebar><b-icon-info-circle></b-icon-info-circle></b-link>
@@ -28,7 +28,7 @@
                 <b-dropdown-item @click="selectPlotFunction('gene')">gene expression box plot</b-dropdown-item>
             </b-dropdown>
             <b-dropdown right text="tools" class="col-md-2 px-0 m-1">
-                <b-dropdown-item>download data/plots</b-dropdown-item>
+                <b-dropdown-item v-b-modal.downloadDataModal>download data/plots</b-dropdown-item>
                 <b-dropdown-item @click="datasetInfo.show=true">find dataset</b-dropdown-item>
                 <b-dropdown-item v-b-modal.projectDataModal>project other data</b-dropdown-item>
             </b-dropdown>
@@ -70,6 +70,40 @@
       </p>
   </div>
 </b-sidebar>
+
+<!-- Download data (modal) -->
+<b-modal id="downloadDataModal" title="Download data/plots" hide-footer>
+    <b-card no-body>
+        <b-tabs card>
+            <b-tab title="Data" active>
+                <b-card-text>
+                    You can download the data used for the atlas here. The samples matrix contains data about each sample, 
+                    the genes matrix shows which genes were included in the atlas and which were left out, and 
+                    the expression matrix contains rank normalised expression values (note: large file).
+                    <ul class="mt-2">
+                        <li v-for="item in downloadData.fileTypes" :key="item.key">
+                            <b-link :href="'http://127.0.0.1:5000/atlases/' + atlasType + '/' + item.key + '?as_file=true'">{{item.name}}</b-link> ({{item.size}})
+                        </li>
+                    </ul>
+                </b-card-text>
+            </b-tab>
+            <b-tab title="Plots">
+                <b-card-text>
+                    You can download plots at high resolution here, rather than relying the low resolution png download
+                    button provided by plotly.
+                </b-card-text>
+                <b-form-group label="Image type" v-slot="{ ariaDescribedby }">
+                    <b-form-radio-group v-model="downloadData.selectedImageType" :options="downloadData.imageTypes" :aria-describedby="ariaDescribedby"></b-form-radio-group>
+                </b-form-group>
+                <b-form inline>
+                    <b-form-group label="width (pixels)"><b-form-input v-model="downloadData.plotWidth"></b-form-input></b-form-group>
+                    <b-form-group label="height (pixels)"><b-form-input v-model="downloadData.plotHeight"></b-form-input></b-form-group>
+                </b-form>
+                <b-button @click="downloadPlot" class="mt-2">Download</b-button>
+            </b-tab>
+        </b-tabs>
+    </b-card>
+</b-modal>
 
 <!-- Projecting data (modal) -->
 <b-modal id="projectDataModal" title="Project other data" hide-footer>
@@ -202,6 +236,21 @@ export default {
                 mouseY: 0,
                 divX: 0,
                 divY: 0
+            },
+
+            // download data modal
+            downloadData: {
+                selectedDataType: 'data', // either 'data' or 'plots'
+                fileTypes: [{key:'samples', name:'samples matrix', size:'~50kb'},
+                            {key:'genes', name:'genes matrix', size:'~360kb'},
+                            {key:'expression-file', name:'expression matrix', size:'226Mb'},
+                            {key:'colours-and-ordering', name:'colours and ordering', size:'1kb'},
+                            {key:'coordinates', name:'pca coordinates', size:'~50kb'},
+                ],
+                imageTypes: ['svg','jpeg','webp'],
+                selectedImageType: 'svg',
+                plotWidth: 1200,
+                plotHeight: 900,
             },
 
             // upload data modal
@@ -655,6 +704,16 @@ export default {
             });
             let layout = {  title: "",  margin: {t:10, l:20, r:0, b:0}, xaxis: {automargin: true}, };
             Plotly.newPlot("geneExpressionScatterPlotDiv", traces, layout);
+        },
+
+        // ------------ Download data methods ---------------
+        downloadPlot() {
+            Plotly.downloadImage(document.getElementById(this.mainPlotDiv), {
+                format: this.downloadData.selectedImageType,
+                height: parseInt(this.downloadData.height),
+                width: parseInt(this.downloadData.width),
+                filename: 'Stemformatics_' + this.atlasType + '_atlas'
+            });
         },
 
         // ------------ Data projection methods ---------------

@@ -24,8 +24,8 @@
         <p class="mt-2">
             This is a prototype version of the new Stemformatics website. As such, many of the pages haven't been added yet, while some functionality are still missing.
             The atlas pages should mostly work, and <b-link to="/datasets/explore">Explore Data</b-link> and <b-link to="datasets/search">Search and filter</b-link> pages 
-            under the Datasets menu should also mostly work. 
-            Still to come are "View a dataset" section under Datasets menu, as well as most of the pages under the About and Genes menus.
+            under the Datasets menu should also mostly work. Some datasets may not render PCA - this is due to the dataset requiring more clean up. 
+            Feel free to try another dataset.
         </p>
       </b-col>
     </b-row>
