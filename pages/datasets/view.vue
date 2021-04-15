@@ -167,6 +167,7 @@ export default {
                 let name = groupItems[i] + " (" + x.length + ")";
                 traces.push({x:x, y:y, z:z, mode:'markers', type:'scatter3d' , name:name});
             }
+
             let layout = {margin: {t:20, l:0, r:0, b:0}, scene:{xaxis:{title:'PC1'}, yaxis:{title:'PC2'}, zaxis:{title:'PC3'}}};
             Plotly.newPlot('pcaPlotDiv', traces, layout);
         },
@@ -179,7 +180,8 @@ export default {
                 return;
 
             this.genes.selectedGene = gene[0];
-            this.$axios.get("/api/datasets/" + this.datasetId + "/expression?orient=index&gene_id=" + this.genes.selectedGene.gene_id).then(res => {
+            const key = this.datasetMetadata.platform_type=='Microarray'? 'genes' : 'cpm';
+            this.$axios.get("/api/datasets/" + this.datasetId + "/expression?orient=index&gene_id=" + this.genes.selectedGene.gene_id + "&key=" + key).then(res => {
                 this.genes.expressionValues = res.data;
                 this.updateGenePlot('new');
             });

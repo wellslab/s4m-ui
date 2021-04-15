@@ -20,7 +20,7 @@
           <b-dropdown-item to="/datasets/search">Search and filter</b-dropdown-item>
           <b-dropdown-item to="/datasets/view">View a dataset</b-dropdown-item>
           <b-dropdown-item to="/datasets/api">API access</b-dropdown-item>
-          <b-dropdown-item to="/datasets/api">About sample annotation</b-dropdown-item>
+          <b-dropdown-item to="/datasets/annotation">About sample annotation</b-dropdown-item>
         </b-dropdown>
         <b-dropdown text="Atlases" variant="dark" class="ml-4">
           <b-dropdown-item to="/atlas/myeloid">Myeloid atlas</b-dropdown-item>

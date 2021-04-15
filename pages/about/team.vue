@@ -10,7 +10,7 @@
         <h3>The Stemformatics Team</h3>
         <p>Stemformatics team is based at the 
           <b-link href="https://biomedicalsciences.unimelb.edu.au/departments/anatomy-and-neuroscience/engage/cscs" target="_blank">
-          Centre for Stem Cell Systems</b-link> at the University of Melbourne.
+          Centre for Stem Cell Systems</b-link> at the University of Melbourne. More to come...
         </p>
       </b-col>
     </b-row>
