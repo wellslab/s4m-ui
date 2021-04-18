@@ -18,7 +18,7 @@
     </b-carousel-slide>
     <b-carousel-slide caption="View Gene Expression">
       <template #img>
-        <b-link to="/genes/expression">
+        <b-link to="/genes">
           <img class="d-block img-fluid w-100" src="/img/GeneExpressionScreenshot1.png" alt="screenshot of gene expression plot">
         </b-link>
       </template>
