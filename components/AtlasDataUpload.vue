@@ -5,7 +5,7 @@
         The other dataset may be from Stemformatics, or your own.
     </p>
     <p>For more details on projecting your own data, including how to project single cell RNA-Seq data,
-        see this <b-link to="/Stemformatics_atlas_projection_vignette.html" target="_blank">vignette</b-link>.
+        see this <b-link to="/AtlasVignette/Stemformatics_atlas_projection_vignette.html" target="_blank">vignette</b-link>.
     </p>
     <b-form-select v-model="selectedDataSource">
         <b-form-select-option value="null">[Select data source...]</b-form-select-option>

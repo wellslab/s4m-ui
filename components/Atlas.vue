@@ -18,7 +18,7 @@
                 @keyup="getPossibleGenes" @keyup.enter="showGeneExpression(selectedGene)"
                 placeholder="[gene symbol]" v-b-tooltip.hover :title="tooltip.selectedGene" class="col-md-2 m-1"></b-form-input>
             <b-form-datalist id="possible-genes-datalist">
-                <option v-for="gene in possibleGenes" :key="gene.ensembl">{{gene.symbol}}</option>
+                <option v-for="gene in possibleGenes" :key="gene.ensembl">{{gene.inclusion? '' : '('}}{{gene.symbol}}{{gene.inclusion? '' : ')'}}</option>
             </b-form-datalist>
             <b-button v-if="selectedPlotBy=='gene expression'" @click="showGeneExpression(selectedGene)" variant="dark" class="m-1">go</b-button>
             <b-dropdown right text="plot functions" class="col-md-2 px-0 m-1" variant="secondary">
@@ -31,6 +31,7 @@
                 <b-dropdown-item v-b-modal.downloadDataModal>download data/plots</b-dropdown-item>
                 <b-dropdown-item @click="datasetInfo.show=true">find dataset</b-dropdown-item>
                 <b-dropdown-item v-b-modal.projectDataModal>project other data</b-dropdown-item>
+                <b-dropdown-item @click="customSampleGroup.show=true">combine sample groups</b-dropdown-item>
             </b-dropdown>
         </b-form>
     </div>
@@ -61,13 +62,23 @@
     </b-row>
     
 <b-sidebar id="sidebar" title="Help and more info" shadow>
-  <div class="px-3 py-2">
-      <p>Stemformatics integrated atlas provides a way to visualise multiple datasets together on a single PCA plot.
-          Read more about it at our <b-link to='/atlas/about'>about atlas</b-link> page. Each atlas page is full of
-          features:
-      </p>
-      <p>feature 1...
-      </p>
+    <div class="px-3 py-2">
+        <p>Stemformatics integrated atlas provides a way to visualise multiple datasets together on a single PCA plot.
+            Read more about it at our <b-link to='/atlas/about'>about atlas</b-link> page, which briefly outlines the method we used
+            to construct the atlas and links to our published papers. 
+        </p>
+        <p>You can explore the atlas in several ways: Plot by <b>"sample type"</b> to change 
+            the colour of the samples to based on attributes such as progenitor type, sample source or cell type. 
+            Plot by <b>"gene expression"</b> to search by gene symbol to overlay a heatmap onto the atlas. 
+            Display sample annotations and gene expression data side-by-side. Click on the item in the legend to add or remove that category.
+        </p>
+        <p> 
+            Zoom in or out using your mouse, double-click individual samples to see more information on their origin, cell type, 
+            Stemformatics dataset, and sample description. <b>"project other data"</b> function allows you
+            to see where samples from another dataset sit, either from another Stemformatics dataset or your own.
+            You can see exactly which datasets were used to build this atlas by selecting <b>"find dataset"</b> function. 
+            All of the data displayed in this atlas are available to download via <b>"download data/plots"</b> function.
+        </p>
   </div>
 </b-sidebar>
 
@@ -141,12 +152,10 @@
     <div slot="main" class="card-body text-center bg-white">
         <h4>gene: {{selectedGene}}</h4>
         <b-form inline class="justify-content-center">group by 
-            <b-form-select v-model="geneExpressionDialog.selectedSampleGroup" @change="geneExpressionScatterPlot">
-                <option v-for="item in colourBy" :key="item">{{item}}</option>
-            </b-form-select>
-            <b-form-select v-model="geneExpressionDialog.selectedPlotType" @change="geneExpressionScatterPlot" class="ml-2">
-                <option v-for="item in geneExpressionDialog.plotTypes" :key="item">{{item}}</option>
-            </b-form-select>
+            <b-form-select v-model="geneExpressionDialog.selectedSampleGroup" :options="colourBy" 
+                @change="geneExpressionScatterPlot"></b-form-select>
+            <b-form-select v-model="geneExpressionDialog.selectedPlotType" :options="geneExpressionDialog.plotTypes" 
+                @change="geneExpressionScatterPlot" class="ml-2"></b-form-select>
             <b-form-checkbox v-model="geneExpressionDialog.showPoints" @change="geneExpressionScatterPlot" class="ml-1">show points</b-form-checkbox>
         </b-form>
         <div id="geneExpressionScatterPlotDiv" class="mt-2"></div>
@@ -168,6 +177,21 @@
     </li></ul>
 </div>
 
+<!-- Custom sample grouping div (draggable) -->
+<draggable-div v-if="customSampleGroup.show" class="border border-light bg-light shadow overflow-hidden">
+    <div slot="header" class="card-header bg-dark" title="Drag me around by this area">
+        <span class="text-white">Combine sample groups</span>
+        <b-link href="#" @click="customSampleGroup.show=false" class="float-right font-weight-bold text-white">X</b-link>
+    </div>
+    <div slot="main" class="p-2">
+        <atlas-custom-sample-group :sample-table="sampleTable" :sample-ids="sampleIds" :sample-type-colours="sampleTypeColours"
+            :sample-groups="colourBy" :sample-type-ordering="sampleTypeOrdering" :custom-group-name="customSampleGroup.groupName"
+            :selected-sample-group1="colourBy[0]"
+            @save="applyCustomSampleGroup" @close="customSampleGroup.show=false"></atlas-custom-sample-group>
+
+    </div>
+</draggable-div>
+
 </div>
 </template>
 
@@ -175,9 +199,11 @@
 // Include BootstrapVueIcons - including this in nuxt.config.js or layouts/default.vue doesn't seem to work
 import Vue from 'vue'
 import { BootstrapVueIcons } from 'bootstrap-vue'
+import AtlasCustomSampleGroup from './AtlasCustomSampleGroup.vue'
 Vue.use(BootstrapVueIcons)
 
 export default {
+  components: { AtlasCustomSampleGroup },
     head: {
         script: [ { src: 'https://cdn.plot.ly/plotly-latest.min.js' } ],
     },
@@ -269,11 +295,18 @@ export default {
                 showPoints: false,
             },
 
+            // custom sample group dialog
+            customSampleGroup: {
+                show: false,
+                groupName: 'custom_sample_group',   // used as sample group name
+                data: [], // data specified by the user
+            },
+
             // tooltip texts
             tooltip: {atlasType: "show information about this page",
                     atlasToggle: "toggle atlas",
                     selectedGene: "Select a gene from suggestions and press go to show its expression." +
-                                    "The genes with grey font colours were filtered out before creating this PCA.",
+                                    "The genes with brackets were filtered out before creating this PCA.",
                     geneExpressionPlot: "This plot shows rank normalised values of the gene in the atlas as "+
                                         "either a violin or a box plot. The values are in the range [0,1]." +
                                         "You can drag this plot overlay by grabbing it near the title.",
@@ -652,7 +685,7 @@ export default {
         showGeneExpression(geneSymbol) {
             let self = this;
             if (geneSymbol!=null)
-                self.selectedGene = geneSymbol;
+                self.selectedGene = geneSymbol.replace('(','').replace(')','');
             let matchingGenes = self.possibleGenes.filter(item => item.symbol==self.selectedGene);
             if (matchingGenes.length>0) {
                 let geneId = matchingGenes[0].ensembl;
@@ -767,7 +800,40 @@ export default {
             self.datasetInfo.allData.push(datasetAttributes);            
             self.updateLegends();
             self.updatePlot();
+        },
+
+        // ------------ Custom sample group methods ---------------
+        // Apply custom sample group defined. data looks like [{sampleGroup:'B Cell_in vitro', sampleIds:['s1',...]}, ...]
+        applyCustomSampleGroup(inputData) {
+            let self = this;
+            const data = inputData.filter(item => item.sampleIds.length>0);
+            if (data.length==0) {
+                self.customSampleGroup.show = false;
+                return;
+            }
+            // Update various data
+            var groupName = self.customSampleGroup.groupName;
+            if (self.colourBy.indexOf(groupName)==-1)
+                self.colourBy.push(groupName);
+            self.sampleTable[groupName] = {};
+            self.sampleTypeOrdering[groupName] = [];
+            for (var i=0; i<data.length; i++) {
+                self.sampleTypeOrdering[groupName].push(data[i].sampleGroup);
+                for (var j=0; j<data[i].sampleIds.length; j++)
+                    self.sampleTable[groupName][data[i].sampleIds[j]] = data[i].sampleGroup;
+            }
+            self.customSampleGroup.show = false;
+
+            // Show sample type plot and custom sample group defined 
+            // - otherwise it's not obvious to the user that the changes have been saved
+            delete self.sampleTypeColours[groupName]
+            self.updateSampleTypeColours();
+            self.selectedColourBy = self.customSampleGroup.groupName;
+            self.selectedPlotBy = "sample type";
+            self.updateLegends();
+            self.updatePlot();
         }
+        
     },
 
     mounted() {

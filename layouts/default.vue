@@ -1,7 +1,7 @@
 <template>
 <div class="h-100">
   <PageNavigation />
-  <Nuxt />
+  <Nuxt class="pb-4"/><!-- offset footer height by adding padding to the bottom -->
   <footer class="footer fixed-bottom bg-dark">
     <b-container class="text-muted p-1">
       <b-row align-h="between">
