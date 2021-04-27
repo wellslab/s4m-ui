@@ -15,12 +15,24 @@
         <b-tab title="Overview" active>
             <div class="col-md-7 m-auto text-center">
                 <p>{{datasetMetadata.title}}</p>
-                <b-form inline class="justify-content-center mt-4">
-                    PCA of log normalised expression, coloured by 
-                    <b-form-select size="sm" v-model="pca.selectedSampleGroup" :options="sampleGroups" @change="plotPCA()" class="ml-1"></b-form-select>
-                </b-form>
+                    PCA of log normalised expression 
             </div>
-            <div id="pcaPlotDiv" class="text-center"></div>
+            <b-row class="small justify-content-center">
+                <b-col col md="9" class="overflow-auto text-center">
+                    <div id="pcaPlotDiv"></div>
+                </b-col>
+                <b-col>
+                    <!-- Legend area. -->
+                    colour by: 
+                    <b-form-select size="sm" v-model="pca.selectedSampleGroup" :options="sampleGroups" @change="plotPCA()" class="ml-1"></b-form-select>
+                    <ul class="mt-3 list-unstyled p-0"><li v-for="(legend,i) in pca.currentLegends" :key="legend.value">
+                        <b-link href="#" @click="plotPCA(i);" style="font-size:13px;">
+                        <b-icon-circle-fill :style="{'color': legend.colour}" scale="0.6"></b-icon-circle-fill>
+                        <span :style="legend.visible? 'color:black' : 'color:#a7a7a7'">{{legend.value}} ({{legend.number}})</span>
+                        </b-link>
+                    </li></ul>
+                </b-col>
+            </b-row>
         </b-tab>
 
         <b-tab title="Details">
@@ -30,8 +42,9 @@
                         <b-td>{{row.key}}</b-td>
                         <b-td>
                             <b-link v-if="row.key=='pubmed_id'" :href="'https://pubmed.ncbi.nlm.nih.gov/' + row.value" target="_blank">{{row.value}}</b-link>
-                            <b-link v-else-if="row.key=='accession' && row.value.startsWith('GSE')" :href="'https://www.ncbi.nlm.nih.gov/gds/?term=' + row.value + '[Accession]'" target="_blank">{{row.value}}</b-link>
-                            <b-link v-else-if="row.key=='accession' && row.value.startsWith('E-MTAB')" :href="'https://www.ebi.ac.uk/arrayexpress/experiments/' + row.value" target="_blank">{{row.value}}</b-link>
+                            <span v-else-if="row.key=='accession'" v-for="accession in accessions" :key="accession.value">
+                                <b-link :href="accession.html" target="_blank" class="mr-2">{{accession.value}}</b-link>
+                            </span>
                             <span v-else>{{row.value}}</span>
                         </b-td>
                     </b-tr>
@@ -98,6 +111,11 @@
 </template>
 
 <script>
+// Include BootstrapVueIcons - including this in nuxt.config.js or layouts/default.vue doesn't seem to work
+import Vue from 'vue'
+import { BootstrapVueIcons } from 'bootstrap-vue'
+Vue.use(BootstrapVueIcons)
+
 import data_functions from "~/mixins/data_functions.js"
 
 export default {
@@ -115,14 +133,19 @@ export default {
             ],
 
             // pca plot
+            // Note currentLegends is same as legends[pca.selectedSampleGroup], 
+            // because vue doesn't seem to like updating the dom for changes inside legends object, we make a copy here
             pca: {selectedSampleGroup: "",
                   coords: {},
                   attributes: {},
-                 },
+                  legends: {},
+                  currentLegends:[],    
+                  },
 
             // dataset metadata
             datasetMetadata: {},
             metadataTable: [],
+            accessions: {},   // useful for rendering accession html more easily
 
             // sample table
             samples: [],    // [{'sample_id':'7283_GSM1977399', 'cell_type':'', ...}, ...]
@@ -148,28 +171,58 @@ export default {
     },
 
     methods: {
+        // Return a more useful version of trace name if it's too long, using elipses
+        traceName(name) {
+            return name.length>15? '<b-link v-b-tooltip.hover title="test">' + name.substring(0,15) + '...</b-link>' : name;
+        },
+        
         // ------------ Overview tab ---------------
-        plotPCA() {
-            // First collect sample ids based on selectedSampleGroup
-            // sample id coming from samples table is in datasetId_sampleId format, and pca features don't have the datasetId
-            // component, so we remove this part.
-            let self = this;
-            let sampleIds = self._sampleIdsFromSampleGroup(self.samples, self.pca.selectedSampleGroup);
-            
-            // Create a plotly trace for each key in sampleIds
-            let traces = [];
-            let groupItems = Object.keys(sampleIds);
-            groupItems.sort();
-            for (let i=0; i<groupItems.length; i++) {
-                let x = sampleIds[groupItems[i]].map(item => self.pca.coords['0'][item]);
-                let y = sampleIds[groupItems[i]].map(item => self.pca.coords['1'][item]);
-                let z = sampleIds[groupItems[i]].map(item => self.pca.coords['2'][item]);
-                let name = groupItems[i] + " (" + x.length + ")";
-                traces.push({x:x, y:y, z:z, mode:'markers', type:'scatter3d' , name:name});
-            }
+        // Set up legends object for use in PCA plot. This object contains all the info needed to render the plot for all sample groups
+        setPCALegends() {
+            const exampleColours = ['#64edbc', '#6495ed', '#ed6495', '#edbc64', '#8b8b00', '#008b00', '#8b008b', '#00008b', 
+                                  '#708090', '#908070', '#907080', '#709080', '#008080', '#008000', '#800000', '#bca68f', 
+                                  '#bc8fa6', '#bc8f8f', '#008160', '#816000', '#600081', '#ff1493', '#14ff80'];
 
-            let layout = {margin: {t:20, l:0, r:0, b:0}, scene:{xaxis:{title:'PC1'}, yaxis:{title:'PC2'}, zaxis:{title:'PC3'}}};
-            Plotly.newPlot('pcaPlotDiv', traces, layout);
+            this.sampleGroups.forEach(sampleGroup => {
+                // First collect sample ids based on sampleGroup
+                let sampleIds = this._sampleIdsFromSampleGroup(this.samples, sampleGroup);
+                let groupItems = Object.keys(sampleIds);
+                groupItems.sort();
+
+                // Keys of sampleIds form sample group items. Create a legend per sample group item
+                this.pca.legends[sampleGroup] = groupItems.map((value,i) => {
+                    return {'value': value, 'number': sampleIds[value].length, 'sampleIds': sampleIds[value],
+                            'colour': exampleColours[i % exampleColours.length], 'visible': true,
+                            'x': sampleIds[value].map(item => this.pca.coords['0'][item]),
+                            'y': sampleIds[value].map(item => this.pca.coords['1'][item]),
+                            'z': sampleIds[value].map(item => this.pca.coords['2'][item])};
+                });
+            })
+        },
+
+        // Create or update the PCA plot. If legendIndex is undefined, create a new plot,
+        // otherwise assume it's the index of clicked legend, and its corresponding trace will be toggled.
+        plotPCA(legendIndex) {
+            this.pca.currentLegends = this.pca.legends[this.pca.selectedSampleGroup];
+
+            // Different action depending on legendIndex
+            if (legendIndex==undefined) { // new plot or user changed sample group, so create a new plot by showing all traces under the selected sample group
+                const traces = this.pca.legends[this.pca.selectedSampleGroup].map(legend => {
+                    return {x:legend.x, y:legend.y, z:legend.z, mode:'markers', type:'scatter3d', text:legend.sampleIds, hoverinfo:'text', marker:{color:legend.colour}}
+                });
+                const layout = {showlegend:false, margin: {t:20, l:0, r:0, b:0}, scene:{xaxis:{title:'PC1'}, yaxis:{title:'PC2'}, zaxis:{title:'PC3'}}};
+                Plotly.newPlot('pcaPlotDiv', traces, layout);
+            }
+            else {  // legendIndex is a selected index - work out if we're adding or removing a trace
+                let legend = this.pca.currentLegends[legendIndex];
+                if (legend.visible) {   // currently visible, so hide
+                    Plotly.deleteTraces('pcaPlotDiv', legendIndex);
+                } else {
+                    let trace = {x:legend.x, y:legend.y, z:legend.z, mode:'markers', type:'scatter3d', text:legend.sampleIds, hoverinfo:'text', marker:{color:legend.colour}};
+                    Plotly.addTraces('pcaPlotDiv', trace, legendIndex);
+                }
+                legend.visible = !legend.visible;
+            }
         },
 
         // ------------ Genes tab ---------------
@@ -233,14 +286,23 @@ export default {
             this.datasetMetadata = res.data;
             this.datasetMetadata.displayName = this.datasetMetadata.name.split("_")[0] + " (" + this.datasetMetadata.name.split("_")[1] + ")";
             
+            // Parse accession number to make it helpful for rendering dom
+            const accessions = this.datasetMetadata.accession.indexOf('|')==-1? [this.datasetMetadata.accession] : this.datasetMetadata.accession.split('|');
+                // both accession types may be specified eg: "GSE42519|E-GEOD-42519"
+            this.accessions = accessions.map(item => {
+                const html = item.startsWith('GSE')? 'https://www.ncbi.nlm.nih.gov/gds/?term=' + item + '[Accession]' : 'https://www.ebi.ac.uk/arrayexpress/experiments/' + item;
+                return { html: html, value: item }
+            });
+            console.log(JSON.stringify(this.accessions));
+
             // Create a shorter version of authors
-            let authors = this.datasetMetadata.authors.split(', ');
-            if (authors.length>3) {
-                authors = authors.splice(0,3);
-                authors.push('et.al.');
-                this.datasetMetadata.authorsShort = authors.join(', ');
-            } else
-                this.datasetMetadata.authorsShort = this.datasetMetadata.authors;
+            // let authors = this.datasetMetadata.authors.split(', ');
+            // if (authors.length>3) {
+            //     authors = authors.splice(0,3);
+            //     authors.push('et.al.');
+            //     this.datasetMetadata.authorsShort = authors.join(', ');
+            // } else
+            //     this.datasetMetadata.authorsShort = this.datasetMetadata.authors;
 
             // construct metadataTable, leaving out some fields we don't need to show
             this.metadataTable = [];
@@ -252,16 +314,25 @@ export default {
             this.breadcrumb.push({text: this.datasetMetadata.displayName, active: true});
         });
         this.$axios.get("/api/datasets/" + this.datasetId + "/samples").then(res => {
-            this.samples = res.data;
-            // don't include these in sample groups
-            const hideKeys = ["sample_description","external_source_id"];
-            this.sampleGroups = this._sampleGroupsForPlotlyTrace(this.samples).filter(item => hideKeys.indexOf(item)==-1);
-            this.pca.selectedSampleGroup = this.sampleGroups[0];
-            this.genes.selectedSampleGroup = this.sampleGroups[0];
-
             // PCA should be plotted after sample table construction
-            this.$axios.get("/api/datasets/" + this.datasetId + "/pca?orient=dict").then(res => {
-                this.pca.coords = res.data["coordinates"];
+            this.$axios.get("/api/datasets/" + this.datasetId + "/pca?orient=dict").then(res2 => {
+                this.samples = res.data;
+                
+                // Extract sample groups to use, but don't include these
+                const hideKeys = ["sample_description","external_source_id"];
+                this.sampleGroups = this._sampleGroupsForPlotlyTrace(this.samples).filter(item => hideKeys.indexOf(item)==-1);
+
+                // Sort sample group with some preferences to certain fields
+                this.sampleGroups.sort((a,b) => {
+                    if (a=='cell_type') return -1;
+                    else if (a=='sample_type') return -1;
+                    else return a<b? -1 : 1;
+                })
+
+                this.pca.selectedSampleGroup = this.sampleGroups[0];
+                this.genes.selectedSampleGroup = this.sampleGroups[0];
+                this.pca.coords = res2.data["coordinates"];
+                this.setPCALegends();
                 this.plotPCA();
             });
         })

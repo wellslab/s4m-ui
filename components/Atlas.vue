@@ -199,11 +199,9 @@
 // Include BootstrapVueIcons - including this in nuxt.config.js or layouts/default.vue doesn't seem to work
 import Vue from 'vue'
 import { BootstrapVueIcons } from 'bootstrap-vue'
-import AtlasCustomSampleGroup from './AtlasCustomSampleGroup.vue'
 Vue.use(BootstrapVueIcons)
 
 export default {
-  components: { AtlasCustomSampleGroup },
     head: {
         script: [ { src: 'https://cdn.plot.ly/plotly-latest.min.js' } ],
     },
