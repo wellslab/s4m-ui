@@ -15,7 +15,11 @@
         <b-tab title="Overview" active>
             <div class="col-md-7 m-auto text-center">
                 <p>{{datasetMetadata.title}}</p>
-                    PCA of log normalised expression 
+                <h5>PCA of log normalised expression
+                    <small><b-link v-b-tooltip.hover title="show scree plot" @click="pca.showScreePlot=true; plotPCAScree()">
+                        <b-icon-bar-chart-fill flip-h class='ml-2'></b-icon-bar-chart-fill></b-link>
+                    </small>
+                </h5>
             </div>
             <b-row class="small justify-content-center">
                 <b-col col md="9" class="overflow-auto text-center">
@@ -33,6 +37,16 @@
                     </li></ul>
                 </b-col>
             </b-row>
+            <draggable-div v-show="pca.showScreePlot" class="border border-light bg-light shadow">
+                <div slot="header" class="card-header bg-dark" title="Drag me around by this area">
+                    <span class="text-white">Scree plot for the PCA</span>
+                    <b-link href="#" @click="pca.showScreePlot=false" class="float-right font-weight-bold text-white">X</b-link>
+                </div>
+                <div slot="main" class="card-body text-center bg-white">
+                    <h4></h4>
+                    <div id="pcaScreePlotDiv" class="mt-2"></div>
+                </div>
+            </draggable-div>
         </b-tab>
 
         <b-tab title="Details">
@@ -139,7 +153,8 @@ export default {
                   coords: {},
                   attributes: {},
                   legends: {},
-                  currentLegends:[],    
+                  currentLegends:[],
+                  showScreePlot: false,
                   },
 
             // dataset metadata
@@ -208,7 +223,8 @@ export default {
             // Different action depending on legendIndex
             if (legendIndex==undefined) { // new plot or user changed sample group, so create a new plot by showing all traces under the selected sample group
                 const traces = this.pca.legends[this.pca.selectedSampleGroup].map(legend => {
-                    return {x:legend.x, y:legend.y, z:legend.z, mode:'markers', type:'scatter3d', text:legend.sampleIds, hoverinfo:'text', marker:{color:legend.colour}}
+                    return {x:legend.x, y:legend.y, z:legend.z, mode:'markers', type:'scatter3d', text:legend.sampleIds, hoverinfo:'text', 
+                            marker:{color:legend.colour, size:5}}
                 });
                 const layout = {showlegend:false, margin: {t:20, l:0, r:0, b:0}, scene:{xaxis:{title:'PC1'}, yaxis:{title:'PC2'}, zaxis:{title:'PC3'}}};
                 Plotly.newPlot('pcaPlotDiv', traces, layout);
@@ -218,11 +234,23 @@ export default {
                 if (legend.visible) {   // currently visible, so hide
                     Plotly.deleteTraces('pcaPlotDiv', legendIndex);
                 } else {
-                    let trace = {x:legend.x, y:legend.y, z:legend.z, mode:'markers', type:'scatter3d', text:legend.sampleIds, hoverinfo:'text', marker:{color:legend.colour}};
+                    let trace = {x:legend.x, y:legend.y, z:legend.z, mode:'markers', type:'scatter3d', text:legend.sampleIds, hoverinfo:'text', 
+                                 marker:{color:legend.colour, size:5}};
                     Plotly.addTraces('pcaPlotDiv', trace, legendIndex);
                 }
                 legend.visible = !legend.visible;
             }
+        },
+
+        plotPCAScree() {
+            // Read explained variance and convert to percentages
+            let expVar = Object.values(this.pca.attributes.explained_variance_);
+            const sum = expVar.reduce((a, b) => a + b, 0);
+            expVar = expVar.map(item => item/sum);
+            const x = expVar.map((item,i) => 'PC' + (i + 1));
+            const traces = [{x:x, y:expVar, mode:'markers', type:'bar'}];
+            const layout = {title:"Percentage of variance explained for each PC component"};
+            Plotly.newPlot('pcaScreePlotDiv', traces, layout);
         },
 
         // ------------ Genes tab ---------------
@@ -293,7 +321,6 @@ export default {
                 const html = item.startsWith('GSE')? 'https://www.ncbi.nlm.nih.gov/gds/?term=' + item + '[Accession]' : 'https://www.ebi.ac.uk/arrayexpress/experiments/' + item;
                 return { html: html, value: item }
             });
-            console.log(JSON.stringify(this.accessions));
 
             // Create a shorter version of authors
             // let authors = this.datasetMetadata.authors.split(', ');
@@ -322,16 +349,19 @@ export default {
                 const hideKeys = ["sample_description","external_source_id"];
                 this.sampleGroups = this._sampleGroupsForPlotlyTrace(this.samples).filter(item => hideKeys.indexOf(item)==-1);
 
-                // Sort sample group with some preferences to certain fields
+                // Sort sample group with some preferences to certain fields 
+                // (from https://stackoverflow.com/questions/13304543/javascript-sort-array-based-on-another-array)
+                const sorted = ['cell_type','sample_type']; // remember that not all sampleGroups will have all these values
                 this.sampleGroups.sort((a,b) => {
-                    if (a=='cell_type') return -1;
-                    else if (a=='sample_type') return -1;
-                    else return a<b? -1 : 1;
-                })
+                    const index1 = sorted.indexOf(a);
+                    const index2 = sorted.indexOf(b);
+                    return (index1 > -1 ? index1 : Infinity) - (index2 > -1 ? index2 : Infinity);
+                });
 
                 this.pca.selectedSampleGroup = this.sampleGroups[0];
                 this.genes.selectedSampleGroup = this.sampleGroups[0];
                 this.pca.coords = res2.data["coordinates"];
+                this.pca.attributes = res2.data["attributes"];
                 this.setPCALegends();
                 this.plotPCA();
             });

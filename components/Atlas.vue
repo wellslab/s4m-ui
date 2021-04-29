@@ -514,11 +514,13 @@ export default {
             // Note that plotly doesn't really have double click event detection, so we're going to measure the interval between
             // two single clicks if it's on the sample id.
             div.on('plotly_click', function(data) { self.handlePlotlyClick(data); });
+            self.loading = false;
         },
 
         // Function to update the plot
         updatePlot() {
             let self = this;
+            self.loading = true;
             let div = document.getElementById(self.rightPlotDiv);
 
             if (self.selectedPlotBy=="sample type") // always show one plot for sample type
@@ -542,7 +544,9 @@ export default {
                     Plotly.purge(div);
             }
             // always update mainPlotDiv
-            Plotly.react(self.mainPlotDiv, self.traces(self.selectedPlotBy), self.layout(self.selectedPlotBy));
+            Plotly.react(self.mainPlotDiv, self.traces(self.selectedPlotBy), self.layout(self.selectedPlotBy)).then(function() {
+                self.loading = false;
+            });
         },
         
         // ------------ Control related methods ---------------
