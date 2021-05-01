@@ -8,9 +8,54 @@
       </b-col>
       <b-col>
         <h3>The Stemformatics Team</h3>
-        <p>Stemformatics team is based at the 
+        <p>Stemformatics is developed and maintained by a small multidisciplinary team, mainly consisting of postdocs and 
+          students. While physically based at the 
           <b-link href="https://biomedicalsciences.unimelb.edu.au/departments/anatomy-and-neuroscience/engage/cscs" target="_blank">
-          Centre for Stem Cell Systems</b-link> at the University of Melbourne. More to come...
+          Centre for Stem Cell Systems</b-link> at the University of Melbourne, the team has a current member working in Queensland and 
+          has had members working from as far away as Dublin and Siberia in the past.
+        </p>
+        <div class='text-center'><b-img src="/img/StemformaticsTeamPhotos.png"></b-img></div>
+        <b>Project lead: Christine Wells</b>
+        <p>Christine has lead the Stemformatics project and its team from inception, sourcing funding and managing many of the staff 
+          and students along the way, as well as engaging in the stem cell research communities both nationally and internationally.
+          She also loves macrophages and her favourite gene is CLEC4.
+        </p>
+        <b>Project manager and developer: Jarny Choi</b>
+        <p>Jarny has been involved in Stemformatics from its early days and has extensive experience in developing systems
+          which enable genomics data easy to access and use. He is the main creator of the new Stemformatics website, playing many
+          roles including bioinformatician, developer and system administrator within the project.
+        </p>
+        <b>Data processing and annotation: Suzy Butcher</b>
+        <p>Suzy is a postdoc with a versatile set of skills, having worked in the lab as well as analysing data.
+          Her current work in Stemformatics includes developing and implementing data processing pipelines as well as
+          annotating thousands of the samples in the system for consistency and ontological insight.
+        </p>
+        <b>Other contributors</b>
+        <p>Many of the other members of the lab make significant contributions towards Stemformatics, including <b>Paul Angel</b>
+        who develops integrated atlases, <b>Zahra Elahi</b> who has built the <b-link to='/atlas/dc'>dc atlas</b-link>, and
+        <b>Nadia Rajab</b> who is the driving force behind the <b-link to='/atlas/myeloid'>myeloid atlas</b-link>.
+        Yidi Deng has analysed projections of single cell data onto the atlases, and Isaac Virshup has analysed data.
+        </p>
+        <h5>Former team members</h5>
+        <p>A huge range of people from a diverse range of backgrounds have worked on our team in the past, from undergraudate
+          students to software engineers:<br/>
+          Othmar Korn, Steve Englart, Jack Bransfield, Tyrone Chen, Rowland Mosbergen, Isha Nagpal,
+          Chris Pacheco Rivera, Elizabeth Mason, Catherine Song, Xinly Pan, Thanushi Peiris, Yifan Wang, Lu Chen, Palash, 
+          Luxin, JingCheng Wang, Wu Yan, Ariane Mora, Sadia Waleem, Huan Wang, Melinda Wang, Peter Zhang. 
+        </p>
+        <h5>Former annotators</h5>
+        <p>A key ingredient in making Stemformatics useful for research is extensive data annotation, most of which cannot be
+          automated. Many people have contributed to this effort over the years, including Jessica Schwarber, Alejandro Vitale,
+          and Jill Shepherd.
+        </p>
+        <h5>Collaborators</h5>
+        <p>Stemformatics has been fortunate to collaborate with many excellent scientists over the years, both nationally and
+          internationally, and these continue to drive the project forward. Particular thanks go to Kim-Anh Le Cao at the 
+          University of Melbourne and Karen Keeshan, Joana Silvestre and Mhairi Copland from the University of Glasgow.
+        </p>
+        <p>A recent collaboration with <b-link href="https://mdap.unimelb.edu.au/" target="_blank">Melbourne Data Analytics Platform</b-link>
+        contributed towards a better annotation data structure and ontology based choices, as well as ideas for visualisations.
+        Priyanka Pillai, Bobbie Shaban, Noel Faux, Aleks Michalewicz and Mar Quiroga were on this team.
         </p>
       </b-col>
     </b-row>
