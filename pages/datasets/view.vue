@@ -80,10 +80,12 @@
             [Coming soon: Show interesting genes for this dataset - most variable genes across cell types, markers genes for cell types, etc.]
             <b-form inline class="justify-content-center mt-3">
                 Show expression for gene: <b-form-input v-model="genes.selectedGeneSymbol" list="possible-genes-datalist" 
-                    @keyup="getPossibleGenes" placeholder="[gene symbol]"></b-form-input>
+                    @keyup="getPossibleGenes" @keyup.enter="plotGene" placeholder="[gene symbol]"></b-form-input>
                 <b-form-datalist id="possible-genes-datalist">
                     <option v-for="gene in genes.possibleGenes" :key="gene.gene_id">{{gene.gene_name}}</option>
                 </b-form-datalist>
+                <!-- @keyup.enter does not work unless this dummy input is added because hitting enter submits the form with just one input -->
+                <b-form-input v-show="false"></b-form-input>
                 <b-button variant="dark" @click="plotGene">show</b-button>
             </b-form>
             <b-form v-if="genes.selectedGene.gene_id!=null" inline class="justify-content-center mt-3">
@@ -255,12 +257,19 @@ export default {
 
         // ------------ Genes tab ---------------
         plotGene() {
+            if (this.genes.selectedGeneSymbol.length==0) return;
+
             // First find matching gene id
             let gene = this.genes.possibleGenes.filter(item => item.gene_name==this.genes.selectedGeneSymbol);
-            if (gene.length==0) // something went wrong
-                return;
+            // If there's no matching gene here, assume that user copied and pasted a gene id instead of
+            // selecting from the dropdown. We'll still support fetching the expression for this.
+            if (gene.length>0)
+                this.genes.selectedGene = gene[0];
+            else {
+                this.genes.selectedGene.gene_id = this.genes.selectedGeneSymbol;
+                this.genes.selectedGene.gene_name = this.genes.selectedGeneSymbol;
+            }
 
-            this.genes.selectedGene = gene[0];
             const key = this.datasetMetadata.platform_type=='Microarray'? 'genes' : 'cpm';
             this.$axios.get("/api/datasets/" + this.datasetId + "/expression?orient=index&gene_id=" + this.genes.selectedGene.gene_id + "&key=" + key).then(res => {
                 this.genes.expressionValues = res.data;
@@ -291,11 +300,19 @@ export default {
 
         getPossibleGenes() {
             if (this.genes.selectedGeneSymbol.length<=1) return;    // ignore 1 or less characters entered
-            this.$axios.get('/api/genes?search_string=' + this.genes.selectedGeneSymbol)
-                .then(res => {
-                    if (res.data.length>0)
-                        this.genes.possibleGenes = res.data;
+            this.$axios.get('/geneinfo/v3/query?species=human&fields=symbol,ensembl.gene&size=50&q=' + this.genes.selectedGeneSymbol).then(res => {
+                if (res.data.total>0) {
+                    // Note that some genes may not have ensembl ids, so lack the ensembl field
+                    const genes = res.data['hits'].filter(item => 'ensembl' in item);
+                    if (genes.length>0)
+                        this.genes.possibleGenes = genes.map(item => {
+                            return {gene_id: item.ensembl.gene, gene_name: item.symbol}
+                        });
+                }
             });
+            // .catch(error => {
+            //     alert("Could not fetch matching expression values for " + this.genes.selectedGeneSymbol);
+            // });
         },
 
         // ------------ Samples tab ---------------

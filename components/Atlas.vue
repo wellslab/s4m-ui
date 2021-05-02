@@ -20,6 +20,8 @@
             <b-form-datalist id="possible-genes-datalist">
                 <option v-for="gene in possibleGenes" :key="gene.ensembl">{{gene.inclusion? '' : '('}}{{gene.symbol}}{{gene.inclusion? '' : ')'}}</option>
             </b-form-datalist>
+            <!-- @keyup.enter does not work unless this dummy input is added because hitting enter submits the form with just one input -->
+            <b-form-input v-show="false"></b-form-input>
             <b-button v-if="selectedPlotBy=='gene expression'" @click="showGeneExpression(selectedGene)" variant="dark" class="m-1">go</b-button>
             <b-dropdown right text="plot functions" class="col-md-2 px-0 m-1" variant="secondary">
                 <b-dropdown-item @click="selectPlotFunction('toggle')">toggle 3d/2d</b-dropdown-item>
