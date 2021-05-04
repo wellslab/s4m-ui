@@ -63,6 +63,8 @@ export default {
           { text: 'About', active: true },
           { text: 'About Stemformatics', active: true }
         ],
+        // Data here come from output of models/datasets.py:sampleSummaryTable() from the api server - using copy and paste. 
+        // Code is still in progress. I also just manually substituted some words here.
         summaryTable1: [
           {platform_type:"Microarray", number_of_datasets:377},
           {platform_type:"RNASeq", number_of_datasets:77},
@@ -74,8 +76,8 @@ export default {
           {sample:'iPSC', number_of_samples:1323},
           {sample:'ESC', number_of_samples:948},
           {sample:'fibroblast', number_of_samples:812},
-          {sample:'acute myeloid leukemia cell', number_of_samples:728},
-          {sample:'peripheral blood mononuclear cell', number_of_samples:683},
+          {sample:'AML', number_of_samples:728},
+          {sample:'PBMC', number_of_samples:683},
           {sample:'MSC', number_of_samples:678},
           {sample:'macrophage', number_of_samples:568},
           {sample:'mononuclear cell of bone marrow', number_of_samples:343},

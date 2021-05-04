@@ -2,9 +2,9 @@
 <div>
     <!-- Area for controls. -->
     <div class="text-center mt-2">
-        <h3 class="mb-2">Integrated Atlas: {{atlasType}}
+        <h3 class="mb-2">Integrated Atlas: <b-link @click="showVersionInfo" v-b-tooltip.hover title="Click to show atlas version">{{atlasType}}</b-link>
             <small>
-                <b-link v-b-tooltip.hover.right title="Background and more information" v-b-toggle.sidebar><b-icon-info-circle></b-icon-info-circle></b-link>
+                <b-link v-b-tooltip.hover.right title="Background and more information" v-b-toggle.sidebar class="ml-2"><b-icon-info-circle></b-icon-info-circle></b-link>
                 <b-spinner v-if="loading" label="Loading..." variant="secondary" style="width:1.5rem; height:1.5rem;"></b-spinner>
             </small>
         </h3>
@@ -124,7 +124,7 @@
 </b-modal>
 
 <!-- Find dataset div (draggable) -->
-<draggable-div v-show="datasetInfo.show" class="border border-light bg-light" style="width:350px; opacity:0.95">
+<draggable-div v-show="datasetInfo.show" class="border border-light bg-light" style="width:350px; opacity:0.95; left:70%">
     <div slot="header" class="card-header bg-dark" title="Drag me around by this area">
         <span class="text-white">Find dataset</span>
         <b-link href="#" @click="datasetInfo.show=false" class="float-right font-weight-bold text-white">X</b-link>
@@ -194,6 +194,24 @@
     </div>
 </draggable-div>
 
+<!-- version info (modal) -->
+<b-modal v-model="versionInfo.show" title="Atlas version" hide-footer>
+    <p>Currently showing version {{versionInfo.currentVersion}} of the {{atlasType}} atlas. Available versions are:</p>
+    <ul class="list-unstyled"><li v-for="(item,i) in versionInfo.availableVersions" :key="item">
+        <b-link href="#" v-if="versionInfo.showReleaseNotes.indexOf(item)==-1" @click="versionInfo.showReleaseNotes.push(item)">
+            <b-icon-chevron-right></b-icon-chevron-right>
+            {{item}}
+        </b-link>
+        <b-link href="#" v-if="versionInfo.showReleaseNotes.indexOf(item)!=-1" @click="versionInfo.showReleaseNotes.splice(versionInfo.showReleaseNotes.indexOf(item),1)">
+            <b-icon-chevron-down></b-icon-chevron-down>
+            {{item}}
+        </b-link>
+        <b-collapse :visible="versionInfo.showReleaseNotes.indexOf(item)!=-1">
+            <ul class="list-unstyled ml-3"><li v-for="line in versionInfo.releaseNotes[i].split('\n')">{{line}}</li></ul>
+        </b-collapse>
+        </li></ul>
+</b-modal>
+
 </div>
 </template>
 
@@ -208,7 +226,7 @@ export default {
         script: [ { src: 'https://cdn.plot.ly/plotly-latest.min.js' } ],
     },
 
-    props: ["atlasType"],
+    props: ["atlasType", "atlasVersion"],
 
     data() {
         return {
@@ -300,6 +318,15 @@ export default {
                 show: false,
                 groupName: 'custom_sample_group',   // used as sample group name
                 data: [], // data specified by the user
+            },
+
+            // version info
+            versionInfo: {
+                show: false,
+                currentVersion:'',
+                availableVersions:[],   // ['1.3','1.2',...]
+                showReleaseNotes:[],  // will hold version numbers where release notes are currently showing
+                releaseNotes:[] // ['These files correspond to...', ...]
             },
 
             // tooltip texts
@@ -588,7 +615,7 @@ export default {
                     this.geneExpressionScatterPlot();
             }
         },
-        
+                
         // ------------ sampleInfo methods ---------------
         // Should run when user clicks on a point in the plot. Since there's no double-click event detection in plotly
         // we measure the time interval between clicks to define double click.
@@ -836,8 +863,17 @@ export default {
             self.selectedPlotBy = "sample type";
             self.updateLegends();
             self.updatePlot();
-        }
+        },
         
+        // ------------ Show version info ---------------
+        showVersionInfo() {
+            this.versionInfo.show = true;
+            this.$axios.get("/api/atlas-types").then(res => {
+                this.versionInfo.availableVersions = res.data[this.atlasType].versions;
+                this.versionInfo.currentVersion = res.data[this.atlasType].current_version;
+                this.versionInfo.releaseNotes = res.data[this.atlasType].release_notes;
+            });
+        }
     },
 
     mounted() {

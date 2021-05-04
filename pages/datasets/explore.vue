@@ -63,6 +63,11 @@ export default {
         selectedDataType: 'samples',
         sunburst: {},
         clickedItem: {'display':'', 'value':'', 'descriptor':'', 'ids':[]},
+        acronym: {'induced pluripotent stem cell':'iPSC',
+                  'hematopoietic multipotent progenitor':'HMP',
+                  'chronic myeloid leukemia':'CML',
+                  'embryonic stem cell':'ESC',
+                  'peripheral blood mononuclear cell':'PBMC'},
       }
     },
 
@@ -91,6 +96,12 @@ export default {
         let query = self.selectedDataType=='samples'? 'format=sunburst1&projects=atlas' : 'format=sunburst2&projects=atlas';
         self.$axios.get("/api/search/datasets?" + query).then(res => {
             self.sunburst = res.data;
+            
+            // substitute acronyms for labels wherever possible
+            self.sunburst.labels = self.sunburst.labels.map(item => {
+              return (item in self.acronym)? self.acronym[item] : item;
+            });
+
             self.plot();
             let plotDiv = document.getElementById("plotDiv");
             document.getElementById("draggable-container").style.left = plotDiv.getBoundingClientRect().left + (plotDiv.offsetWidth *0.85) + 'px';

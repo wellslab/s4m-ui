@@ -10,7 +10,7 @@
 
 <script>
 export default {
-    data: function () {
+    data() {
         return {
             positions: {
                 clientX: undefined,
@@ -22,7 +22,7 @@ export default {
     },
 
     methods: {
-        dragMouseDown: function (event) {
+        dragMouseDown(event) {
             event.preventDefault()
             // get the mouse cursor position at startup:
             this.positions.clientX = event.clientX
@@ -30,7 +30,7 @@ export default {
             document.onmousemove = this.elementDrag
             document.onmouseup = this.closeDragElement
         },
-        elementDrag: function (event) {
+        elementDrag(event) {
             event.preventDefault()
             this.positions.movementX = this.positions.clientX - event.clientX
             this.positions.movementY = this.positions.clientY - event.clientY
@@ -44,6 +44,9 @@ export default {
             document.onmouseup = null
             document.onmousemove = null
         }
+    },
+
+    mounted() {
     }
 }
 </script>
