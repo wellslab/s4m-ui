@@ -18,6 +18,7 @@
                 <h5>PCA of log normalised expression
                     <small><b-link v-b-tooltip.hover title="show scree plot" @click="pca.showScreePlot=true; plotPCAScree()">
                         <b-icon-bar-chart-fill flip-h class='ml-2'></b-icon-bar-chart-fill></b-link>
+                        <b-spinner v-if="pca.loading" label="Loading..." variant="secondary" class="ml-2" style="width:1.5rem; height:1.5rem;"></b-spinner>
                     </small>
                 </h5>
             </div>
@@ -77,9 +78,11 @@
         </b-tab>
 
         <b-tab title="Genes" class="text-center">
-            [Coming soon: Show interesting genes for this dataset - most variable genes across cell types, markers genes for cell types, etc.]
+            Look up expression profile for a gene in this dataset. You can also copy and paste Ensembl gene id here.
             <b-form inline class="justify-content-center mt-3">
-                Show expression for gene: <b-form-input v-model="genes.selectedGeneSymbol" list="possible-genes-datalist" 
+                <div v-if="genes.loading"><b-spinner label="Loading..." variant="secondary" style="width:1.5rem; height:1.5rem;"></b-spinner></div>
+                <div v-else>gene:</div>
+                <b-form-input v-model="genes.selectedGeneSymbol" list="possible-genes-datalist" class="ml-2"
                     @keyup="getPossibleGenes" @keyup.enter="plotGene" placeholder="[gene symbol]"></b-form-input>
                 <b-form-datalist id="possible-genes-datalist">
                     <option v-for="gene in genes.possibleGenes" :key="gene.gene_id">{{gene.gene_name}}</option>
@@ -87,16 +90,29 @@
                 <!-- @keyup.enter does not work unless this dummy input is added because hitting enter submits the form with just one input -->
                 <b-form-input v-show="false"></b-form-input>
                 <b-button variant="dark" @click="plotGene">show</b-button>
-            </b-form>
-            <b-form v-if="genes.selectedGene.gene_id!=null" inline class="justify-content-center mt-3">
-                group by: <b-form-select v-model="genes.selectedSampleGroup" :options="sampleGroups" @change="updateGenePlot" class="col-md-2 small-select"></b-form-select>
-                <b-form-select v-model="genes.selectedPlotType" @change="updateGenePlot" class="col-md-2 bg-light small-select">
+                <b-form-select v-if="genes.selectedGene.gene_id!=null" v-model="genes.selectedPlotType" @change="updateGenePlot('restyle')" 
+                    class="bg-light small-select ml-2">
                     <b-form-select-option value="box">box plot</b-form-select-option>
                     <b-form-select-option value="violin">violin plot</b-form-select-option>
                 </b-form-select>
-                <b-form-checkbox v-model="genes.showPoints" @change="updateGenePlot" class="ml-1">show points</b-form-checkbox>
+                <b-form-checkbox v-if="genes.selectedGene.gene_id!=null" v-model="genes.showPoints" @change="updateGenePlot('restyle')" class="ml-1">show points</b-form-checkbox>
             </b-form>
-            <div id="genePlotDiv"></div>
+            <b-row class="small justify-content-center">
+                <b-col col md="9" class="overflow-auto text-center">
+                    <div id="genePlotDiv"></div>
+                </b-col>
+                <b-col class="text-left">
+                    <!-- Legend area. -->
+                    colour by: 
+                    <b-form-select size="sm" v-model="genes.selectedSampleGroup" :options="sampleGroups" @change="updateGenePlot()" class="ml-1"></b-form-select>
+                    <ul class="mt-3 list-unstyled p-0"><li v-for="(legend,i) in genes.currentLegends" :key="legend.value">
+                        <b-link href="#" @click="updateGenePlot(i);" style="font-size:13px;">
+                        <b-icon-circle-fill :style="{'color': legend.colour}" scale="0.6"></b-icon-circle-fill>
+                        <span :style="legend.visible? 'color:black' : 'color:#a7a7a7'">{{legend.value}} ({{legend.number}})</span>
+                        </b-link>
+                    </li></ul>
+                </b-col>
+            </b-row>
         </b-tab>
 
         <b-tab title="Download">
@@ -147,6 +163,8 @@ export default {
                 { text: 'Datasets', active: true },
                 { text: 'View a dataset', active: true }
             ],
+            
+            datasetId: 6277,
 
             // pca plot
             // Note currentLegends is same as legends[pca.selectedSampleGroup], 
@@ -157,6 +175,7 @@ export default {
                   legends: {},
                   currentLegends:[],
                   showScreePlot: false,
+                  loading: false,
                   },
 
             // dataset metadata
@@ -175,16 +194,18 @@ export default {
                     showPoints:false,
                     possibleGenes:[],
                     expressionValues:{},
+                    currentLegends:[],  // we can use same legends as pca
+                    loading:false,
                     },
         }
     },
 
     computed: {
         // Values in store (auto sync)
-        datasetId: {    // try to get it from url first, then try the store
-            get () { return this.$store.getters['datasets_view/getDatasetId'] },
-            set (value) { this.$store.commit('datasets_view/setDatasetId', value) }
-        },
+        // datasetId: {    // try to get it from url first, then try the store
+        //     get () { return this.$store.getters['datasets_view/getDatasetId'] },
+        //     set (value) { this.$store.commit('datasets_view/setDatasetId', value) }
+        // },
     },
 
     methods: {
@@ -226,20 +247,14 @@ export default {
             if (legendIndex==undefined) { // new plot or user changed sample group, so create a new plot by showing all traces under the selected sample group
                 const traces = this.pca.legends[this.pca.selectedSampleGroup].map(legend => {
                     return {x:legend.x, y:legend.y, z:legend.z, mode:'markers', type:'scatter3d', text:legend.sampleIds, hoverinfo:'text', 
-                            marker:{color:legend.colour, size:5}}
+                            marker:{color:legend.colour, size:5}, visible:legend.visible}
                 });
                 const layout = {showlegend:false, margin: {t:20, l:0, r:0, b:0}, scene:{xaxis:{title:'PC1'}, yaxis:{title:'PC2'}, zaxis:{title:'PC3'}}};
                 Plotly.newPlot('pcaPlotDiv', traces, layout);
             }
             else {  // legendIndex is a selected index - work out if we're adding or removing a trace
                 let legend = this.pca.currentLegends[legendIndex];
-                if (legend.visible) {   // currently visible, so hide
-                    Plotly.deleteTraces('pcaPlotDiv', legendIndex);
-                } else {
-                    let trace = {x:legend.x, y:legend.y, z:legend.z, mode:'markers', type:'scatter3d', text:legend.sampleIds, hoverinfo:'text', 
-                                 marker:{color:legend.colour, size:5}};
-                    Plotly.addTraces('pcaPlotDiv', trace, legendIndex);
-                }
+                Plotly.restyle('pcaPlotDiv',{visible: !legend.visible}, legendIndex);
                 legend.visible = !legend.visible;
             }
         },
@@ -256,6 +271,7 @@ export default {
         },
 
         // ------------ Genes tab ---------------
+        // Plots gene expression when user enters/changes gene
         plotGene() {
             if (this.genes.selectedGeneSymbol.length==0) return;
 
@@ -271,31 +287,41 @@ export default {
             }
 
             const key = this.datasetMetadata.platform_type=='Microarray'? 'genes' : 'cpm';
+            this.genes.loading = true;
             this.$axios.get("/api/datasets/" + this.datasetId + "/expression?orient=index&gene_id=" + this.genes.selectedGene.gene_id + "&key=" + key).then(res => {
                 this.genes.expressionValues = res.data;
-                this.updateGenePlot('new');
+                this.updateGenePlot();
+            }).catch(error => {
+                alert("No expression value for this gene in this dataset");
+            }).then(() => {
+                this.genes.loading = false;
             });
         },
 
-        updateGenePlot(newPlot) {
-            let sampleIds = this._sampleIdsFromSampleGroup(this.samples, this.genes.selectedSampleGroup);
+        // Update an existing gene plot (so no fetching expression data from server)
+        updateGenePlot(legendIndex) {
+            this.genes.currentLegends = this.pca.legends[this.genes.selectedSampleGroup];
 
-            // Create a plotly trace for each key in sampleIds
-            let traces = [];
-            let groupItems = Object.keys(sampleIds);
-            groupItems.sort();
-            groupItems.forEach(groupItem => {
-                let y = sampleIds[groupItem].map(item => this.genes.expressionValues[this.genes.selectedGene.gene_id][item]);
-                let name = groupItem + " (" + y.length + ")";
-                traces.push({y:y, type:this.genes.selectedPlotType , name:name, 
-                            boxpoints:this.genes.showPoints? 'all':false,
-                            points:this.genes.showPoints? 'all':false});
-            });
-            let layout = {yaxis: {title: "log2"}};
-            if (newPlot)
+            // Different action depending on legendIndex
+            if (legendIndex==undefined) { // new plot or user changed sample group, so create a new plot by showing all traces under the selected sample group
+                const traces = this.pca.legends[this.genes.selectedSampleGroup].map(legend => {
+                    const y = legend.sampleIds.map(item => this.genes.expressionValues[this.genes.selectedGene.gene_id][item]);
+                    return {y:y, type:this.genes.selectedPlotType, boxpoints:this.genes.showPoints? 'all':false, name:legend.value,
+                            points:this.genes.showPoints? 'all':false, visible:legend.visible}
+                });
+                const layout = {yaxis: {title: "log2"}, showlegend:false};
                 Plotly.newPlot('genePlotDiv', traces, layout);
-            else
-                Plotly.react('genePlotDiv', traces, layout);
+            }
+            else if (legendIndex=='restyle') {
+                const params = this.genes.selectedPlotType=='box'? {boxpoints:this.genes.showPoints? 'all':false} : {points: this.genes.showPoints? 'all':false};
+                params['type'] = this.genes.selectedPlotType;
+                Plotly.restyle('genePlotDiv', params);
+            }
+            else {  // legendIndex is a selected index - work out if we're adding or removing a trace
+                let legend = this.genes.currentLegends[legendIndex];
+                Plotly.restyle('genePlotDiv',{visible: !legend.visible}, legendIndex);
+                legend.visible = !legend.visible;
+            }
         },
 
         getPossibleGenes() {
@@ -323,9 +349,15 @@ export default {
 
     mounted() {
         // Set datasetId if coming from query
-        if (this.$route.query.id!=null)
+        if (this.$route.query.id!=null) {
             this.datasetId = this.$route.query.id;
-            
+            localStorage.setItem('s4m:datasets_view.selectedDatasetId', this.datasetId);   
+        }
+        else // try localStorage
+            this.datasetId = localStorage.getItem('s4m:datasets_view.selectedDatasetId') || 6277;
+
+        this.pca.loading = true;
+
         // Fetch dataset metadata and sample metada from API server and populate local variables
         this.$axios.get("/api/datasets/" + this.datasetId + "/metadata").then(res => {
             this.datasetMetadata = res.data;
@@ -357,6 +389,7 @@ export default {
 
             this.breadcrumb.push({text: this.datasetMetadata.displayName, active: true});
         });
+
         this.$axios.get("/api/datasets/" + this.datasetId + "/samples").then(res => {
             // PCA should be plotted after sample table construction
             this.$axios.get("/api/datasets/" + this.datasetId + "/pca?orient=dict").then(res2 => {
@@ -381,6 +414,8 @@ export default {
                 this.pca.attributes = res2.data["attributes"];
                 this.setPCALegends();
                 this.plotPCA();
+            }).catch().then(() => {
+                this.pca.loading = false;
             });
         })
     }

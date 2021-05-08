@@ -485,8 +485,6 @@ export default {
                 // one trace per item of availableValues
                 for (let i=0; i<self.legends.length; i++) {
                     let legend = self.legends[i];
-                    if (!legend.visible) continue;
-
                     let trace = traceTemplate();
                     trace.x = legend.sampleIds.map(item => self.coords['0'][item]);
                     trace.y = legend.sampleIds.map(item => self.coords['1'][item]);
@@ -498,6 +496,7 @@ export default {
                     trace.marker.symbol = legend.sampleIds.map(item => 
                         self.uploadData.projectedSampleIds.indexOf(item)==-1? "circle" : "diamond-open");
                     trace.sampleIds = legend.sampleIds;
+                    trace.visible = legend.visible;
                     traces.push(trace);
                 }
             } else {    // gene expression plot - one trace only
