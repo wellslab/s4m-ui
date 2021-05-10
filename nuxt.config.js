@@ -33,7 +33,8 @@ export default {
   modules: [
     'bootstrap-vue/nuxt',
     '@nuxtjs/axios',
-    '@nuxtjs/auth'
+    '@nuxtjs/auth',
+    '@nuxtjs/dotenv'
   ],
   
   bootstrapVue: {
@@ -52,7 +53,7 @@ export default {
   
   proxy: {
     '/api': {
-      target: 'http://127.0.0.1:5000',  // works as long as api server runs on the same localhost
+      target: process.env.BASE_API_URL,  // works as long as api server runs on the same localhost
       pathRewrite: {'^/api' : ''},
     },
     '/geneinfo': {

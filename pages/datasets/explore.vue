@@ -67,7 +67,8 @@ export default {
                   'hematopoietic multipotent progenitor':'HMP',
                   'chronic myeloid leukemia':'CML',
                   'embryonic stem cell':'ESC',
-                  'peripheral blood mononuclear cell':'PBMC'},
+                  'peripheral blood mononuclear cell':'PBMC',
+                  'cord blood CD34+ haematopoietic progenitor cells':'CD34+ HPC'},
       }
     },
 

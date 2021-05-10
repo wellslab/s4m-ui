@@ -117,18 +117,18 @@
 
         <b-tab title="Download">
             <p>Download files for this dataset in tab-separated text format here.</p>
-            <p><b-link :href="'http://127.0.0.1:5000/datasets/' + datasetId + '/samples?as_file=true'">Sample table</b-link></p>
+            <p><b-link :href="apiUrl + '/datasets/' + datasetId + '/samples?as_file=true'">Sample table</b-link></p>
             Expression files
             <ul v-if="datasetMetadata.platform_type=='RNASeq'">
-                <li><b-link :href="'http://127.0.0.1:5000/datasets/' + datasetId + '/expression?as_file=true'">
+                <li><b-link :href="apiUrl + '/datasets/' + datasetId + '/expression?as_file=true'">
                     raw counts file summarised at Ensembl gene id (unnormalised)</b-link></li>
-                <li><b-link :href="'http://127.0.0.1:5000/datasets/' + datasetId + '/expression?as_file=true&key=cpm'">
+                <li><b-link :href="apiUrl + '/datasets/' + datasetId + '/expression?as_file=true&key=cpm'">
                     cpm (counts per million) file with Ensembl gene ids</b-link></li>
             </ul>
             <ul v-if="datasetMetadata.platform_type=='Microarray'">
-                <li><b-link :href="'http://127.0.0.1:5000/datasets/' + datasetId + '/expression?as_file=true'">
+                <li><b-link :href="apiUrl + '/datasets/' + datasetId + '/expression?as_file=true'">
                     normalised expression values at probe id (background corrected)</b-link></li>
-                <li><b-link :href="'http://127.0.0.1:5000/datasets/' + datasetId + '/expression?as_file=true&key=genes'">
+                <li><b-link :href="apiUrl + '/datasets/' + datasetId + '/expression?as_file=true&key=genes'">
                     log normalised expression values at gene id (highest value of probe used for each gene)</b-link></li>
             </ul>
         </b-tab>
@@ -164,6 +164,7 @@ export default {
                 { text: 'View a dataset', active: true }
             ],
             
+            apiUrl: 'http://127.0.0.1:5000', // set to process.env.BASE_URL when mounted
             datasetId: 6277,
 
             // pca plot
@@ -360,6 +361,7 @@ export default {
             this.datasetId = localStorage.getItem('s4m:datasets_view.selectedDatasetId') || 6277;
 
         this.pca.loading = true;
+        this.apiUrl = process.env.BASE_API_URL;
 
         // Fetch dataset metadata and sample metada from API server and populate local variables
         this.$axios.get("/api/datasets/" + this.datasetId + "/metadata").then(res => {

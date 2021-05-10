@@ -22,6 +22,7 @@ $ npm add @nuxtjs/axios
 $ npm add @nuxtjs/auth
 $ npm install pm2 -g  # see https://nuxtjs.org/docs/2.x/deployment/deployment-pm2/
 $ npm install @nuxtjs/google-analytics  # see https://google-analytics.nuxtjs.org/setup
+$ npm install @nuxtjs/dotenv
 
 #$ npm install sass-loader 
 #$ npm install node-sass

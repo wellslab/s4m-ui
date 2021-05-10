@@ -95,7 +95,7 @@
                     the expression matrix contains rank normalised expression values (note: large file).
                     <ul class="mt-2">
                         <li v-for="item in downloadData.fileTypes" :key="item.key">
-                            <b-link :href="'http://127.0.0.1:5000/atlases/' + atlasType + '/' + item.key + '?as_file=true'">{{item.name}}</b-link> ({{item.size}})
+                            <b-link :href="apiUrl + '/atlases/' + atlasType + '/' + item.key + '?as_file=true'">{{item.name}}</b-link> ({{item.size}})
                         </li>
                     </ul>
                 </b-card-text>
@@ -244,6 +244,8 @@ export default {
             sampleTypeColoursOriginal: {},    // colours may change, so we keep original colours stored here
             sampleTypeColours: {},    // {"Sample Source":{"in vivo":"#8b8b00",...}, ...}
             sampleTypeOrdering: {},  // {"Sample Source":["in vivo","ex vivo",...], ...}
+
+            apiUrl: 'http://127.0.0.1:5000', // set to process.env.BASE_URL when mounted
 
             // gene expression related
             selectedGene: "",
@@ -876,6 +878,8 @@ export default {
     },
 
     mounted() {
+        this.apiUrl = process.env.BASE_API_URL;
+
         // Fetch sample table
         this.$axios.get("/api/atlases/" + this.atlasType + "/samples?orient=dict").then(res => {
             this.sampleTable = res.data;    // {col: {row:val}}
