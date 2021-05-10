@@ -101,7 +101,7 @@
                 <b-col col md="9" class="overflow-auto text-center">
                     <div id="genePlotDiv"></div>
                 </b-col>
-                <b-col class="text-left">
+                <b-col v-if="genes.selectedGene.gene_id!=null" class="text-left">
                     <!-- Legend area. -->
                     colour by: 
                     <b-form-select size="sm" v-model="genes.selectedSampleGroup" :options="sampleGroups" @change="updateGenePlot()" class="ml-1"></b-form-select>
@@ -210,12 +210,14 @@ export default {
 
     methods: {
         // Return a more useful version of trace name if it's too long, using elipses
-        traceName(name) {
-            return name.length>15? '<b-link v-b-tooltip.hover title="test">' + name.substring(0,15) + '...</b-link>' : name;
-        },
+        // traceName(name) {
+        //     return name.length>15? '<b-link v-b-tooltip.hover title="test">' + name.substring(0,15) + '...</b-link>' : name;
+        // },
         
         // ------------ Overview tab ---------------
         // Set up legends object for use in PCA plot. This object contains all the info needed to render the plot for all sample groups
+        // Note that this same object will be used for gene expression plot, as the sample group related
+        // objects are common.
         setPCALegends() {
             const exampleColours = ['#64edbc', '#6495ed', '#ed6495', '#edbc64', '#8b8b00', '#008b00', '#8b008b', '#00008b', 
                                   '#708090', '#908070', '#907080', '#709080', '#008080', '#008000', '#800000', '#bca68f', 
@@ -309,7 +311,8 @@ export default {
                     return {y:y, type:this.genes.selectedPlotType, boxpoints:this.genes.showPoints? 'all':false, name:legend.value,
                             points:this.genes.showPoints? 'all':false, visible:legend.visible}
                 });
-                const layout = {yaxis: {title: "log2"}, showlegend:false};
+                const title = this.datasetMetadata.platform_type=='RNASeq'? 'log2(cpm+1)' : 'log2';
+                const layout = {yaxis: {title: title}, showlegend:false};
                 Plotly.newPlot('genePlotDiv', traces, layout);
             }
             else if (legendIndex=='restyle') {
