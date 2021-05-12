@@ -32,9 +32,11 @@
   </div>
   <div slot="main" style="max-width: 18rem;">
     <div class="card-body">
-      <b-link @click="gotoDatasetSearchPage()">
-        {{clickedItem.value}} samples from {{datasetIds.length}} datasets</b-link> 
-        have this value as {{clickedItem.descriptor}}.
+      <ul class="pl-2">
+      <li><b-link @click="gotoDatasetSearchPage()">{{clickedItem.value}} samples from {{datasetIds.length}} datasets</b-link> 
+        have this value as {{clickedItem.descriptor}}.</li>
+      <li><b-link @click="gotoDatasetSearchPage()">Show all datasets</b-link> which contain this term in any of its samples.</li>
+      </ul>
     </div>
   </div>
 </draggable-div>

@@ -310,7 +310,7 @@ export default {
                 const traces = this.pca.legends[this.genes.selectedSampleGroup].map(legend => {
                     const y = legend.sampleIds.map(item => this.genes.expressionValues[this.genes.selectedGene.gene_id][item]);
                     return {y:y, type:this.genes.selectedPlotType, boxpoints:this.genes.showPoints? 'all':false, name:legend.value,
-                            points:this.genes.showPoints? 'all':false, visible:legend.visible}
+                            points:this.genes.showPoints? 'all':false, visible:legend.visible, marker:{color: legend.colour}}
                 });
                 const title = this.datasetMetadata.platform_type=='RNASeq'? 'log2(cpm+1)' : 'log2';
                 const layout = {yaxis: {title: title}, showlegend:false};

@@ -1,7 +1,7 @@
 <template>
 <div>
 <Breadcrumb :breadcrumb="breadcrumb"/>
-<b-container class="pt-4">
+<b-container class="py-4">
     <b-row>
         <b-col class="col-sm-12 col-md-6 col-lg-3 col-xl-3">
             <PageSidebar :sidebarType="'datasets'" :activeItem="'api'" />
@@ -18,10 +18,16 @@
   curl https://api.stemformatics.org/datasets/2000/metadata
 
   # python example
-  import pandas, requests, json
-  r = requests.get('https://api.stemformatics.org/datasets/2000/metadata')
-  df = pandas.DataFrame(json.loads(r.text))
-  display(df)
+  import pandas, requests
+  r = requests.get('https://api.stemformatics.org/datasets/2000/samples')
+  df = pandas.DataFrame(r.json())
+  display(df.head())
+                sample_id    cell_type parental_cell_type  ... developmental_stage treatment external_source_id
+        0  2000_1787466030_H  neurosphere         epithelium  ...
+        1  2000_1787466065_A  neurosphere         epithelium  ...
+        2  2000_1787466030_E  neurosphere         epithelium  ...
+        3  2000_1787466065_D  neurosphere         epithelium  ...
+        4  2000_1699538158_H  neurosphere         epithelium  ...
 
   # R example
   library(httr)

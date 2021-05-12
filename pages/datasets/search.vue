@@ -204,7 +204,7 @@ export default {
 
         // Free text search
         search() {
-            this.$axios.get("/api/search/datasets?query_string=" + this.searchString).then(res => {
+            this.$axios.get("/api/search/datasets?include_samples_query=true&query_string=" + this.searchString).then(res => {
                 this.tableName = 'Search Results [' + this.searchString + ']';
                 this.tableDescription = 'Results of a free text search.';
                 this.setupTable(res.data);

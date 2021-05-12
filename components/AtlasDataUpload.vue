@@ -120,7 +120,7 @@ export default {
                                                   this.uploadProgress = Math.round((95 * data.loaded) / data.total)
                                               }
                     }).then(res => {
-                    if (res.data.error=='') {
+                    if ('data' in res && res.data.error=='') {
                         self.$emit('project-data', res.data);
                         self.$emit('close');
                     }

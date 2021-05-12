@@ -2,7 +2,7 @@
 <div>
     <!-- Area for controls. -->
     <div class="text-center mt-2">
-        <h3 class="mb-2">Integrated Atlas: <b-link @click="showVersionInfo" v-b-tooltip.hover title="Click to show atlas version">{{atlasType}}</b-link>
+        <h3 class="mb-2">Integrated Atlas: <b-link @click="showVersionInfo" v-b-tooltip.hover title="Click to show atlas version">{{displayName}}</b-link>
             <small>
                 <b-link v-b-tooltip.hover.right title="Background and more information" v-b-toggle.sidebar class="ml-2"><b-icon-info-circle></b-icon-info-circle></b-link>
                 <b-spinner v-if="loading" label="Loading..." variant="secondary" style="width:1.5rem; height:1.5rem;"></b-spinner>
@@ -226,7 +226,7 @@ export default {
         script: [ { src: 'https://cdn.plot.ly/plotly-latest.min.js' } ],
     },
 
-    props: ["atlasType", "atlasVersion"],
+    props: ["atlasType", "displayName"],
 
     data() {
         return {

@@ -2,7 +2,7 @@
 <div>
 <Breadcrumb :breadcrumb="breadcrumb"/>
 <b-container class="pt-4">
-    <Atlas atlasType="dc"/>
+    <Atlas atlasType="dc" displayName="DC"/>
 </b-container>
 </div>
 </template>
