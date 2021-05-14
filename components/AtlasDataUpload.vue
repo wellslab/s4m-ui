@@ -119,7 +119,7 @@ export default {
                                                   // since this just gives feedback for file upload time.
                                                   this.uploadProgress = Math.round((95 * data.loaded) / data.total)
                                               }
-                    }).then(res => {
+                }).then(res => {
                     if ('data' in res && res.data.error=='') {
                         self.$emit('project-data', res.data);
                         self.$emit('close');

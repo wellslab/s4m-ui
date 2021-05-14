@@ -293,6 +293,11 @@ export default {
             this.genes.loading = true;
             this.$axios.get("/api/datasets/" + this.datasetId + "/expression?orient=index&gene_id=" + this.genes.selectedGene.gene_id + "&key=" + key).then(res => {
                 this.genes.expressionValues = res.data;
+                if (this.datasetMetadata.platform_type=='RNASeq') // apply log
+                    Object.keys(this.genes.expressionValues[this.genes.selectedGene.gene_id]).forEach(sampleId => {
+                        const value = this.genes.expressionValues[this.genes.selectedGene.gene_id][sampleId];
+                        this.genes.expressionValues[this.genes.selectedGene.gene_id][sampleId] = Math.log2(value + 1);
+                    })
                 this.updateGenePlot();
             }).catch(error => {
                 alert("No expression value for this gene in this dataset");

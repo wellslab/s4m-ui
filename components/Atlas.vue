@@ -900,14 +900,14 @@ export default {
                     this.sampleIds = Object.keys(this.coords[Object.keys(this.coords)[0]]);
 
                     // Construct sampleInfo.allData - can't construct just from sampleTable, since we want to include
-                    // other sample metadata fields, not available from atlas sample table.
+                    // other sample metadata fields, not available from atlas sample table. Only fetching facs_profile for now.
+                    // The fetched data here look like: {"6638_GSM868879":{"facs_profile":"CD16- CD123+",...},...}
                     let datasetIds = this.sampleIds.map(item => item.split("_")[0]);
                     datasetIds = Array.from(new Set(datasetIds));   // unique values only
                     datasetIds = datasetIds.map(item => "dataset_id=" + item);  // create query string
-                    this.$axios.get("/api/search/samples?orient=index&field=cell_type&field=facs_profile&limit=1200&" + datasetIds.join("&")).then(res4 => {
-                        this.sampleIds.forEach(sampleId => {
-                            this.sampleInfo.allData[sampleId] = res4.data[sampleId];
-                        });
+                    this.$axios.get("/api/search/samples?orient=index&field=facs_profile&limit=1200&" + datasetIds.join("&")).then(res4 => {
+                        this.sampleInfo.allData = res4.data;
+                        Object.keys(this.sampleInfo.allData).forEach(sampleId => { this.sampleInfo.allData[sampleId]["sample_id"] = sampleId});
                     });
 
                     // Construct datasetInfo.allData by fetching from api
