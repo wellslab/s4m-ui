@@ -142,3 +142,25 @@ this.$axios.get('/api/governance/' + datasetId + '/qchtml?type=multiqc', {respon
     link.click();
 })
 ```
+
+In page filtering
+```
+    // Set datasetFilters
+    this.datasetFilters.forEach(filterItem => {
+        // values holds unique values for this filter, counts holds how many items in datasets have matching values
+        filterItem.values = Array.from(new Set(this.datasets.map(item => item[filterItem.key])));
+        filterItem.counts = filterItem.values.map(value => this.datasets.filter(item => item[filterItem.key]==value).length);
+    });
+
+    // Set sampleFilters - trickier since multiple samples exist for each dataset
+    this.sampleFilters.forEach(filterItem => {
+        // unique values are across all datasets
+        let values = Array.from(new Set(this.datasets.map(item => item[filterItem.key]).join(',').split(',')));
+        let counts = values.map(value => this.datasets.filter(item => item[filterItem.key].indexOf(value)!=-1).length);
+        // sort by highest counts to lowest
+        let combined = values.map((item,i) => [item,counts[i]]);
+        combined.sort((a,b) => a[1] > b[1]? -1 : 1);
+        filterItem.values = combined.map(item => item[0]);
+        filterItem.counts = combined.map(item => item[1]);
+    });
+```

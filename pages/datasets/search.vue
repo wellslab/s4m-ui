@@ -7,7 +7,7 @@
         <h3 class="text-center">Search datasets and samples</h3>
         <b-form-group class="mt-3" label-cols-md="5" content-cols-md="4" label-align-md="right" label="Search for a term or select from a pre-defined list below">
           <b-input-group>
-            <b-form-input id="quickSearchInput" v-model="searchString" placeholder="eg. iPSC" @keyup.enter="search"></b-form-input>
+            <b-form-input v-model="searchString" placeholder="eg. iPSC" @keyup.enter="search"></b-form-input>
             <b-input-group-append>
               <b-button variant="dark" @click="search">search</b-button>
             </b-input-group-append>
@@ -45,7 +45,35 @@
     </b-tab>
 
     <b-tab title="Advanced search" class="text-center">
-        <h4>Coming soon</h4>
+        <h3>Advanced search
+            <small>
+                <b-link v-b-tooltip.hover.right title="More information" v-b-toggle.advanced-search-sidebar class="ml-2"><b-icon-info-circle></b-icon-info-circle></b-link>
+            </small>
+        </h3>
+        <b-form inline v-for="(item,index) in advancedSearch" :key="item.key" class="justify-content-center mt-3">
+          <b-input-group prepend="search string">
+            <b-form-input v-model="item.searchString" placeholder="eg. iPSC"></b-form-input>
+            <b-dropdown right text="in dataset fields" class="ml-1" variant="secondary">
+                <b-dropdown-item>name</b-dropdown-item>
+                <b-dropdown-item>description</b-dropdown-item>
+            </b-dropdown>
+            <b-dropdown right text="in sample fields" class="ml-1" variant="secondary">
+                <b-dropdown-item>name</b-dropdown-item>
+                <b-dropdown-item>description</b-dropdown-item>
+            </b-dropdown>
+            <b-link @click="addAdvancedSearch"><b-icon-plus-circle font-scale="1.5" class="ml-2 align-middle" shift-v="-2"></b-icon-plus-circle></b-link>
+            <b-icon-dash-circle v-if="index==0" font-scale="1.5" class="ml-1 align-middle text-white"></b-icon-dash-circle>
+            <b-link v-if="index>0" @click="removeAdvancedSearch(index)"><b-icon-dash-circle font-scale="1.5" class="ml-1 align-middle" shift-v="-2"></b-icon-dash-circle></b-link>
+          </b-input-group>
+        </b-form>
+
+        <b-sidebar id="advanced-search-sidebar" title="Help and more info" class="text-left" shadow>
+            <div class="px-3 py-2">
+                <p>You can build your query here to find datasets. For example, you can search for datasets where
+                    platform="RNA-Seq" and cell_type="Macrophage". 
+                </p>
+        </div>
+        </b-sidebar>
     </b-tab>
       
     <b-tab title="Search results" class="text-center">
@@ -105,6 +133,11 @@
 </template>
 
 <script>
+// Include BootstrapVueIcons - including this in nuxt.config.js or layouts/default.vue doesn't seem to work
+import Vue from 'vue'
+import { BootstrapVueIcons } from 'bootstrap-vue'
+Vue.use(BootstrapVueIcons)
+
 export default {
     data() {
         return {
@@ -115,6 +148,9 @@ export default {
             ],
             searchString: null,
             refineSearchString: null,
+
+            advancedSearch: [{searchString:"", datasetScope:"", sampleScope:"", operand:"and", key:0}
+                            ],
 
             table: [],
             // These are not actually all table columns fetched from API but these are available for user to choose from
@@ -205,11 +241,21 @@ export default {
         // Free text search
         search() {
             this.$axios.get("/api/search/datasets?include_samples_query=true&query_string=" + this.searchString).then(res => {
-                this.tableName = 'Search Results [' + this.searchString + ']';
+                this.tableName = 'Search results [' + this.searchString + ']';
                 this.tableDescription = 'Results of a free text search.';
                 this.setupTable(res.data);
                 this.tabIndex = 2;
             });
+        },
+
+        addAdvancedSearch() {
+            let newItem = { ...this.advancedSearch[0]};
+            newItem.key = this.advancedSearch.length;
+            this.advancedSearch.push(newItem);
+        },
+
+        removeAdvancedSearch(index) {
+            this.advancedSearch.splice(index,1);
         },
 
         // Show the table given by name (eg. atlas). Makes a query to api and returns data to use in the table.

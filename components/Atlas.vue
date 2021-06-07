@@ -70,7 +70,7 @@
             to construct the atlas and links to our published papers. 
         </p>
         <p>You can explore the atlas in several ways: Plot by <b>"sample type"</b> to change 
-            the colour of the samples to based on attributes such as progenitor type, sample source or cell type. 
+            the colour of the samples to based on attributes such as cell type or sample source. 
             Plot by <b>"gene expression"</b> to search by gene symbol to overlay a heatmap onto the atlas. 
             Display sample annotations and gene expression data side-by-side. Click on the item in the legend to add or remove that category.
         </p>

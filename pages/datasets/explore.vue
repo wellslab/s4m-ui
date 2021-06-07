@@ -33,9 +33,9 @@
   <div slot="main" style="max-width: 18rem;">
     <div class="card-body">
       <ul class="pl-2">
-      <li><b-link @click="gotoDatasetSearchPage()">{{clickedItem.value}} samples from {{datasetIds.length}} datasets</b-link> 
+      <li><b-link @click="gotoDatasetFilterPage()">{{clickedItem.value}} samples from {{datasetIds.length}} datasets</b-link> 
         have this value as {{clickedItem.descriptor}}.</li>
-      <li><b-link @click="gotoDatasetSearchPage()">Show all datasets</b-link> which contain this term in any of its samples.</li>
+      <li><b-link @click="gotoDatasetFilterPage('free_search')">Show all datasets</b-link> which contain this term in any of its samples.</li>
       </ul>
     </div>
   </div>
@@ -49,6 +49,7 @@
 import Vue from 'vue'
 import { BootstrapVueIcons } from 'bootstrap-vue'
 Vue.use(BootstrapVueIcons)
+
 
 export default {
     head: {
@@ -127,15 +128,27 @@ export default {
         this.clickedItem.ids = this.sunburst.values[index];
       },
 
-      // Go to the results section of dataset search page, based on the sample ids clicked
-      gotoDatasetSearchPage() {
-        // Separate dataset ids from sample ids, save this in storage, then call search results page
-        this.$store.commit('datasets_search/setTableName', 'Datasets with ' + this.clickedItem.display + ' [Visual Data Explorer]');
-        this.$store.commit('datasets_search/setTableDescription', 'Datasets containing ' + this.clickedItem.display + ' coming from Visual Data Explorer');
-        this.$store.commit('datasets_search/setDatasetIds', this.datasetIds);
-        this.$store.commit('datasets_search/setTabIndex', 2);
-        this.$router.push({path: "/datasets/search"});
-      }
+      //
+      gotoDatasetFilterPage(searchType) {
+        let params = new URLSearchParams();
+        let name = this.clickedItem.display;
+        if (searchType=='free_search') {
+          params.append('title', 'Datasets from search of ' + name);
+          params.append('description', 'Datasets containing ' + name + ' in any of sample fields or dataset metadata.');
+          params.append('include_samples_query', 'true');
+          params.append('query_string', name);
+        } 
+        else {
+          params.append('title', 'Datasets with ' + name + ' [Visual Data Explorer]');
+          params.append('description', 'Datasets containing ' + name + ' coming from Visual Data Explorer');
+          this.datasetIds.forEach(element => {
+            params.append('dataset_id', element)
+          });
+        }
+        //this.$router.push({path: "/datasets/filter", query: params});
+        this.$router.push('/datasets/filter?' + params.toString());
+      },
+
     },
 
     mounted() {

@@ -22,7 +22,7 @@
               while the blood atlas contains more broad range of human blood cells.
             </p>
             <div class='text-center'><b-img src="/img/AtlasSummaryWithIcons.png"></b-img></div>
-            <p class='mt-2'>Read more about the Myeloid atlas at <b-link href="https://doi.org/10.1101/719237" target="_blank">biorxiv</b-link> and
+            <p class='mt-2'>Read more about the Myeloid atlas at <b-link href="https://doi.org/10.1016/j.stemcr.2021.04.010" target="_blank">Stem Cell Reports</b-link> and
               blood atlas at <b-link href="https://doi.org/10.1371/journal.pcbi.1008219" target="_blank">PLOS Comp Biology</b-link>.
             </p>
         </div>

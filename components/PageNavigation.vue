@@ -17,10 +17,10 @@
         </b-dropdown>
         <b-dropdown text="Datasets" variant="dark" class="ml-4">
           <b-dropdown-item to="/datasets/explore">Explore data</b-dropdown-item>
-          <b-dropdown-item to="/datasets/search">Search and filter</b-dropdown-item>
+          <b-dropdown-item to="/datasets/collections">View collections</b-dropdown-item>
+          <b-dropdown-item to="/datasets/filter">Filter datasets</b-dropdown-item>
           <b-dropdown-item to="/datasets/view">View a dataset</b-dropdown-item>
           <b-dropdown-item to="/datasets/api">API access</b-dropdown-item>
-          <b-dropdown-item to="/datasets/annotation">About sample annotation</b-dropdown-item>
         </b-dropdown>
         <b-dropdown text="Atlases" variant="dark" class="ml-4">
           <b-dropdown-item to="/atlas/myeloid">Myeloid atlas</b-dropdown-item>

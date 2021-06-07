@@ -21,6 +21,13 @@
               metrics. Common issues include poor experimental design (such as batch effect confounding biological classes of interest or 
               insufficient sample class replication), or misannotation of samples, or missing parts of primary data.
             </p>
+
+            <h3>About sample annotations</h3>
+            <p>All Stemformatics datasets have been curated to ensure quality. One of the most challenging aspect of curation
+                process involves annotating the samples which originate from the datasets.
+                In Stemformatics, domain specific knowledge has been applied to the data to highlight key similarities and 
+                differences in the context of the biological questions being asked.
+            </p>            
       </b-col>
     </b-row>
 </b-container>
