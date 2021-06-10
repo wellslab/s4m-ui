@@ -207,7 +207,7 @@
             {{item}}
         </b-link>
         <b-collapse :visible="versionInfo.showReleaseNotes.indexOf(item)!=-1">
-            <ul class="list-unstyled ml-3"><li v-for="line in versionInfo.releaseNotes[i].split('\n')">{{line}}</li></ul>
+            <ul class="list-unstyled ml-3"><li v-for="line in versionInfo.releaseNotes[i].split('\n')" :key="line">{{line}}</li></ul>
         </b-collapse>
         </li></ul>
 </b-modal>
@@ -802,7 +802,6 @@ export default {
             
             // Now add projected points to all relevant data variables. Note that we should be able to
             // remove these points later - for now, reload page.
-            //this.addProjectedPoints(projectionData.name, projectionData.coords, projectionData.sampleIds, sampleTypes, datasetAttributes);
             let self = this;
             self.uploadData.name = projectionData.name;
             for (let item in self.coords) { // update coordinates to include projected coordinates
@@ -822,7 +821,8 @@ export default {
                 for (let item in self.sampleTable) {
                     self.sampleTable[item][sampleId] = sampleTypes[i];
                     self.sampleTypeColours[item][sampleTypes[i]] = "green";
-                    self.sampleTypeOrdering[item].push(sampleTypes[i]);
+                    if (self.sampleTypeOrdering[item].indexOf(sampleTypes[i])==-1)
+                        self.sampleTypeOrdering[item].push(sampleTypes[i]);
                     self.sampleInfo.allData[sampleId][item] = sampleTypes[i];
                 }
             }

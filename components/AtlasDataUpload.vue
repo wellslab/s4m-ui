@@ -108,7 +108,7 @@ export default {
                 self.formData.append("test_name", self.testDatasetName);
                 self.formData.append("test_expression", self.testDatasetExpression);
                 self.formData.append("test_samples", self.testDatasetSamples);
-                self.formData.append("test_sample_column", self.selectedSampleColumn);
+                self.formData.append("test_sample_column", self.testDatasetColumn);
             }
 
             self.showLoading = true;
