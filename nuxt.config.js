@@ -56,9 +56,13 @@ export default {
       target: process.env.BASE_API_URL,  // works as long as api server runs on the same localhost
       pathRewrite: {'^/api' : ''},
     },
-    '/geneinfo': {
+    '/mygene': {
       target: 'https://mygene.info',
-      pathRewrite: {'^/geneinfo' : ''},
+      pathRewrite: {'^/mygene' : ''},
+    },
+    '/reactome': {
+      target: 'https://reactome.org',
+      pathRewrite: {'^/reactome' : ''},
     },
   },
   

@@ -17,17 +17,33 @@
   # cURL example
   curl https://api.stemformatics.org/datasets/2000/metadata
 
-  # python example
+  # python examples
   import pandas, requests
   r = requests.get('https://api.stemformatics.org/datasets/2000/samples')
   df = pandas.DataFrame(r.json())
-  display(df.head())
+  print(df.head())
                 sample_id    cell_type parental_cell_type  ... developmental_stage treatment external_source_id
         0  2000_1787466030_H  neurosphere         epithelium  ...
         1  2000_1787466065_A  neurosphere         epithelium  ...
         2  2000_1787466030_E  neurosphere         epithelium  ...
         3  2000_1787466065_D  neurosphere         epithelium  ...
         4  2000_1699538158_H  neurosphere         epithelium  ...
+
+  # Note that you can safely use spaces inside query string variable and requests will parse it for you
+  r = requests.get('https://api.stemformatics.org/search/samples?query_string=%s&field=tissue_of_origin&field=dataset_id' % 'dendritic cell')
+  print(r.json()[:2])
+        [{'sample_id': '7277_GSM2067549', 'dataset_id': 7277, 'tissue_of_origin': 'umbilical cord blood'}, 
+         {'sample_id': '7277_GSM2067548', 'dataset_id': 7277, 'tissue_of_origin': 'umbilical cord blood'}]
+
+  # To get expression matrix as file but read it into pandas directly
+  import io
+  r = requests.get('https://api.stemformatics.org/datasets/6756/expression?as_file=true')
+  df = pandas.read_csv(io.StringIO(r.text), sep='\t', index_col=0)
+  print(df.head())
+                    GSM741192.CEL  GSM741193.CEL  GSM741194.CEL  GSM741195.CEL  \
+        1415670_at         8.209027       8.262415       8.557468       9.205204   
+        1415671_at        10.852328      11.100999      10.912304      10.836298   
+        1415672_at        10.431524      10.364212      10.517259      11.122440   
 
   # R example
   library(httr)
@@ -133,11 +149,14 @@ export default {
     ]`
                 },
                
-                {show: false, url:'/datasets/{dataset_id}/expression?gene_id={Ensembl_gene_id}&key=cpm&orient=records&as_file=false', 
+                {show: false, url:'/datasets/{dataset_id}/expression?gene_id={Ensembl_gene_id}&key=cpm&log2=false&orient=records&as_file=false', 
                  heading: 'Fetches expression values for a gene in the dataset. key may be ' +
-                    'one of [raw,genes] for microarray data, where you should use probe id for gene_id ' +
-                    'if key=raw, and one of [raw,cpm] for RNA-seq data, where raw means unnormalised ' +
-                    'count values. If as_file=true, the entire expression matrix can be downloaded for the matching key.',
+                    'one of [raw,genes] for Microarray data, where you should specify probe id for gene_id ' +
+                    'if key=raw, and one of [raw,cpm] for RNASeq data, where raw means unnormalised ' +
+                    'count values. Note that key=genes will also work with RNASeq data and will just fetch raw version of it. ' + 
+                    "This way you don't need to check for platform_type before making the query. Similarly, key=cpm also works for " +
+                    "Microarray data to fetch its genes version. If log2=true, numpy.log2(exp+1) will be applied, but if the values are " +
+                    "already logged, such as for microarray data, it will not log again. If as_file=true, the entire expression matrix can be downloaded for the matching key.",
                  example:
     `[
         {

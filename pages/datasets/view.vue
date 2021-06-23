@@ -90,29 +90,14 @@
                 <!-- @keyup.enter does not work unless this dummy input is added because hitting enter submits the form with just one input -->
                 <b-form-input v-show="false"></b-form-input>
                 <b-button variant="dark" @click="plotGene">show</b-button>
-                <b-form-select v-if="genes.selectedGene.gene_id!=null" v-model="genes.selectedPlotType" @change="updateGenePlot('restyle')" 
-                    class="bg-light small-select ml-2">
+                <b-form-select v-if="selectedGeneId!=null" v-model="genes_selectedPlotType" class="bg-light small-select ml-2">
                     <b-form-select-option value="box">box plot</b-form-select-option>
                     <b-form-select-option value="violin">violin plot</b-form-select-option>
                 </b-form-select>
-                <b-form-checkbox v-if="genes.selectedGene.gene_id!=null" v-model="genes.showPoints" @change="updateGenePlot('restyle')" class="ml-1">show points</b-form-checkbox>
+                <b-form-checkbox v-if="selectedGeneId!=null" v-model="genes_showPoints" class="ml-1">show points</b-form-checkbox>
             </b-form>
-            <b-row class="small justify-content-center">
-                <b-col col md="9" class="overflow-auto text-center">
-                    <div id="genePlotDiv"></div>
-                </b-col>
-                <b-col v-if="genes.selectedGene.gene_id!=null" class="text-left">
-                    <!-- Legend area. -->
-                    colour by: 
-                    <b-form-select size="sm" v-model="genes.selectedSampleGroup" :options="sampleGroups" @change="updateGenePlot()" class="ml-1"></b-form-select>
-                    <ul class="mt-3 list-unstyled p-0"><li v-for="(legend,i) in genes.currentLegends" :key="legend.value">
-                        <b-link href="#" @click="updateGenePlot(i);" style="font-size:13px;">
-                        <b-icon-circle-fill :style="{'color': legend.colour}" scale="0.6"></b-icon-circle-fill>
-                        <span :style="legend.visible? 'color:black' : 'color:#a7a7a7'">{{legend.value}} ({{legend.number}})</span>
-                        </b-link>
-                    </li></ul>
-                </b-col>
-            </b-row>
+            <GeneExpressionPlot ref="geneExpressionPlot" :gene_id="selectedGeneId" :dataset_id="datasetId" 
+                :plot_type="genes_selectedPlotType" :show_points="genes_showPoints"/>
         </b-tab>
 
         <b-tab title="Download">
@@ -173,8 +158,8 @@ export default {
             pca: {selectedSampleGroup: "",
                   coords: {},
                   attributes: {},
-                  legends: {},
-                  currentLegends:[],
+                  legends: {},  // vue doesn't update dom when this changes
+                  currentLegends:[],    // vue will update dome when this changes - so this is a copy of legeneds[pca.selectedSampleGroup]
                   showScreePlot: false,
                   loading: false,
                   },
@@ -188,25 +173,17 @@ export default {
             samples: [],    // [{'sample_id':'7283_GSM1977399', 'cell_type':'', ...}, ...]
             sampleGroups: [],   // ["sample_type", "age", ...]
 
-            // genes
-            genes: {selectedGene:{gene_id: null, gene_name:''},
-                    selectedSampleGroup:'cell_type',
-                    selectedPlotType:'box',
-                    showPoints:false,
+            // genes - some of these fields need to be reactive, in which case best to not be inside other objects
+            selectedGeneId: null,
+            selectedGeneName: '',
+            genes_selectedPlotType:'box',
+            genes_showPoints:true,
+            genes: {selectedGeneSymbol:'',
                     possibleGenes:[],
                     expressionValues:{},
-                    currentLegends:[],  // we can use same legends as pca
                     loading:false,
                     },
         }
-    },
-
-    computed: {
-        // Values in store (auto sync)
-        // datasetId: {    // try to get it from url first, then try the store
-        //     get () { return this.$store.getters['datasets_view/getDatasetId'] },
-        //     set (value) { this.$store.commit('datasets_view/setDatasetId', value) }
-        // },
     },
 
     methods: {
@@ -276,66 +253,27 @@ export default {
         // ------------ Genes tab ---------------
         // Plots gene expression when user enters/changes gene
         plotGene() {
+            this.genes.selectedGeneSymbol = this.genes.selectedGeneSymbol.trim();
             if (this.genes.selectedGeneSymbol.length==0) return;
 
             // First find matching gene id
             let gene = this.genes.possibleGenes.filter(item => item.gene_name==this.genes.selectedGeneSymbol);
             // If there's no matching gene here, assume that user copied and pasted a gene id instead of
             // selecting from the dropdown. We'll still support fetching the expression for this.
-            if (gene.length>0)
+            this.genes = {...this.genes};
+            if (gene.length>0) {
                 this.genes.selectedGene = gene[0];
+                this.selectedGeneId = gene[0].gene_id;
+            }
             else {
-                this.genes.selectedGene.gene_id = this.genes.selectedGeneSymbol;
-                this.genes.selectedGene.gene_name = this.genes.selectedGeneSymbol;
-            }
-
-            const key = this.datasetMetadata.platform_type=='Microarray'? 'genes' : 'cpm';
-            this.genes.loading = true;
-            this.$axios.get("/api/datasets/" + this.datasetId + "/expression?orient=index&gene_id=" + this.genes.selectedGene.gene_id + "&key=" + key).then(res => {
-                this.genes.expressionValues = res.data;
-                if (this.datasetMetadata.platform_type=='RNASeq') // apply log
-                    Object.keys(this.genes.expressionValues[this.genes.selectedGene.gene_id]).forEach(sampleId => {
-                        const value = this.genes.expressionValues[this.genes.selectedGene.gene_id][sampleId];
-                        this.genes.expressionValues[this.genes.selectedGene.gene_id][sampleId] = Math.log2(value + 1);
-                    })
-                this.updateGenePlot();
-            }).catch(error => {
-                alert("No expression value for this gene in this dataset");
-            }).then(() => {
-                this.genes.loading = false;
-            });
-        },
-
-        // Update an existing gene plot (so no fetching expression data from server)
-        updateGenePlot(legendIndex) {
-            this.genes.currentLegends = this.pca.legends[this.genes.selectedSampleGroup];
-
-            // Different action depending on legendIndex
-            if (legendIndex==undefined) { // new plot or user changed sample group, so create a new plot by showing all traces under the selected sample group
-                const traces = this.pca.legends[this.genes.selectedSampleGroup].map(legend => {
-                    const y = legend.sampleIds.map(item => this.genes.expressionValues[this.genes.selectedGene.gene_id][item]);
-                    return {y:y, type:this.genes.selectedPlotType, boxpoints:this.genes.showPoints? 'all':false, name:legend.value,
-                            points:this.genes.showPoints? 'all':false, visible:legend.visible, marker:{color: legend.colour}}
-                });
-                const title = this.datasetMetadata.platform_type=='RNASeq'? 'log2(cpm+1)' : 'log2';
-                const layout = {yaxis: {title: title}, showlegend:false};
-                Plotly.newPlot('genePlotDiv', traces, layout);
-            }
-            else if (legendIndex=='restyle') {
-                const params = this.genes.selectedPlotType=='box'? {boxpoints:this.genes.showPoints? 'all':false} : {points: this.genes.showPoints? 'all':false};
-                params['type'] = this.genes.selectedPlotType;
-                Plotly.restyle('genePlotDiv', params);
-            }
-            else {  // legendIndex is a selected index - work out if we're adding or removing a trace
-                let legend = this.genes.currentLegends[legendIndex];
-                Plotly.restyle('genePlotDiv',{visible: !legend.visible}, legendIndex);
-                legend.visible = !legend.visible;
+                this.selectedGeneId = this.genes.selectedGeneSymbol;
+                this.genes.selectedGeneName = this.genes.selectedGeneSymbol;
             }
         },
 
         getPossibleGenes() {
             if (this.genes.selectedGeneSymbol.length<=1) return;    // ignore 1 or less characters entered
-            this.$axios.get('/geneinfo/v3/query?species=human&fields=symbol,ensembl.gene&size=50&q=' + this.genes.selectedGeneSymbol).then(res => {
+            this.$axios.get('/mygene/v3/query?species=human&fields=symbol,ensembl.gene&size=50&q=' + this.genes.selectedGeneSymbol).then(res => {
                 if (res.data.total>0) {
                     // Note that some genes may not have ensembl ids, so lack the ensembl field
                     const genes = res.data['hits'].filter(item => 'ensembl' in item);
@@ -359,11 +297,11 @@ export default {
     mounted() {
         // Set datasetId if coming from query
         if (this.$route.query.id!=null) {
-            this.datasetId = this.$route.query.id;
+            this.datasetId = parseInt(this.$route.query.id);
             localStorage.setItem('s4m:datasets_view.selectedDatasetId', this.datasetId);   
         }
         else // try localStorage
-            this.datasetId = localStorage.getItem('s4m:datasets_view.selectedDatasetId') || 6277;
+            this.datasetId = parseInt(localStorage.getItem('s4m:datasets_view.selectedDatasetId')) || 6277;
 
         this.pca.loading = true;
         this.apiUrl = process.env.BASE_API_URL;
@@ -419,7 +357,6 @@ export default {
                 });
 
                 this.pca.selectedSampleGroup = this.sampleGroups[0];
-                this.genes.selectedSampleGroup = this.sampleGroups[0];
                 this.pca.coords = res2.data["coordinates"];
                 this.pca.attributes = res2.data["attributes"];
                 this.setPCALegends();

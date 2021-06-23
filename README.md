@@ -11,7 +11,7 @@
 
 ```bash
 # If installing in a conda env
-$ conda create --prefix /mnt/data/miniconda3/envs/s4m  # create new env to specific loation
+$ conda create --prefix /mnt/miniconda3/envs/s4m-ui  # create new env to specific loation
 $ conda activate s4m
 $ conda install nodejs
 
@@ -71,6 +71,10 @@ https://codesandbox.io/s/github/AngelinCalu/bs-vue-timeline-demo?file=/src/compo
 
 pm2 logs
 https://pm2.keymetrics.io/docs/usage/log-management/
+
+
+Excellent write up on how reactive elements in vue work
+https://michaelnthiessen.com/debugging-guide-why-your-component-isnt-updating/
 
 ## Temporary clipboard
 

@@ -30,7 +30,7 @@
         </b-dropdown>
         <b-dropdown text="Genes" variant="dark" class="ml-4">
           <b-dropdown-item to="/genes/">Discover</b-dropdown-item>
-          <b-dropdown-item>More coming soon</b-dropdown-item>
+          <b-dropdown-item to="/genes/topgenes">Top scoring genes</b-dropdown-item>
         </b-dropdown>
       </b-navbar-nav>
     </b-collapse>

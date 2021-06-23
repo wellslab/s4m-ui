@@ -217,8 +217,8 @@ export default {
             if (!('pagination_start' in query)) // unspecified starting point from query, so get from UI
                 query['pagination_start'] = this.paginationStart;
 
-            this.collectionName = query.title;
-            this.collectionDescription = query.description;
+            if ('title' in query) this.collectionName = query.title;
+            if ('description' in query) this.collectionDescription = query.description;
             
             let params = new URLSearchParams();
             for (const [key, value] of Object.entries(query)) {
