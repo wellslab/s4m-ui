@@ -50,6 +50,7 @@ $ npm run start
 # or to run forever (better for stable prod env)
 $ npm run build
 $ pm2 start
+$ pm2 stop ecosystem.config.js
 
 # generate static project (see scripts section under package.json - running npm run generate is equivalent to nuxt generate for example)
 $ npm run generate
@@ -167,4 +168,12 @@ In page filtering
         filterItem.values = combined.map(item => item[0]);
         filterItem.counts = combined.map(item => item[1]);
     });
+```
+
+Using URLSearchParams, which can handle duplicate keys:
+```
+let params = new URLSearchParams();
+params.append('title', 'this is title');
+params.append('value', 'val1');
+params.append('value', 'val2');
 ```

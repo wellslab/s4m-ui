@@ -204,9 +204,6 @@ export default {
         // this page, rather than by the api, so this assumes that api call we're making does not contain
         // title or description as keys.
         getDatasets(query) {
-            // Convert query into URLSearchParams object, which can handle duplicate keys.
-            // Note that /datasets/filter?dataset_id=6167&dataset_id=6218 will look like {dataset_id:[6167,6218]}
-            // inside query. We can use append method in URLSearchParams object to handle this.
             if (Object.keys(query).length==0) { // we try to get it from localStorage
                 let queryFromStorage = JSON.parse(localStorage.getItem('s4m:datasets_filter.apiQuery'));
                 if (queryFromStorage!=null) {
@@ -220,18 +217,7 @@ export default {
             if ('title' in query) this.collectionName = query.title;
             if ('description' in query) this.collectionDescription = query.description;
             
-            let params = new URLSearchParams();
-            for (const [key, value] of Object.entries(query)) {
-                if (Array.isArray(value)) {
-                    for (const val of value) {
-                        params.append(key, val);
-                    }
-                } else {
-                    params.append(key, value);
-                }
-            }
-
-            this.$axios.get("/api/search/datasets",{params: params}).then(res => {
+            this.$axios.get("/api/search/datasets",{params: query}).then(res => {
                 this.datasets = res.data.results;
                 this.counts = res.data.counts;
                 this.totalRecords = res.data.total;
@@ -278,7 +264,7 @@ export default {
                     else
                         this.apiQuery['filter_platform_type'] = filterItem.selectedRadio;
                 } else {
-                    this.apiQuery['filter_' + filterItem.key] = filterItem.values.filter((item,i) => filterItem.selected[i]);
+                    this.apiQuery['filter_' + filterItem.key] = filterItem.values.filter((item,i) => filterItem.selected[i]).join(',');
                 }
             });
             // Reset paginationStart
@@ -314,7 +300,11 @@ export default {
   
     mounted() {
         this.getDatasets(this.$route.query);
-    }
+        this.$root.$on('show_datasets_filter', data => {
+            this.getDatasets(data);
+        });
+    },
+
 }
 </script>
 

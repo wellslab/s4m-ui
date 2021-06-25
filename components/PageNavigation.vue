@@ -6,6 +6,7 @@
     <b-collapse id="nav-collapse" is-nav>
       <!-- Right aligned nav items -->
       <b-navbar-nav class="ml-auto">
+        <b-form-input v-model="searchString" placeholder="quick search" @keyup.enter="search" size="sm" class="my-auto w-10"></b-form-input>
         <b-dropdown text="About" variant="dark" class="ml-4">
           <b-dropdown-item to="/about">About Stemformatics</b-dropdown-item>
           <b-dropdown-item to="/about/team">Team</b-dropdown-item>
@@ -40,7 +41,23 @@
 
 <script>
 export default {
-    name: "PageNavigation"
+  data() {
+    return {
+      searchString: '',
+    }
+  },
+
+  methods: {
+    search() {
+      if (this.searchString=='') return;
+      let params = {'title': 'Search results [' + this.searchString + ']',
+                    'description': 'Results of a free text search.',
+                    'include_samples_query': 'true',
+                    'query_string': this.searchString};
+      this.$router.push({path: "/datasets/filter", query: params});
+      this.$root.$emit('show_datasets_filter', params);
+    },
+  }
 }
 </script>
 

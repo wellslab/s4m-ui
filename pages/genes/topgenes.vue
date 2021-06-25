@@ -8,7 +8,7 @@
         <small>
             <b-link v-b-tooltip.hover.right title="Background and more information" v-b-toggle.sidebar class="ml-2"><b-icon-info-circle></b-icon-info-circle></b-link>
             <b-spinner v-if="loading" label="Loading..." variant="secondary" style="width:1.5rem; height:1.5rem;"></b-spinner>
-            <b-link @click="gotoReactome">reactome</b-link>
+            <b-link @click="gotoReactome">r</b-link>
         </small>
     </h3>
     </div>
@@ -103,8 +103,9 @@ export default {
             // this.$axios.post("/mygene/v3/gene", 'ids=1017,695&fields=name,symbol,refseq.rna', {'headers': {'Content-Type':'application/x-www-form-urlencoded'}}).then(res => {
             //     console.log(res.data);
             // });
-            this.$axios.post("/reactome/AnalysisService/", 'KIT\nGATA1', {'headers': {'Content-Type':'application/x-www-form-urlencoded'}}).then(res => {
-                console.log(res.data);
+            this.$axios.post("/reactome/AnalysisService/identifiers/?interactors=false&pageSize=20&page=1&sortBy=ENTITIES_PVALUE&order=ASC&resource=TOTAL&pValue=1&includeDisease=true", 'KIT\nGATA1', {'headers': {'Content-Type':'text/plain'}}).then(res => {
+                const token = res.data.summary.token;
+                window.open("https://reactome.org/PathwayBrowser/#DTAB=AN&ANALYSIS=" + token, "_blank");
             });
         }
     },
@@ -134,8 +135,7 @@ export default {
                     geneSymbols.add(element.symbol);
                 }
             });
-            let query = datasetIds.map(item => 'dataset_id=' + item);
-            this.$axios.get("/api/search/datasets?" + query.join('&')).then(res2 => {
+            this.$axios.get("/api/search/datasets?dataset_id=" + datasetIds.join(',')).then(res2 => {
                 res2.data.forEach(item => {
                     const name = item.name.split('_');
                     this.datasetDisplayName[item.dataset_id] = name[0] + " (" + name[1] + ")";

@@ -30,7 +30,7 @@
         4  2000_1699538158_H  neurosphere         epithelium  ...
 
   # Note that you can safely use spaces inside query string variable and requests will parse it for you
-  r = requests.get('https://api.stemformatics.org/search/samples?query_string=%s&field=tissue_of_origin&field=dataset_id' % 'dendritic cell')
+  r = requests.get('https://api.stemformatics.org/search/samples?query_string=%s&field=tissue_of_origin,dataset_id' % 'dendritic cell')
   print(r.json()[:2])
         [{'sample_id': '7277_GSM2067549', 'dataset_id': 7277, 'tissue_of_origin': 'umbilical cord blood'}, 
          {'sample_id': '7277_GSM2067548', 'dataset_id': 7277, 'tissue_of_origin': 'umbilical cord blood'}]
@@ -233,7 +233,7 @@ export default {
 
                 {show: false, url:'/search/samples?dataset_id={datasetId}&query_string={queryString}&field={field}&orient=records&limit=50', 
                  heading: 'Fetches sample metadata matching the search parameters. ' +
-                    'field specifies a subset of the fields to fetch, for example field=cell_type&field=tissue_of_origin. ' +
+                    'field specifies a subset of the fields to fetch, for example field=cell_type,tissue_of_origin. ' +
                     'See example below for a full list of available fields.',
                  example:
     `[

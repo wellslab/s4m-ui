@@ -19,7 +19,7 @@
                 </b-card-text>
                 <b-form-select size="sm" :options="sampleGroups" v-model="selectedSampleGroup"></b-form-select>
                 <b-form-select size="sm" :options="sampleGroupItems" v-model="selectedSampleGroupItem" class="mt-1"></b-form-select>                
-                <b-button class="float-right mt-2" variant="dark">Search</b-button>
+                <b-button class="float-right mt-2">search</b-button>
             </b-card-body>
         </b-card>
 
@@ -32,7 +32,7 @@
                 <b-form-group description="start typing then select from the list of genes">
                     <b-form-input id="geneSearchInput" placeholder="eg. Myb" @keyup.enter="searchGenes" size="sm"></b-form-input>
                 </b-form-group>
-                <b-button variant="dark" @click="searchGenes" class="float-right align-self-end">search</b-button>
+                <b-button @click="searchGenes" class="float-right align-self-end">search</b-button>
             </b-card-body>
         </b-card>
 
@@ -42,7 +42,7 @@
                 <b-card-text>
                     <p>Explore our pre-defined gene sets for high expression in particular cell types.</p>
                     <ul>
-                        <li><b-link to="/genes/topgenes">Highly expressed in monocytes</b-link></li>
+                        <li><b-link to="/genes/topgenes">Genes highly expressed in monocytes</b-link></li>
                     </ul>
                 </b-card-text>
             </b-card-body>

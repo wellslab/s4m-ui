@@ -78,14 +78,13 @@ export default {
     },
 
     methods: {
-        // Free text search - use URLSearchParams and toString method for more robust transfer of query parameters
+        // Free text search 
         search() {
-            let params = new URLSearchParams();
-            params.append('title', 'Search results [' + this.searchString + ']');
-            params.append('description', 'Results of a free text search.');
-            params.append('include_samples_query', 'true');
-            params.append('query_string', this.searchString);
-            this.$router.push("/datasets/filter?" + params.toString());
+            let params = {'title': 'Search results [' + this.searchString + ']',
+                          'description': 'Results of a free text search.',
+                          'include_samples_query': 'true',
+                          'query_string': this.searchString};
+            this.$router.push({path: "/datasets/filter", query:params});
         },
 
         // Go to /datasets/filter page, with search parameters for the collection, which will be passed onto the page.
@@ -93,14 +92,12 @@ export default {
         // Atlas table is a bit better as it looks for datasets with project field.
         showDatasetCollection(name) {
             let collection = this.datasetCollection[name];
-            // Build query parameters using URLSearchParams
-            let params = new URLSearchParams();
-            params.append('title', collection.title);
-            params.append('description', collection.description);
+            let params = {'title': collection.title,
+                          'description': collection.description};
             for (const [key, value] of Object.entries(collection.apiParams)) {
-                params.append(key, value);
+                params[key] = value;
             }
-            this.$router.push("/datasets/filter?" + params.toString());
+            this.$router.push({path: "/datasets/filter", query:params});
         },
 
     },

@@ -159,6 +159,9 @@
             <b-form-select v-model="geneExpressionDialog.selectedPlotType" :options="geneExpressionDialog.plotTypes" 
                 @change="geneExpressionScatterPlot" class="ml-2"></b-form-select>
             <b-form-checkbox v-model="geneExpressionDialog.showPoints" @change="geneExpressionScatterPlot" class="ml-1">show points</b-form-checkbox>
+            <b-link v-b-tooltip.hover title="Download plot as a jpeg file" @click="downloadGeneExpressionScatterPlot">
+                <b-icon-download class="ml-2"></b-icon-download>
+            </b-link>
         </b-form>
         <div id="geneExpressionScatterPlotDiv" class="mt-2"></div>
     </div>
@@ -771,6 +774,13 @@ export default {
             Plotly.newPlot("geneExpressionScatterPlotDiv", traces, layout);
         },
 
+        downloadGeneExpressionScatterPlot() {
+            Plotly.downloadImage(document.getElementById("geneExpressionScatterPlotDiv"), {
+                format: 'jpeg', height: 900, width: 2000,
+                filename: 'Stemformatics_' + this.atlasType + '_atlas_' + this.selectedGene
+            });
+        },
+
         // ------------ Download data methods ---------------
         downloadPlot() {
             Plotly.downloadImage(document.getElementById(this.mainPlotDiv), {
@@ -904,8 +914,7 @@ export default {
                     // The fetched data here look like: {"6638_GSM868879":{"facs_profile":"CD16- CD123+",...},...}
                     let datasetIds = this.sampleIds.map(item => item.split("_")[0]);
                     datasetIds = Array.from(new Set(datasetIds));   // unique values only
-                    datasetIds = datasetIds.map(item => "dataset_id=" + item);  // create query string
-                    this.$axios.get("/api/search/samples?orient=index&field=facs_profile&limit=1200&" + datasetIds.join("&")).then(res4 => {
+                    this.$axios.get("/api/search/samples?orient=index&field=facs_profile&limit=1200&dataset_id=" + datasetIds.join(",")).then(res4 => {
                         this.sampleInfo.allData = res4.data;
                         Object.keys(this.sampleInfo.allData).forEach(sampleId => { this.sampleInfo.allData[sampleId]["sample_id"] = sampleId});
                     });

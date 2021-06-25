@@ -96,7 +96,7 @@
                 </b-form-select>
                 <b-form-checkbox v-if="selectedGeneId!=null" v-model="genes_showPoints" class="ml-1">show points</b-form-checkbox>
             </b-form>
-            <GeneExpressionPlot ref="geneExpressionPlot" :gene_id="selectedGeneId" :dataset_id="datasetId" 
+            <GeneExpressionPlot v-show="selectedGeneId!=null" ref="geneExpressionPlot" :gene_id="selectedGeneId" :dataset_id="datasetId" 
                 :plot_type="genes_selectedPlotType" :show_points="genes_showPoints"/>
         </b-tab>
 

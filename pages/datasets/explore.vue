@@ -100,7 +100,6 @@ export default {
         let query = self.selectedDataType=='samples'? 'format=sunburst1&projects=atlas' : 'format=sunburst2&projects=atlas';
         self.$axios.get("/api/search/datasets?" + query).then(res => {
             self.sunburst = res.data;
-            
             // substitute acronyms for labels wherever possible
             self.sunburst.labels = self.sunburst.labels.map(item => {
               return (item in self.acronym)? self.acronym[item] : item;
@@ -130,23 +129,20 @@ export default {
 
       //
       gotoDatasetFilterPage(searchType) {
-        let params = new URLSearchParams();
+        let params = {};
         let name = this.clickedItem.display;
         if (searchType=='free_search') {
-          params.append('title', 'Datasets from search of ' + name);
-          params.append('description', 'Datasets containing ' + name + ' in any of sample fields or dataset metadata.');
-          params.append('include_samples_query', 'true');
-          params.append('query_string', name);
+          params['title'] = 'Datasets from search of ' + name;
+          params['description'] = 'Datasets containing ' + name + ' in any of sample fields or dataset metadata.';
+          params['include_samples_query'] = 'true';
+          params['query_string'] = name;
         } 
         else {
-          params.append('title', 'Datasets with ' + name + ' [Visual Data Explorer]');
-          params.append('description', 'Datasets containing ' + name + ' coming from Visual Data Explorer');
-          this.datasetIds.forEach(element => {
-            params.append('dataset_id', element)
-          });
+          params['title'] = 'Datasets with ' + name + ' [Visual Data Explorer]';
+          params['description'] = 'Datasets containing ' + name + ' coming from Visual Data Explorer';
+          params['dataset_id'] = this.datasetIds.join(',');
         }
-        //this.$router.push({path: "/datasets/filter", query: params});
-        this.$router.push('/datasets/filter?' + params.toString());
+        this.$router.push({path: "/datasets/filter", query: params});
       },
 
     },
