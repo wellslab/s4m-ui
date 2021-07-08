@@ -15,7 +15,7 @@
 
     <b-card v-if="selectedDataSource=='Stemformatics'" bg-variant="light" class="mt-3">
         <p>Select from the full list of datasets below. Start typing to quickly narrow down the choices.
-        Go to <b-link to="/datasets/search" target="_blank">search page</b-link> and find the name if you want to
+        Go to <b-link to="/datasets/collections" target="_blank">search page</b-link> and find the name if you want to
         use a more detailed search.</p>
         <label for="dataset-select-input">Select a dataset</label>
         <b-form-input list="input-list" id="dataset-select-input" v-model="selectedDataset" placeholder="[author_year_pubmed-id]"></b-form-input>

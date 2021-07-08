@@ -177,3 +177,6 @@ params.append('title', 'this is title');
 params.append('value', 'val1');
 params.append('value', 'val2');
 ```
+
+Inter-component communication via global events:
+https://stackoverflow.com/questions/38616167/communication-between-sibling-components-in-vue-js-2-0

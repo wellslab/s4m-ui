@@ -31,7 +31,8 @@
         </b-dropdown>
         <b-dropdown text="Genes" variant="dark" class="ml-4">
           <b-dropdown-item to="/genes/">Discover</b-dropdown-item>
-          <b-dropdown-item to="/genes/topgenes">Top scoring genes</b-dropdown-item>
+          <b-dropdown-item to="/genes/sampletogenes">From sample to genes</b-dropdown-item>
+          <b-dropdown-item to="/genes/collections">Gene set collections</b-dropdown-item>
         </b-dropdown>
       </b-navbar-nav>
     </b-collapse>
@@ -48,10 +49,11 @@ export default {
   },
 
   methods: {
+    // Perform general search by emitting an event on the root instance as global event hub
     search() {
       if (this.searchString=='') return;
       let params = {'title': 'Search results [' + this.searchString + ']',
-                    'description': 'Results of a free text search.',
+                    'description': 'Results of a quick search.',
                     'include_samples_query': 'true',
                     'query_string': this.searchString};
       this.$router.push({path: "/datasets/filter", query: params});

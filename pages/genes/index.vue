@@ -13,24 +13,24 @@
     <b-card-group deck>
         <b-card no-body img-src="/img/Genes_SamplesToGenes.png" img-alt="Find genes from samples" img-top>
             <b-card-body class="border-top border-gray-200">
-                <h4 class="red">Sample group to genes</h4>
+                <h4><b-link to="/genes/sampletogenes">Sample group to genes</b-link></h4>
                 <b-card-text>
                     Start from a sample group of interest (eg. 'monocyte') and find highly expressed genes. 
                 </b-card-text>
-                <b-form-select size="sm" :options="sampleGroups" v-model="selectedSampleGroup"></b-form-select>
+                <b-form-select size="sm" :options="sampleGroups" v-model="selectedSampleGroup" @change="getSampleGroupItems"></b-form-select>
                 <b-form-select size="sm" :options="sampleGroupItems" v-model="selectedSampleGroupItem" class="mt-1"></b-form-select>                
-                <b-button class="float-right mt-2">search</b-button>
+                <b-button class="float-right mt-2" @click="goToSampleGroupToGenes">search</b-button>
             </b-card-body>
         </b-card>
 
         <b-card no-body img-src="/img/Genes_GeneToSamples.png" img-alt="Find samples from gene" img-top>
             <b-card-body class="border-top border-gray-200">
-                <h4 class="red">Genes to sample groups</h4>
+                <h4><b-link>Genes to sample groups</b-link></h4>
                 <b-card-text>
                     Start from a gene interest and find highly expressed samples. 
                 </b-card-text>
                 <b-form-group description="start typing then select from the list of genes">
-                    <b-form-input id="geneSearchInput" placeholder="eg. Myb" @keyup.enter="searchGenes" size="sm"></b-form-input>
+                    <b-form-input id="geneSearchInput" placeholder="coming soon" @keyup.enter="searchGenes" size="sm" disabled></b-form-input>
                 </b-form-group>
                 <b-button @click="searchGenes" class="float-right align-self-end">search</b-button>
             </b-card-body>
@@ -38,13 +38,13 @@
 
         <b-card no-body img-src="/img/Genes_GenesetCollection.png" img-alt="Explore gene set collections" img-top>
             <b-card-body class="border-top border-gray-200">
-                <h4 class="red">Gene set collections</h4>
+                <h4><b-link>Gene set collections</b-link></h4>
                 <b-card-text>
-                    <p>Explore our pre-defined gene sets for high expression in particular cell types.</p>
-                    <ul>
-                        <li><b-link to="/genes/topgenes">Genes highly expressed in monocytes</b-link></li>
-                    </ul>
+                    Explore our pre-defined gene sets for high expression in particular cell types.
                 </b-card-text>
+                <ul>
+                    <li><b-link>Genes highly expressed in monocytes</b-link></li>
+                </ul>
             </b-card-body>
         </b-card>
     </b-card-group>
@@ -62,24 +62,41 @@ export default {
             { text: 'Discover', active: true }
             ],
             searchString:'',
-            sampleGroups: ["cell_type","tissue_of_origin"],
+            sampleGroups: ["cell_type","tissue_of_origin",],
             selectedSampleGroup: 'cell_type',
-            sampleGroupItems: ["blood","monocyte"],
-            selectedSampleGroupItem: 'blood'
+            sampleGroupItems: [],
+            selectedSampleGroupItem: 'blood',
         }
     },
 
     methods: {
-      searchGenes() {
+        getSampleGroupItems() {
+            this.$axios.get("/api/values/samples/" + this.selectedSampleGroup + "?include_count=true").then(res => {
+                let combined = Object.keys(res.data).map(item => [item, res.data[item]]);
+                combined.sort((a,b) => a[1] > b[1]? -1 : 1);
+                let discard = ["","in vitro","undefined"];
+                this.sampleGroupItems = combined.filter((item,i) => i<20 && discard.indexOf(item[0])==-1 &&  !item[0].startsWith("Day")).map(item => item[0]);
+                this.selectedSampleGroupItem = this.sampleGroupItems[0];
+            });
+        },
 
-      }
+        goToSampleGroupToGenes() {
+            // Go to sampletogenes page with selected params. search=true makes it run the search immediately on that page.
+            // Note that boolean value doesn't seem to get passed to the page, so using string.
+            this.$router.push({path: "/genes/sampletogenes", 
+                               query:{selectedSampleGroup:this.selectedSampleGroup, selectedSampleGroupItem:this.selectedSampleGroupItem, search:"true"}});
+        },
+
+        searchGenes() {
+
+        }
+    },
+
+    mounted() {
+        this.getSampleGroupItems();
     }
 }
 </script>
 
 <style>
-.red {
-    color: #EE255F;
-    font-weight: 450;
-}
 </style>

@@ -45,7 +45,7 @@
                 <b-form-select v-model="selectedSortField" :options="sortFields" @change="sortDatasets" class="bg-light small-select ml-2"></b-form-select>
                 <b-dropdown text="tools" class="ml-1 text-right">
                     <b-dropdown-item @click="viewAsTable">View as table</b-dropdown-item>
-                    <b-dropdown-item @click="viewAsTable">Export all API</b-dropdown-item>
+                    <b-dropdown-item @click="showDownloadDataDialog=true">Download datasets</b-dropdown-item>
                 </b-dropdown>
                 </div>
             </b-form>
@@ -94,6 +94,19 @@
     </b-card>
 </b-modal>
 
+<!-- Show download data (modal) -->
+<b-modal v-model="showDownloadDataDialog" title="Download data" hide-footer>
+    <b-card no-body class="border-0">
+        <p>You can download all the data from all the datasets here ({{filteredTotal}} datasets, after filtering has been applied) as one zip file.
+            Note however that this could take a long time for a large number of datasets.
+        </p>
+        <b-button-group>
+            <b-button @click="downloadData" class="mt-2">Download</b-button>
+            <b-button @click="showDownloadDataDialog=false" class="mt-2 ml-2">Close</b-button>
+        </b-button-group>
+    </b-card>
+</b-modal>
+
 <b-sidebar id="sidebar" title="More info on filtering" shadow>
     <div class="px-3 py-2">
         <p>Selecting multiple filter values here selects all datasets which contain at least one of the selected values.
@@ -126,8 +139,11 @@ export default {
                 { text: 'Datasets', to: '/datasets/explore' },
                 { text: 'Filter datasets', active: true }
             ],
+            apiUrl: 'http://127.0.0.1:5000', // set to process.env.BASE_URL when mounted
+            
             loading: true,
             searchString: null,
+            showDownloadDataDialog: false,
 
             datasets: [],   // array of dataset objects returned by api query
             totalRecords: 0,    // total number of datasets available through query, including those not returned in this pagination
@@ -293,12 +309,27 @@ export default {
             this.getDatasets(query);
         },
 
+        downloadData() {
+            this.$axios.get('/api/download?dataset_id=' + this.datasets.map(item => item.dataset_id).join(','),
+                {responseType:'blob'}
+            ).then(res => {
+                let fileURL = window.URL.createObjectURL(new Blob([res.data]));
+                let fileLink = document.createElement('a');
+                fileLink.href = fileURL;
+                fileLink.setAttribute('download', 'Stemformatics_downloaded_datasets.zip');
+                document.body.appendChild(fileLink);
+                fileLink.click();
+                this.showDownloadDataDialog = false;
+            })
+        },
+
         viewAsTable() {
             alert("Coming soon!");
         }
     },
   
     mounted() {
+        this.apiUrl = process.env.BASE_API_URL;
         this.getDatasets(this.$route.query);
         this.$root.$on('show_datasets_filter', data => {
             this.getDatasets(data);

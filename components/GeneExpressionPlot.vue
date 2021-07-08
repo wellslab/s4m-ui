@@ -99,7 +99,7 @@ export default {
                     this.selectedSampleGroup = this.sampleGroups[0];
                     this.setLegends();
 
-                    this.$axios.get("/api/datasets/" + this.dataset_id + "/expression?orient=index&key=cpm&gene_id=" + this.gene_id).then(res3 => {
+                    this.$axios.get("/api/datasets/" + this.dataset_id + "/expression?orient=index&key=cpm&log2=true&gene_id=" + this.gene_id).then(res3 => {
                         this.expressionValues = res3.data;
                         if (this.datasetMetadata.platform_type=='RNASeq') // apply log
                             Object.keys(this.expressionValues[this.gene_id]).forEach(sampleId => {

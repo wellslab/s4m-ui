@@ -1,7 +1,7 @@
 <template>
 <div>
     <!-- Area for controls. -->
-    <div class="text-center mt-2">
+    <div class="text-center mt-1">
         <h3 class="mb-2">Integrated Atlas: <b-link @click="showVersionInfo" v-b-tooltip.hover title="Click to show atlas version">{{displayName}}</b-link>
             <small>
                 <b-link v-b-tooltip.hover.right title="Background and more information" v-b-toggle.sidebar class="ml-2"><b-icon-info-circle></b-icon-info-circle></b-link>
@@ -40,15 +40,16 @@
 
     <!-- Plot and legend area -->
     <b-row class="small justify-content-center" @mousemove="updateMousePosition">
-        <b-col col :md="showTwoPlots? 4: 9" class="overflow-auto text-center">
+        <b-col col :md="showTwoPlots? (showColourByAsDraggable? 6: 4): (selectedPlotBy=='sample type'? 9: 12)" class="overflow-auto text-center">
             <div id="mainPlotDiv"></div>
         </b-col>
-        <b-col v-show="showTwoPlots" col md="4" class="overflow-auto text-center">
+        <b-col v-show="showTwoPlots" col :md="showColourByAsDraggable? 6: 4" class="overflow-auto text-center">
             <div id="rightPlotDiv"></div>
         </b-col>
-        <b-col v-if="showTwoPlots || selectedPlotBy=='sample type' || geneExpression.length==0" md="3">
+        <b-col v-if="!showColourByAsDraggable && (showTwoPlots || selectedPlotBy=='sample type' || geneExpression.length==0)" md="3">
             <!-- Legend area, only shown if selectedPlot is sample type. -->
-            colour by: 
+            colour by: <b-link @click="showColourByAsDraggable=true" v-b-tooltip.hover title="pop out this area as a draggable box">
+                <b-icon-box-arrow-in-up-right></b-icon-box-arrow-in-up-right></b-link>
             <b-form-select v-model="selectedColourBy" :options="colourBy" @change="updateLegends(); updatePlot()" 
                 data-step="1" data-intro="Colour each sample by a sample group here.">
             </b-form-select>
@@ -63,6 +64,33 @@
         </b-col>
     </b-row>
     
+<!-- Legend area can be "popped out" to be a draggable - this should be a component, as it's just a copy and paste
+of the same code for legend area above. -->
+<draggable-div v-show="showColourByAsDraggable" class="border border-light bg-light" style="width:350px; opacity:0.95; left:70%">
+    <div slot="header" class="card-header bg-dark" title="Drag me around by this area">
+        <span class="text-white">Colour by</span>
+        <b-link href="#" @click="showColourByAsDraggable=false" class="float-right font-weight-bold text-white"
+            v-b-tooltip.hover title="Pop this box back into the page">
+            <b-icon-box-arrow-in-down-left></b-icon-box-arrow-in-down-left>
+        </b-link>
+    </div>
+    <div slot="main">
+        <div class="card-body">
+            <b-form-select v-model="selectedColourBy" :options="colourBy" @change="updateLegends(); updatePlot()" 
+                data-step="1" data-intro="Colour each sample by a sample group here.">
+            </b-form-select>
+            <ul class="mt-3 list-unstyled p-0" data-step="2" data-intro="Click on a legend to show/hide samples in the plot.">
+                <li v-for="(legend,i) in legends" :style="sampleTypeBreakPoint[selectedColourBy].indexOf(legend.value)!=-1? 'margin-top:10px' : ''" :key="legend.value">
+                <b-link href="#" @click="updateLegends(i); updatePlot();" style="font-size:13px;">
+                <b-icon-circle-fill v-if="uploadData.projectedSampleIds.indexOf(legend.sampleIds[0])==-1" :style="{'color': legend.colour}" scale="0.6"></b-icon-circle-fill>
+                <b-icon-diamond v-if="uploadData.projectedSampleIds.indexOf(legend.sampleIds[0])!=-1" :style="{'color': legend.colour}" scale="0.6"></b-icon-diamond>
+                <span :style="legend.visible? 'color:black' : 'color:#a7a7a7'">{{legend.value}} ({{legend.number}})</span>
+                </b-link>
+            </li></ul>
+        </div>
+    </div>
+</draggable-div>
+
 <b-sidebar id="sidebar" title="Help and more info" shadow>
     <div class="px-3 py-2">
         <p>Stemformatics integrated atlas provides a way to visualise multiple datasets together on a single PCA plot.
@@ -243,6 +271,7 @@ export default {
 
             colourBy: [],   // ["Cell Type", "Sample Source", ...]
             selectedColourBy: "Cell Type",  // overwrite at mounted()
+            showColourByAsDraggable: false,
 
             sampleTypeColoursOriginal: {},    // colours may change, so we keep original colours stored here
             sampleTypeColours: {},    // {"Sample Source":{"in vivo":"#8b8b00",...}, ...}
@@ -572,6 +601,7 @@ export default {
                     div.on('plotly_click', function(data) { self.handlePlotlyClick(data, "sample type") });
                 } else  // there's already a plot in rightPlotDiv, so just update it
                     Plotly.react(div, self.traces(), self.layout());
+                self.showColourByAsDraggable = true;
             } else {
                 if (div!=null && div.layout!=null)   // showing only one plot but rightPlotDiv contains a plot, so purge it
                     Plotly.purge(div);
