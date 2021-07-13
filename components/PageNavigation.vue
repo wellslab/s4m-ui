@@ -32,7 +32,7 @@
         <b-dropdown text="Genes" variant="dark" class="ml-4">
           <b-dropdown-item to="/genes/">Discover</b-dropdown-item>
           <b-dropdown-item to="/genes/sampletogenes">From sample to genes</b-dropdown-item>
-          <b-dropdown-item to="/genes/collections">Gene set collections</b-dropdown-item>
+          <b-dropdown-item>Gene set collections</b-dropdown-item>
         </b-dropdown>
       </b-navbar-nav>
     </b-collapse>

@@ -38,13 +38,12 @@
 
         <b-card no-body img-src="/img/Genes_GenesetCollection.png" img-alt="Explore gene set collections" img-top>
             <b-card-body class="border-top border-gray-200">
-                <h4><b-link>Gene set collections</b-link></h4>
+                <h4><b-link to="/genes/genesetcollections">Gene set collections</b-link></h4>
                 <b-card-text>
                     Explore our pre-defined gene sets for high expression in particular cell types.
                 </b-card-text>
-                <ul>
-                    <li><b-link>Genes highly expressed in monocytes</b-link></li>
-                </ul>
+                <b-form-select v-model="selectedGeneset" :options="genesets" size="sm"></b-form-select>
+                <b-button @click="showGenesets" class="float-right align-self-end mt-2">show</b-button>
             </b-card-body>
         </b-card>
     </b-card-group>
@@ -66,6 +65,8 @@ export default {
             selectedSampleGroup: 'cell_type',
             sampleGroupItems: [],
             selectedSampleGroupItem: 'blood',
+            genesets: [],
+            selectedGeneset: ''
         }
     },
 
@@ -89,11 +90,19 @@ export default {
 
         searchGenes() {
 
+        },
+
+        showGenesets() {
+            this.$router.push({path: "/genes/genesetcollections", query:{selectedGeneset: this.selectedGeneset}});
         }
     },
 
     mounted() {
         this.getSampleGroupItems();
+        this.$axios.get("/api/genes/geneset-collection").then(res => {
+            this.genesets = res.data;
+            this.selectedGeneset = this.genesets[0];
+        });
     }
 }
 </script>

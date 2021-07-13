@@ -40,7 +40,7 @@
 
     <!-- Plot and legend area -->
     <b-row class="small justify-content-center" @mousemove="updateMousePosition">
-        <b-col col :md="showTwoPlots? (showColourByAsDraggable? 6: 4): (selectedPlotBy=='sample type'? 9: 12)" class="overflow-auto text-center">
+        <b-col col :md="showTwoPlots? (showColourByAsDraggable? 6: 4): (selectedPlotBy=='sample type' || geneExpression.length==0? 9: 12)" class="overflow-auto text-center">
             <div id="mainPlotDiv"></div>
         </b-col>
         <b-col v-show="showTwoPlots" col :md="showColourByAsDraggable? 6: 4" class="overflow-auto text-center">
@@ -992,5 +992,8 @@ div.sampleInfo {
 }
 div.sampleInfo li {
     margin-top: 5px;
+}
+.js-plotly-plot .plotly .user-select-none {
+    margin: auto;
 }
 </style>

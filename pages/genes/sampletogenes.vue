@@ -89,9 +89,9 @@ export default {
             breadcrumb: [
                 { text: 'Home', to: '/' },
                 { text: 'Genes', to: '/genes' },
-                { text: 'Gene set collections', active: true }
+                { text: 'Sample group to genes', active: true }
             ],
-            sampleGroups: ["cell_type","tissue_of_origin",],
+            sampleGroups: ["cell_type","tissue_of_origin"],
             selectedSampleGroup: 'cell_type',
             sampleGroupItems: [],
             selectedSampleGroupItem: 'blood',
