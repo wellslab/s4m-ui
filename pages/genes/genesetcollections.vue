@@ -31,7 +31,8 @@
         <b-col class="px-0 ml-1">
             <b-card no-body>
                 <b-card-header class="text-center">
-                    Expression of {{selectedGeneset}} in <b-link :to="'/datasets/view?id=' + selectedDataset.datasetId" target="_blank">{{selectedDataset.displayName}}</b-link>
+                    Expression of <b-link :href="'https://www.gsea-msigdb.org/gsea/msigdb/cards/' + selectedGeneset + '.html'" target="_blank">
+                    {{selectedGeneset}}</b-link> in <b-link :to="'/datasets/view?id=' + selectedDataset.datasetId" target="_blank">{{selectedDataset.displayName}}</b-link>
                 </b-card-header>
                 <b-card-body>
                     <div id="mainPlotDiv"></div>
@@ -42,13 +43,14 @@
 
     <b-sidebar id="sidebar" title="Help and more info" shadow>
         <div class="px-3 py-2">
-            <p>This page shows genes with high expression in selected sample group, such as cell_type=monocyte. 
-            On the far left is the list of genes with this high expression pattern. The number in the brackets shows the number of
-                datasets in which this gene was found to have high expression in this sample group. Higher number here implies that 
-                this gene is found to have high expression in the selected sample group consistently across more datasets.
+            <p>This page is designed to highlight interesting expression patterns for sets of genes
+                in datasets where these genes produce varied expression across different cell types.
+                Simply select the geneset, which will show a list of datasets which have been scored
+                and select a dataset to see a heatmap of that geneset in that dataset.
             </p>
-            <p>The second column from the left is the list of datasets in which the selected gene show high expression. Simply select gene-dataset
-                combination to show the expression profile of that gene in that dataset.
+            <p>The score for each dataset is shown and datasets are sorted on this score. 
+                It is equal to the variance of the mean of the samples in cell types, after
+                the mean of the gene set is first calculated.
             </p>
         </div>
     </b-sidebar>
