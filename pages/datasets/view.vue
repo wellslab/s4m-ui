@@ -4,7 +4,7 @@
 <b-container>
     <div class="text-center">
     <h3 class="my-3">
-        <b-link to="/datasets/search" v-b-tooltip.hover.bottom title="Use the search page under Datasets menu to change dataset">
+        <b-link to="/datasets/collections" v-b-tooltip.hover.bottom title="Use the search function from Dataset collections menu to change dataset">
             {{datasetMetadata.displayName}}
         </b-link>
     </h3>
@@ -83,21 +83,76 @@
                 <div v-if="genes.loading"><b-spinner label="Loading..." variant="secondary" style="width:1.5rem; height:1.5rem;"></b-spinner></div>
                 <div v-else>gene:</div>
                 <b-form-input v-model="genes.selectedGeneSymbol" list="possible-genes-datalist" class="ml-2"
-                    @keyup="getPossibleGenes" @keyup.enter="plotGene" placeholder="[gene symbol]"></b-form-input>
+                    @keyup="getPossibleGenes" @keyup.enter="plotGene" placeholder="[gene symbol]" size="sm"></b-form-input>
                 <b-form-datalist id="possible-genes-datalist">
                     <option v-for="gene in genes.possibleGenes" :key="gene.gene_id">{{gene.gene_name}}</option>
                 </b-form-datalist>
                 <!-- @keyup.enter does not work unless this dummy input is added because hitting enter submits the form with just one input -->
                 <b-form-input v-show="false"></b-form-input>
-                <b-button variant="dark" @click="plotGene">show</b-button>
-                <b-form-select v-if="selectedGeneId!=null" v-model="genes_selectedPlotType" class="bg-light small-select ml-2">
-                    <b-form-select-option value="box">box plot</b-form-select-option>
-                    <b-form-select-option value="violin">violin plot</b-form-select-option>
-                </b-form-select>
-                <b-form-checkbox v-if="selectedGeneId!=null" v-model="genes_showPoints" class="ml-1">show points</b-form-checkbox>
+                <b-button variant="dark" @click="plotGene" size="sm">show</b-button>
+                <b-dropdown right text="functions" class="col-md-2 px-0 m-1 text-left" variant="secondary" size="sm">
+                    <b-dropdown-item v-if="genes_selectedPlotType=='violin'" @click="genes_selectedPlotType='box'">change to box plot</b-dropdown-item>
+                    <b-dropdown-item v-if="genes_selectedPlotType=='box'" @click="genes_selectedPlotType='violin'">change to violin plot</b-dropdown-item>
+                    <b-dropdown-item v-if="!genes_showPoints" @click="genes_showPoints=true">show data points</b-dropdown-item>
+                    <b-dropdown-item v-if="genes_showPoints" @click="genes_showPoints=false">hide data points</b-dropdown-item>
+                    <b-dropdown-item @click="genes_showSimilarGenesDialog=true">find similar genes...</b-dropdown-item>
+                </b-dropdown>
             </b-form>
             <GeneExpressionPlot v-show="selectedGeneId!=null" ref="geneExpressionPlot" :gene_id="selectedGeneId" :dataset_id="datasetId" 
                 :plot_type="genes_selectedPlotType" :show_points="genes_showPoints"/>
+
+            <!-- similar genes (modal) -->
+            <b-modal v-model="genes_showSimilarGenesDialog" title="Find similar genes" hide-footer>
+                <p>You can search for genes with similar expression profile as this gene in this dataset.
+                    Pearson correlation will be used as the score, a list of genes will be shown where you can 
+                    view expression profile for each gene.
+                </p>
+                <p>Selected gene: <b>{{selectedGeneName}}</b></p>
+                <b-button @click="genes_FindSimilarGenes" class="mt-2">Start</b-button>
+                <b-button v-if="genes_correlatedGenes.length>0" @click="genes_showSimilarGenesDialog=false; genes_showHeatmap=true" class="mt-2">Show previous result</b-button>
+                <b-spinner v-if="genes.loading" label="Calculating..." variant="secondary" class="ml-2" style="width:1.5rem; height:1.5rem;"></b-spinner>
+            </b-modal>
+
+            <!-- heatmap (draggable) -->
+            <draggable-div v-show="genes_showHeatmap" class="border border-dark bg-light" style="width:900px; opacity:0.95;">
+                <div slot="header" class="card-header bg-dark" title="Drag me around by this area">
+                    <span class="text-white">Top 30 most correlated genes to <b>{{genes_selectedGeneNameInHeatmap}}</b></span>
+                    <b-link href="#" @click="genes_showHeatmap=false" class="float-right font-weight-bold text-white">X</b-link>
+                </div>
+                <div slot="main">
+                    <div class="card-body py-0">
+                        <b-row class="mt-2">
+                            <b-col class="px-0" md="3">
+                                <b-card no-body :header="'Genes (' + genes_correlatedGenes.length + ')'">
+                                    <div style="max-height:500px; overflow-y:auto">
+                                        <b-list-group flush>
+                                            <b-button squared v-for="gene in genes_correlatedGenes" :key="gene.geneId" 
+                                                :pressed="genes_selectedCorrelatedGene.geneId==gene.geneId"  @click="genes_selectedCorrelatedGene=gene"
+                                                class="list-group-item list-group-item-action d-flex justify-content-between" href="#" 
+                                                style="font-size:smaller">
+                                                {{gene.geneSymbol}} ({{Math.round(100*gene.score)/100}})
+                                                <b-icon-chevron-right scale="0.8"></b-icon-chevron-right>
+                                            </b-button>
+                                        </b-list-group>
+                                    </div>
+                                </b-card>
+                            </b-col>
+                            <b-col class="px-0 ml-1">
+                                <b-card no-body>
+                                    <b-card-header class="text-center">
+                                        Expression of <b-link :href="'https://ensembl.org/Gene/Summary?g=' + genes_selectedCorrelatedGene.geneId" 
+                                            target="_blank" v-b-tooltip.hover :title="genes_selectedCorrelatedGene.geneDescription + ' (Click to go to Ensembl site)'">
+                                            {{genes_selectedCorrelatedGene.geneSymbol}}</b-link>
+                                    </b-card-header>
+                                    <b-card-body>
+                                        <GeneExpressionPlot :gene_id="genes_selectedCorrelatedGene.geneId" :dataset_id="datasetId" plot-div-id="genePlotDiv2"/>
+                                    </b-card-body>
+                                </b-card>
+                            </b-col>
+                        </b-row>
+                    </div>
+                </div>
+            </draggable-div>
         </b-tab>
 
         <b-tab title="Download">
@@ -176,9 +231,14 @@ export default {
             // genes - some of these fields need to be reactive, in which case best to not be inside other objects
             selectedGeneId: null,
             selectedGeneName: '',
-            genes_selectedPlotType:'box',
-            genes_showPoints:true,
-            genes: {selectedGeneSymbol:'',
+            genes_selectedPlotType: 'box',
+            genes_showPoints: true,
+            genes_showSimilarGenesDialog: false,
+            genes_correlatedGenes: [],
+            genes_showHeatmap: false,
+            genes_selectedCorrelatedGene:{},
+            genes_selectedGeneNameInHeatmap: '',
+            genes: {selectedGeneSymbol:'',  // temporarily store what user has selected
                     possibleGenes:[],
                     expressionValues:{},
                     loading:false,
@@ -262,12 +322,12 @@ export default {
             // selecting from the dropdown. We'll still support fetching the expression for this.
             this.genes = {...this.genes};
             if (gene.length>0) {
-                this.genes.selectedGene = gene[0];
                 this.selectedGeneId = gene[0].gene_id;
+                this.selectedGeneName = gene[0].gene_name;
             }
             else {
                 this.selectedGeneId = this.genes.selectedGeneSymbol;
-                this.genes.selectedGeneName = this.genes.selectedGeneSymbol;
+                this.selectedGeneName = this.genes.selectedGeneSymbol;
             }
         },
 
@@ -286,6 +346,33 @@ export default {
             // .catch(error => {
             //     alert("Could not fetch matching expression values for " + this.genes.selectedGeneSymbol);
             // });
+        },
+
+        genes_FindSimilarGenes() {
+            this.genes.loading = true;
+            this.$axios.get('/api/datasets/' + this.datasetId + '/correlated-genes?gene_id=' + this.selectedGeneId).then(res => {
+                let geneIds = Object.keys(res.data);
+                // Get gene symbols and descriptions from mygene
+                this.$axios.post("/mygene/v3/gene", 'fields=symbol,summary,ensembl.gene&ids=' + geneIds.join(','), {'headers': {'Content-Type':'application/x-www-form-urlencoded'}}
+                ).then(result => {
+                    let geneSymbolFromGeneId = {};
+                    let geneDescriptionFromGeneId = {};
+                    result.data.forEach(item => {
+                        geneSymbolFromGeneId[item['query']] = 'symbol' in item? item['symbol'] : item['query'];
+                        geneDescriptionFromGeneId[item['query']] = 'summary' in item? item['summary'] : item['query'];
+                        });
+                    this.genes_correlatedGenes = geneIds.map(item => (
+                        {geneId: item, geneSymbol: geneSymbolFromGeneId[item], geneDescription: geneDescriptionFromGeneId[item], score: res.data[item]}
+                    ));
+                    this.genes_selectedGeneNameInHeatmap = this.selectedGeneName;
+                    this.genes_selectedCorrelatedGene = this.genes_correlatedGenes[0];
+                    this.genes_showHeatmap = true;
+                });
+            })
+            .catch().then(() => {
+                this.genes.loading = false;
+                this.genes_showSimilarGenesDialog = false;
+            });
         },
 
         // ------------ Samples tab ---------------

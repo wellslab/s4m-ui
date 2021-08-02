@@ -14,11 +14,11 @@
 
     <nav v-if="sidebarType=='datasets'">
         <b-list-group>
-        <b-list-group-item to="/datasets/explore" :class="{current: activeItem=='explore'}">Explore datasets</b-list-group-item>
-        <b-list-group-item to="/datasets/search" :class="{current: activeItem=='select'}">Search and filter</b-list-group-item>
+        <b-list-group-item to="/datasets/explore" :class="{current: activeItem=='explore'}">Explore data</b-list-group-item>
+        <b-list-group-item to="/datasets/collections" :class="{current: activeItem=='collections'}">View collections</b-list-group-item>
+        <b-list-group-item to="/datasets/filter" :class="{current: activeItem=='filter'}">Filter datasets</b-list-group-item>
         <b-list-group-item to="/datasets/view" :class="{current: activeItem=='view'}">View a dataset</b-list-group-item>
         <b-list-group-item to="/datasets/api" :class="{current: activeItem=='api'}">API access</b-list-group-item>
-        <b-list-group-item to="/datasets/annotation" :class="{current: activeItem=='annotation'}">About sample annotation</b-list-group-item>
         </b-list-group>
     </nav>
 

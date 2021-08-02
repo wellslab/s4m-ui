@@ -3,14 +3,13 @@
 <Breadcrumb :breadcrumb="breadcrumb"/>
 <b-container class="pt-4">
     <div class="col-md-8 text-center mx-auto">
-    <h3>Discover genes and pathways</h3>
-    <p class="my-3">Find genes and pathways of interest here. Start from samples to find
-        highly expressed genes, or start from genes to find highly expressed samples, or explore our pre-defined
-        collection of gene sets.
+    <h3>Discover genes based on expression</h3>
+    <p class="my-3">Find genes of interest across multiple datasets here.<br/> Start from samples to find
+        highly expressed genes, or start from genes to find highly expressed samples.
     </p>
     </div>
 
-    <b-card-group deck>
+    <b-card-group deck class="col-md-8 mx-auto">
         <b-card no-body img-src="/img/Genes_SamplesToGenes.png" img-alt="Find genes from samples" img-top>
             <b-card-body class="border-top border-gray-200">
                 <h4><b-link to="/genes/sampletogenes">Sample group to genes</b-link></h4>
@@ -25,18 +24,19 @@
 
         <b-card no-body img-src="/img/Genes_GeneToSamples.png" img-alt="Find samples from gene" img-top>
             <b-card-body class="border-top border-gray-200">
-                <h4><b-link>Genes to sample groups</b-link></h4>
+                <h4><b-link to="/genes/genetosamples">Gene to sample groups</b-link></h4>
                 <b-card-text>
-                    Start from a gene interest and find highly expressed samples. 
+                    Start from a gene of interest and find highly expressed samples across datasets.
                 </b-card-text>
+                <br/>
                 <b-form-group description="start typing then select from the list of genes">
-                    <b-form-input id="geneSearchInput" placeholder="coming soon" @keyup.enter="searchGenes" size="sm" disabled></b-form-input>
+                    <b-form-input id="geneSearchInput" placeholder="eg. GATA1" @keyup.enter="searchGenes" size="sm"></b-form-input>
                 </b-form-group>
                 <b-button @click="searchGenes" class="float-right align-self-end">search</b-button>
             </b-card-body>
         </b-card>
 
-        <b-card no-body img-src="/img/Genes_GenesetCollection.png" img-alt="Explore gene set collections" img-top>
+        <b-card v-if="false" no-body img-src="/img/Genes_GenesetCollection.png" img-alt="Explore gene set collections" img-top>
             <b-card-body class="border-top border-gray-200">
                 <h4><b-link to="/genes/genesetcollections">Gene set collections</b-link></h4>
                 <b-card-text>

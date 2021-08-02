@@ -22,7 +22,7 @@
         </p>
         <b>Project manager and developer: Jarny Choi</b>
         <p>Jarny has been involved in Stemformatics from its early days and has extensive experience in developing systems
-          which enable genomics data easy to access and use. He is the main creator of the new Stemformatics website, playing many
+          that makes genomics data easy to access and use. He is the main creator of the new Stemformatics website, playing many
           roles including bioinformatician, developer and system administrator within the project.
         </p>
         <b>Data processing and annotation: Suzy Butcher</b>
@@ -32,9 +32,10 @@
         </p>
         <b>Other contributors</b>
         <p>Many of the other members of the lab make significant contributions towards Stemformatics, including <b>Paul Angel</b>
-        who develops integrated atlases, <b>Zahra Elahi</b> who has built the <b-link to='/atlas/dc'>dc atlas</b-link>, and
-        <b>Nadia Rajab</b> who is the driving force behind the <b-link to='/atlas/myeloid'>myeloid atlas</b-link>.
-        Yidi Deng has analysed projections of single cell data onto the atlases, and Isaac Virshup has analysed data.
+        who develops integrated atlases, <b>Zahra Elahi</b> who has built the <b-link to='/atlas/dc'>DC Atlas</b-link>, and
+        <b>Nadia Rajab</b> who is the driving force behind the <b-link to='/atlas/myeloid'>Myeloid Atlas</b-link>.
+        Yidi Deng develops methods to project and integrate single cell data within the atlas project, and Isaac Virshup analyses data
+        and writes software for large data manipulation.
         </p>
         <h5>Former team members</h5>
         <p>A huge range of people from a diverse range of backgrounds have worked on our team in the past, from undergraudate
@@ -53,9 +54,9 @@
           internationally, and these continue to drive the project forward. Particular thanks go to Kim-Anh Le Cao at the 
           University of Melbourne and Karen Keeshan, Joana Silvestre and Mhairi Copland from the University of Glasgow.
         </p>
-        <p>A recent collaboration with <b-link href="https://mdap.unimelb.edu.au/" target="_blank">Melbourne Data Analytics Platform</b-link>
-        contributed towards a better annotation data structure and ontology based choices, as well as ideas for visualisations.
-        Priyanka Pillai, Bobbie Shaban, Noel Faux, Aleks Michalewicz and Mar Quiroga were on this team.
+        <p>We collaborated recently with a team from <b-link href="https://mdap.unimelb.edu.au/" target="_blank">Melbourne Data Analytics Platform</b-link>,
+        whose members included Priyanka Pillai, Bobbie Shaban, Noel Faux, Aleks Michalewicz and Mar Quiroga. This collaboration produced 
+        a better annotation structure that incorporated ontology-based choices for the hosted datasets, and improved ways to visualise the data.
         </p>
       </b-col>
     </b-row>

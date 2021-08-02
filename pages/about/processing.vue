@@ -23,10 +23,9 @@
             </p>
 
             <h3>About sample annotations</h3>
-            <p>All Stemformatics datasets have been curated to ensure quality. One of the most challenging aspect of curation
-                process involves annotating the samples which originate from the datasets.
-                In Stemformatics, domain specific knowledge has been applied to the data to highlight key similarities and 
-                differences in the context of the biological questions being asked.
+            <p>All Stemformatics datasets have been curated to ensure quality. One of the most challenging aspects of curation
+                process involves annotating the samples, and we do a lot of this work manually applying domain specific knowledge.
+                This allows us to highlight key similarities and differences in the context of the biological questions being asked.
             </p>            
       </b-col>
     </b-row>

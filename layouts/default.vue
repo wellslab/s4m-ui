@@ -37,19 +37,19 @@ export default {
     }
   },
 
-  head() {
-    return {
-      script: [
-        {
-          src: 'https://www.googletagmanager.com/gtag/js?id=G-91J58XLQPZ',
-          async: true,
-        },
-        {
-          src: '/google_anlaytics.js',
-        },
-      ],
-    }
-  },
+  // head() {
+  //   return {
+  //     script: [
+  //       {
+  //         src: 'https://www.googletagmanager.com/gtag/js?id=G-91J58XLQPZ',
+  //         async: true,
+  //       },
+  //       {
+  //         src: '/google_anlaytics.js',
+  //       },
+  //     ],
+  //   }
+  // },
 
   methods: {
   },

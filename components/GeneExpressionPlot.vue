@@ -1,7 +1,7 @@
 <template>
 <b-row class="small justify-content-center">
     <b-col col md="9" class="overflow-auto text-center">
-        <div id="genePlotDiv"></div>
+        <div :id="plotDivId"></div>
     </b-col>
     <b-col class="text-left">
         <!-- Legend area. -->
@@ -31,10 +31,14 @@ export default {
     },
     mixins: [data_functions],
 
+    // Note: sometimes this component may be used multiple times on the same page, in which case the parent should pass on different
+    // plotDivId, otherwise updating the plot in one component will simply overwrite the div in another component.
     props: {dataset_id: {}, // could be string or number
             gene_id: String,
             plot_type: {default:'box', type:String},
-            show_points: {default:true, type:Boolean}},
+            show_points: {default:true, type:Boolean},
+            plotDivId: {default:'genePlotDiv', type:String},
+            },
 
     data() {
         return {
@@ -128,16 +132,16 @@ export default {
                 });
                 const title = this.datasetMetadata.platform_type=='RNASeq'? 'log2(cpm+1)' : 'log2';
                 const layout = {yaxis: {title: title}, showlegend:false};
-                Plotly.newPlot('genePlotDiv', traces, layout);
+                Plotly.newPlot(this.plotDivId, traces, layout);
             }
             else if (selectedLegend=='restyle') {
                 const params = this.plot_type=='box'? {boxpoints:this.show_points? 'all':false} : {points: this.show_points? 'all':false};
                 params['type'] = this.plot_type;
-                Plotly.restyle('genePlotDiv', params);
+                Plotly.restyle(this.plotDivId, params);
             }
             else {  // selectedLegend comes from user click - toggle visibility of the matching trace after working out its index
                 const index = this.legends[this.selectedSampleGroup].map(legend => legend.value).indexOf(selectedLegend.value);
-                Plotly.restyle('genePlotDiv',{visible: !selectedLegend.visible}, index);
+                Plotly.restyle(this.plotDivId,{visible: !selectedLegend.visible}, index);
                 this.legends[this.selectedSampleGroup][index].visible = !selectedLegend.visible;
             }
             this.visibleLegends = this.legends[this.selectedSampleGroup].filter(item => item.visible).map(item => item.value);

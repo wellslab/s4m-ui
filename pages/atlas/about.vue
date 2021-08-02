@@ -16,10 +16,16 @@
         <h3>About the Stemformatics integrated atlases</h3>
         <div v-if="activeItem=='Overview'">
           <h5>Overview</h5>
-            <p>The Stemformatics integrated atlases provide interactive pages based on PCA (principal components anaysis) 
-              plots, compiled from hundreds of samples and tens of datasets (microarray and buk RNA-seq) which reside within Stemformatics.
-              In the myeloid atlas, the samples represent human monocyte, dendritic cell and macrophage biology, 
-              while the blood atlas contains more broad range of human blood cells.
+            <p>The Stemformatics integrated atlases provide interactive pages based on 
+              <b-link href="https://en.wikipedia.org/wiki/Principal_component_analysis" target="_blank">
+            PCA (principal components anaysis)</b-link> plots, compiled from hundreds of samples and tens of datasets (microarray and bulk RNA-seq).
+            Currently 3 atlases are hosted at Stemformatics, each focused on a particular biological system:
+            <ul class="mt-2">
+              <li><b-link to='/atlas/myeloid'>Myeloid Atlas</b-link>: the samples in this atlas represent human monocyte, 
+              dendritic cell and macrophage biology</li>
+              <li><b-link to='/atlas/blood'>Blood Atlas</b-link>: this atlas contains a more broad range of human blood cells</li>
+              <li><b-link to='/atlas/dc'>DC Atlas</b-link>: contains samples from human dendritic cells and monocytes</li>
+            </ul>
             </p>
             <div class='text-center'><b-img src="/img/AtlasSummaryWithIcons.png"></b-img></div>
             <p class='mt-2'>Read more about the Myeloid atlas at <b-link href="https://doi.org/10.1016/j.stemcr.2021.04.010" target="_blank">Stem Cell Reports</b-link> and
@@ -31,7 +37,7 @@
             <p>In brief, the data integration here has been done by first selecting appropriate samples across many curated datasets of
             relevance, then performing an evaluation of each gene's variance on batch and filtering out genes where this is large.
             This method achieves data integration across multiple platforms and data types quite robustly, as long as cell types are represented
-            well across multiple batches. Rank normalisation must be done prior to gene filtering in order to use same scale of values,
+            well across multiple batches. We normalise rank prior to gene filtering in order to use the same scale of values,
             but no other value transformation takes place, at the expense of retaining only a subset of all genes. More details 
             on the method used are available at <b-link href="https://doi.org/10.1371/journal.pcbi.1008219" target="_blank">Angel, et. al. (PLOS Comp Biology)</b-link>.</p>
             <div class='text-center'><b-img src="/img/AtlasMethodSummary.png"></b-img></div>

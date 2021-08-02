@@ -20,6 +20,7 @@ $ npm install nuxt
 $ npm install bootstrap-vue
 $ npm add @nuxtjs/axios
 $ npm add @nuxtjs/auth
+$ npm add vue-gtag
 $ npm install pm2 -g  # see https://nuxtjs.org/docs/2.x/deployment/deployment-pm2/
 $ npm install @nuxtjs/google-analytics  # see https://google-analytics.nuxtjs.org/setup
 $ npm install @nuxtjs/dotenv

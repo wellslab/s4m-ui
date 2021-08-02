@@ -19,6 +19,7 @@ export default {
   // Plugins to run before rendering page (https://go.nuxtjs.dev/config-plugins)
   plugins: [
     //{ src: '~/plugins/plotly.js', ssr: false }
+    {src: '~/plugins/vue-gtag',}
   ],
 
   // Auto import components (https://go.nuxtjs.dev/config-components)
@@ -84,11 +85,11 @@ export default {
     },
   },
   
-  publicRuntimeConfig: {
-    googleAnalytics: {
-      id: process.env.GOOGLE_ANALYTICS_ID
-    }
-  },
+  // publicRuntimeConfig: {
+  //   googleAnalytics: {
+  //     id: process.env.GOOGLE_ANALYTICS_ID
+  //   }
+  // },
   
   // Build Configuration (https://go.nuxtjs.dev/config-build)
   build: {
