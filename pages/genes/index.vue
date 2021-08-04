@@ -99,10 +99,6 @@ export default {
 
     mounted() {
         this.getSampleGroupItems();
-        this.$axios.get("/api/genes/geneset-collection").then(res => {
-            this.genesets = res.data;
-            this.selectedGeneset = this.genesets[0];
-        });
     }
 }
 </script>
