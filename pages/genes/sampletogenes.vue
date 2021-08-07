@@ -19,7 +19,7 @@
         <b-spinner v-if="loading" label="Loading..." variant="secondary" style="width:1.5rem; height:1.5rem;" class="ml-2"></b-spinner>
     </b-form>
 
-    <b-row class="mt-2">
+    <b-row v-show="genes.length>0" class="mt-2">
         <b-col class="px-0" md="2">
             <b-card no-body :header="'Genes (' + genes.length + ')'">
                 <div style="max-height:500px; overflow-y:auto">
@@ -63,7 +63,7 @@
 
     <b-sidebar id="sidebar" title="Help and more info" shadow>
         <div class="px-3 py-2">
-            <p>This page shows genes with high expression in selected sample group, such as cell_type=monocyte. 
+            <p>This page shows genes with high expression for a selected sample group, such as cell_type=monocyte. 
             On the far left is the list of genes with this high expression pattern. The number in the brackets shows the number of
                 datasets in which this gene was found to have high expression in this sample group. Higher number here implies that 
                 this gene is found to have high expression in the selected sample group consistently across more datasets.
@@ -122,6 +122,8 @@ export default {
         },
 
         gotoReactome() {
+            if (this.genes.length==0) return;
+            
             this.loading = true;
             let geneIds = this.genes.map(item => item.geneId);
             this.$axios.post("/reactome/AnalysisService/identifiers/?interactors=false&pageSize=20&page=1&sortBy=ENTITIES_PVALUE&order=ASC&resource=TOTAL&pValue=1&includeDisease=true", 

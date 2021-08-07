@@ -33,12 +33,13 @@ export default {
 
     // Note: sometimes this component may be used multiple times on the same page, in which case the parent should pass on different
     // plotDivId, otherwise updating the plot in one component will simply overwrite the div in another component.
-    props: {dataset_id: {}, // could be string or number
-            gene_id: String,
-            plot_type: {default:'box', type:String},
-            show_points: {default:true, type:Boolean},
-            plotDivId: {default:'genePlotDiv', type:String},
-            },
+    props: {
+        dataset_id: {}, // could be string or number
+        gene_id: String,
+        plot_type: {default:'box', type:String},
+        show_points: {default:true, type:Boolean},
+        plotDivId: {default:'genePlotDiv', type:String},
+    },
 
     data() {
         return {

@@ -80,16 +80,10 @@
         <b-tab title="Genes" class="text-center">
             Look up expression profile for a gene in this dataset. You can also copy and paste Ensembl gene id here.
             <b-form inline class="justify-content-center mt-3">
-                <div v-if="genes.loading"><b-spinner label="Loading..." variant="secondary" style="width:1.5rem; height:1.5rem;"></b-spinner></div>
+                <div v-if="genes_loading"><b-spinner label="Loading..." variant="secondary" style="width:1.5rem; height:1.5rem;"></b-spinner></div>
                 <div v-else>gene:</div>
-                <b-form-input v-model="genes.selectedGeneSymbol" list="possible-genes-datalist" class="ml-2"
-                    @keyup="getPossibleGenes" @keyup.enter="plotGene" placeholder="[gene symbol]" size="sm"></b-form-input>
-                <b-form-datalist id="possible-genes-datalist">
-                    <option v-for="gene in genes.possibleGenes" :key="gene.gene_id">{{gene.gene_name}}</option>
-                </b-form-datalist>
-                <!-- @keyup.enter does not work unless this dummy input is added because hitting enter submits the form with just one input -->
-                <b-form-input v-show="false"></b-form-input>
-                <b-button variant="dark" @click="plotGene" size="sm">show</b-button>
+                <GeneSearch form-group-description="" @gene-selected="updateSelectedGene" @keyup-enter="updateSelectedGene" size="sm" class="ml-1"></GeneSearch>
+                <b-button variant="dark" @click="updateSelectedGene" size="sm">show</b-button>
                 <b-dropdown right text="functions" class="col-md-2 px-0 m-1 text-left" variant="secondary" size="sm">
                     <b-dropdown-item v-if="genes_selectedPlotType=='violin'" @click="genes_selectedPlotType='box'">change to box plot</b-dropdown-item>
                     <b-dropdown-item v-if="genes_selectedPlotType=='box'" @click="genes_selectedPlotType='violin'">change to violin plot</b-dropdown-item>
@@ -98,7 +92,7 @@
                     <b-dropdown-item @click="genes_showSimilarGenesDialog=true">find similar genes...</b-dropdown-item>
                 </b-dropdown>
             </b-form>
-            <GeneExpressionPlot v-show="selectedGeneId!=null" ref="geneExpressionPlot" :gene_id="selectedGeneId" :dataset_id="datasetId" 
+            <GeneExpressionPlot v-show="genes_selectedGene!=null" ref="geneExpressionPlot" :gene_id="genes_selectedGene.geneId" :dataset_id="datasetId" 
                 :plot_type="genes_selectedPlotType" :show_points="genes_showPoints"/>
 
             <!-- similar genes (modal) -->
@@ -107,10 +101,10 @@
                     Pearson correlation will be used as the score, a list of genes will be shown where you can 
                     view expression profile for each gene.
                 </p>
-                <p>Selected gene: <b>{{selectedGeneName}}</b></p>
+                <p>Selected gene: <b>{{genes_selectedGene.geneSymbol}}</b></p>
                 <b-button @click="genes_FindSimilarGenes" class="mt-2">Start</b-button>
                 <b-button v-if="genes_correlatedGenes.length>0" @click="genes_showSimilarGenesDialog=false; genes_showHeatmap=true" class="mt-2">Show previous result</b-button>
-                <b-spinner v-if="genes.loading" label="Calculating..." variant="secondary" class="ml-2" style="width:1.5rem; height:1.5rem;"></b-spinner>
+                <b-spinner v-if="genes_loading" label="Calculating..." variant="secondary" class="ml-2" style="width:1.5rem; height:1.5rem;"></b-spinner>
             </b-modal>
 
             <!-- heatmap (draggable) -->
@@ -173,7 +167,7 @@
             </ul>
         </b-tab>
 
-        <b-tab title="History">
+        <b-tab v-if="false" title="History">
             <p>Description of how this dataset was processed and key QC decisions made: coming soon...</p>
         </b-tab>
     </b-tabs>
@@ -217,7 +211,7 @@ export default {
                   currentLegends:[],    // vue will update dome when this changes - so this is a copy of legeneds[pca.selectedSampleGroup]
                   showScreePlot: false,
                   loading: false,
-                  },
+            },
 
             // dataset metadata
             datasetMetadata: {},
@@ -228,9 +222,8 @@ export default {
             samples: [],    // [{'sample_id':'7283_GSM1977399', 'cell_type':'', ...}, ...]
             sampleGroups: [],   // ["sample_type", "age", ...]
 
-            // genes - some of these fields need to be reactive, in which case best to not be inside other objects
-            selectedGeneId: null,
-            selectedGeneName: '',
+            // genes - most of these fields need to be reactive, in which case best to not be inside other objects
+            genes_selectedGene: {},
             genes_selectedPlotType: 'box',
             genes_showPoints: true,
             genes_showSimilarGenesDialog: false,
@@ -238,11 +231,7 @@ export default {
             genes_showHeatmap: false,
             genes_selectedCorrelatedGene:{},
             genes_selectedGeneNameInHeatmap: '',
-            genes: {selectedGeneSymbol:'',  // temporarily store what user has selected
-                    possibleGenes:[],
-                    expressionValues:{},
-                    loading:false,
-                    },
+            genes_loading:false,
         }
     },
 
@@ -311,46 +300,19 @@ export default {
         },
 
         // ------------ Genes tab ---------------
-        // Plots gene expression when user enters/changes gene
-        plotGene() {
-            this.genes.selectedGeneSymbol = this.genes.selectedGeneSymbol.trim();
-            if (this.genes.selectedGeneSymbol.length==0) return;
-
-            // First find matching gene id
-            let gene = this.genes.possibleGenes.filter(item => item.gene_name==this.genes.selectedGeneSymbol);
-            // If there's no matching gene here, assume that user copied and pasted a gene id instead of
-            // selecting from the dropdown. We'll still support fetching the expression for this.
-            this.genes = {...this.genes};
-            if (gene.length>0) {
-                this.selectedGeneId = gene[0].gene_id;
-                this.selectedGeneName = gene[0].gene_name;
-            }
-            else {
-                this.selectedGeneId = this.genes.selectedGeneSymbol;
-                this.selectedGeneName = this.genes.selectedGeneSymbol;
-            }
-        },
-
-        getPossibleGenes() {
-            if (this.genes.selectedGeneSymbol.length<=1) return;    // ignore 1 or less characters entered
-            this.$axios.get('/mygene/v3/query?species=human&fields=symbol,ensembl.gene&size=50&q=' + this.genes.selectedGeneSymbol).then(res => {
-                if (res.data.total>0) {
-                    // Note that some genes may not have ensembl ids, so lack the ensembl field
-                    const genes = res.data['hits'].filter(item => 'ensembl' in item);
-                    if (genes.length>0)
-                        this.genes.possibleGenes = genes.map(item => {
-                            return {gene_id: item.ensembl.gene, gene_name: item.symbol}
-                        });
-                }
-            });
-            // .catch(error => {
-            //     alert("Could not fetch matching expression values for " + this.genes.selectedGeneSymbol);
-            // });
+        // Should run when gene-selected event is triggered from GeneSearch component.
+        // Note that this automatically triggers expression plot, as GeneExpressionPlot has a watcher on selectedGene.geneId
+        updateSelectedGene(selectedGene) {
+            this.genes_selectedGene = selectedGene;
         },
 
         genes_FindSimilarGenes() {
-            this.genes.loading = true;
-            this.$axios.get('/api/datasets/' + this.datasetId + '/correlated-genes?gene_id=' + this.selectedGeneId).then(res => {
+            if (!('geneId' in this.genes_selectedGene)) {
+                this.$bvModal.msgBoxOk("Select a gene first");
+                return;
+            }
+            this.genes_loading = true;
+            this.$axios.get('/api/datasets/' + this.datasetId + '/correlated-genes?gene_id=' + this.genes_selectedGene.geneId).then(res => {
                 let geneIds = Object.keys(res.data);
                 // Get gene symbols and descriptions from mygene
                 this.$axios.post("/mygene/v3/gene", 'fields=symbol,summary,ensembl.gene&ids=' + geneIds.join(','), {'headers': {'Content-Type':'application/x-www-form-urlencoded'}}
@@ -364,13 +326,13 @@ export default {
                     this.genes_correlatedGenes = geneIds.map(item => (
                         {geneId: item, geneSymbol: geneSymbolFromGeneId[item], geneDescription: geneDescriptionFromGeneId[item], score: res.data[item]}
                     ));
-                    this.genes_selectedGeneNameInHeatmap = this.selectedGeneName;
+                    this.genes_selectedGeneNameInHeatmap = this.genes_selectedGene.geneSymbol;
                     this.genes_selectedCorrelatedGene = this.genes_correlatedGenes[0];
                     this.genes_showHeatmap = true;
                 });
             })
             .catch().then(() => {
-                this.genes.loading = false;
+                this.genes_loading = false;
                 this.genes_showSimilarGenesDialog = false;
             });
         },

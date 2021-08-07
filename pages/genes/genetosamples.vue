@@ -8,14 +8,8 @@
         </small>
     </h3>
     <b-form inline class="justify-content-center mt-3">
-        Find highly expressed cell types for: 
-        <b-form-input v-model="selectedGeneSymbol" list="possible-genes-datalist" class="ml-2"
-            @keyup="getPossibleGenes" @keyup.enter="search" placeholder="[gene symbol]"></b-form-input>
-        <b-form-datalist id="possible-genes-datalist">
-            <option v-for="gene in genes" :key="gene.geneId">{{gene.geneSymbol}}</option>
-        </b-form-datalist>
-        <!-- @keyup.enter does not work unless this dummy input is added because hitting enter submits the form with just one input -->
-        <b-form-input v-show="false"></b-form-input>
+        Find highly expressed cell types for gene: 
+        <GeneSearch form-group-description="" @gene-selected="updateSelectedGene" @keyup-enter="search" class="mx-1"></GeneSearch>
         <b-button variant="dark" @click="search">Search</b-button>
         <b-dropdown text="tools" class="ml-2">
             <b-dropdown-item>Download Data</b-dropdown-item>
@@ -24,15 +18,15 @@
         <b-spinner label="Loading..." variant="secondary" :style="{visibility: loading ? 'visible' : 'hidden'}" class="ml-2"></b-spinner>
     </b-form>
 
-    <b-row class="mt-2">
+    <b-row v-show="celltypes.length>0" class="mt-2">
         <b-col class="px-0" md="2">
             <b-card no-body :header="'Cell types (' + celltypes.length + ')'">
                 <div style="max-height:500px; overflow-y:auto">
                     <b-list-group flush>
                         <b-button squared v-for="celltype in celltypes" :key="celltype.value" :pressed="selectedCelltype==celltype"  @click="selectedCelltype=celltype"
                             class="list-group-item list-group-item-action d-flex justify-content-between" href="#" style="font-size:smaller">
-                            {{celltype.value}} ({{celltype.datasetIds.length}}, {{celltype.meanRank}})
-                            <b-icon-chevron-right scale="0.8" class="text-success"></b-icon-chevron-right>
+                            {{celltype.value}} ({{Math.round(celltype.score*10)/10}})
+                            <b-icon-chevron-right scale="0.8"></b-icon-chevron-right>
                         </b-button>
                     </b-list-group>
                 </div>
@@ -68,13 +62,16 @@
 
     <b-sidebar id="sidebar" title="Help and more info" shadow>
         <div class="px-3 py-2">
-            <p>This page shows genes with high expression in selected sample group, such as cell_type=monocyte. 
-            On the far left is the list of genes with this high expression pattern. The number in the brackets shows the number of
-                datasets in which this gene was found to have high expression in this sample group. Higher number here implies that 
-                this gene is found to have high expression in the selected sample group consistently across more datasets.
+            <p>This page shows cell types with high expression for a selected gene. 
+            The results are displayed in a hierarchical manner, with cell types on the far left, followed by datasets in which that
+            cell type was found to have high expression.
             </p>
-            <p>The second column from the left is the list of datasets in which the selected gene show high expression. Simply select gene-dataset
-                combination to show the expression profile of that gene in that dataset.
+            <p>The number in the bracket after the cell type is the score given to that cell type for high expression. This score
+                is higher if the mean value of all samples in that cell type is higher in the dataset. It is also higher if there
+                are more datasets where the same cell type had high mean values.
+            </p>
+            <p>Note that as the calculation requires looping through hundreds of datasets in the system, it may take up to a minute
+                to return the results,
             </p>
         </div>
     </b-sidebar>
@@ -96,11 +93,9 @@ export default {
                 { text: 'Genes', to: '/genes' },
                 { text: 'Gene to sample groups', active: true }
             ],
-            loading: true,
+            loading: false,
 
-            genes: [],
             selectedGene: {},
-            selectedGeneSymbol: '', // good to separate this from selectedGene, as this may be wrong
 
             celltypes: [],
             selectedCelltype: {},
@@ -112,45 +107,30 @@ export default {
 
     methods: {
 
-        getPossibleGenes() {
-            this.loading = true;
-            if (this.selectedGeneSymbol.length<=1) return;    // ignore 1 or less characters entered
-            this.$axios.get('/mygene/v3/query?species=human&fields=symbol,summary,ensembl.gene&size=50&q=' + this.selectedGeneSymbol).then(res => {
-                if (res.data.total>0) {
-                    // Note that some genes may not have ensembl ids, so lack the ensembl field
-                    const genes = res.data['hits'].filter(item => 'ensembl' in item);
-                    if (genes.length>0)
-                        this.genes = genes.map(item => {
-                            return {geneId: item.ensembl.gene, geneSymbol: item.symbol, geneDescription: item.summary!=null? item.summary : item.query}
-                        });
-                }
-                this.loading = false;
-            });
-            // .catch(error => {
-            //     alert("Could not fetch matching expression values for " + this.genes.selectedGeneSymbol);
-            // });
+        // Should run when gene-selected event is triggered from GeneSearch component.
+        updateSelectedGene(selectedGene) {
+            this.selectedGene = selectedGene;
         },
 
-        search() {
-            this.loading = true;
-
-            // Find matching gene
-            let matchingGene = this.genes.filter(item => item.geneSymbol==this.selectedGeneSymbol);
-            if (matchingGene.length==1)
-                this.selectedGene = matchingGene[0];
-            else {
-                alert("No matching gene - please select from the list of suggestions.");
+        // Peform search for sample groups by going to api
+        search(query) {
+            if (Object.keys(this.selectedGene).length==0) {
                 return;
             }
+
+            this.loading = true;
+            if ('geneId' in query)
+                this.updateSelectedGene(query);
 
             this.$axios.get("/api/genes/gene-to-sample-groups?gene_id=" + this.selectedGene.geneId).then(res => {
                 this.celltypes = [];
                 for (const [celltype,dict] of Object.entries(res.data)) {
-                    const meanRank = dict.ranks.reduce((acc,v) => acc + v) / dict.ranks.length;
-                    this.celltypes.push({value: celltype, datasetIds: dict.datasetIds, var: dict.var, meanRank: meanRank});
+                    const score = dict.score.reduce((acc,v) => acc + v) / dict.score.length * dict.count;
+                    //const maxRank = Math.max(...dict['ranks'])
+                    this.celltypes.push({value: celltype, datasetIds: dict.datasetIds, count: dict.count, score: score});
                 }
-                // sort by count of datasets by default
-                this.sortCelltypes('datasets');
+                // sort by score
+                this.celltypes.sort((a,b) => a.score > b.score? -1 : 1);
 
             }).catch(error => this.$bvModal.msgBoxOk("Unexpected error while performing analysis: " + error.reponse.data)
             ).then(() => {
@@ -158,12 +138,12 @@ export default {
             })
         },
 
-        sortCelltypes(key) {
-            if (key=='datasets')
-                this.celltypes.sort((a,b) => a.datasetIds.length > b.datasetIds.length? -1 : 1);
-            else
-                this.celltypes.sort((a,b) => a.meanRank > b.meanRank? -1 : 1);
-        }
+        // sortCelltypes(key) {
+        //     if (key=='datasets')
+        //         this.celltypes.sort((a,b) => a.datasetIds.length > b.datasetIds.length? -1 : 1);
+        //     else
+        //         this.celltypes.sort((a,b) => a[key] > b[key]? -1 : 1);
+        // }
     },
 
     watch: {
@@ -192,7 +172,7 @@ export default {
     },
 
     mounted() {
-        this.loading = false;
+        this.search(this.$route.query);
     }
 }
 </script>

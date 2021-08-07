@@ -29,10 +29,8 @@
                     Start from a gene of interest and find highly expressed samples across datasets.
                 </b-card-text>
                 <br/>
-                <b-form-group description="start typing then select from the list of genes">
-                    <b-form-input id="geneSearchInput" placeholder="eg. GATA1" @keyup.enter="searchGenes" size="sm"></b-form-input>
-                </b-form-group>
-                <b-button @click="searchGenes" class="float-right align-self-end">search</b-button>
+                <GeneSearch size="sm" @gene-selected="updateSelectedGene" @keyup-enter="goToGeneToSampleGroups"></GeneSearch>
+                <b-button @click="goToGeneToSampleGroups" class="float-right align-self-end">search</b-button>
             </b-card-body>
         </b-card>
 
@@ -56,15 +54,17 @@ export default {
     data() {
         return {
             breadcrumb: [
-            { text: 'Home', to: '/' },
-            { text: 'Genes', active: true },
-            { text: 'Discover', active: true }
+                { text: 'Home', to: '/' },
+                { text: 'Genes', active: true },
+                { text: 'Discover', active: true }
             ],
-            searchString:'',
             sampleGroups: ["cell_type","tissue_of_origin",],
             selectedSampleGroup: 'cell_type',
             sampleGroupItems: [],
             selectedSampleGroupItem: 'blood',
+
+            selectedGene:{},
+
             genesets: [],
             selectedGeneset: ''
         }
@@ -88,13 +88,19 @@ export default {
                                query:{selectedSampleGroup:this.selectedSampleGroup, selectedSampleGroupItem:this.selectedSampleGroupItem, search:"true"}});
         },
 
-        searchGenes() {
-
+        // Should run when gene-selected event is triggered from GeneSearch component.
+        updateSelectedGene(selectedGene) {
+            this.selectedGene = selectedGene;
+        },
+        
+        // Go to genetosamples page with selected params.
+        goToGeneToSampleGroups() {
+            if (Object.keys(this.selectedGene).length>0)
+                this.$router.push({path: "/genes/genetosamples", query:this.selectedGene});
+            else
+                this.$bvModal.msgBoxOk("No matching gene - please select from the list of suggestions.");
         },
 
-        showGenesets() {
-            this.$router.push({path: "/genes/genesetcollections", query:{selectedGeneset: this.selectedGeneset}});
-        }
     },
 
     mounted() {

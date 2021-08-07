@@ -13,7 +13,7 @@ export default {
         return {
             breadcrumb: [
                 { text: 'Home', to: '/' },
-                { text: 'Atlas', activet: true },
+                { text: 'Atlas', to: '/atlas/about' },
                 { text: 'DC', active: true },
             ],
         }
