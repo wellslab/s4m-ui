@@ -44,7 +44,7 @@
                 <div>
                 <b-form-select v-model="selectedSortField" :options="sortFields" @change="sortDatasets" class="bg-light small-select ml-2"></b-form-select>
                 <b-dropdown text="tools" class="ml-1 text-right">
-                    <b-dropdown-item @click="viewAsTable">View as table</b-dropdown-item>
+                    <b-dropdown-item v-if="false" @click="viewAsTable">View as table</b-dropdown-item>
                     <b-dropdown-item @click="showDownloadDataDialog=true">Download datasets</b-dropdown-item>
                 </b-dropdown>
                 </div>
@@ -97,11 +97,19 @@
 <!-- Show download data (modal) -->
 <b-modal v-model="showDownloadDataDialog" title="Download data" hide-footer>
     <b-card no-body class="border-0">
-        <p>You can download all the data from all the datasets here ({{filteredTotal}} datasets, after filtering has been applied) as one zip file.
-            Note however that this could take a long time for a large number of datasets.
+        <p v-if="filteredTotal<51">
+            You can download all the data from all the datasets here ({{filteredTotal}} datasets, after filtering has been applied) as one zip file.
+        </p>
+        <p v-else>
+            There are too many datasets here for this operation.
+        </p>
+        <p>
+            Note there is a maximum limit of 50 datasets in place. If you need to perform this task for more datasets,
+            consider using the <b-link to="/datasets/api">API</b-link> or <b-link to="/about/contact">contact us</b-link>.
+            Note also that this operation could take a long time for a large number of datasets.
         </p>
         <b-button-group>
-            <b-button @click="downloadData" class="mt-2">Download</b-button>
+            <b-button v-if="filteredTotal<51" @click="downloadData" class="mt-2">Download</b-button>
             <b-button @click="showDownloadDataDialog=false" class="mt-2 ml-2">Close</b-button>
         </b-button-group>
     </b-card>

@@ -754,8 +754,10 @@ export default {
             let matchingGenes = self.possibleGenes.filter(item => item.symbol==self.selectedGene);
             if (matchingGenes.length>0) {
                 let geneId = matchingGenes[0].ensembl;
+                // use filtered=true for expression-values api if gene has been filtered in
+                let filtered = matchingGenes[0].inclusion;
                 self.loading = true;
-                self.$axios.get('/api/atlases/' + self.atlasType + '/expression-values?orient=records&gene_id=' + geneId)
+                self.$axios.get('/api/atlases/' + self.atlasType + '/expression-values?orient=records&gene_id=' + geneId + '&filtered=' + filtered)
                     .then(function (response) {
                         if (response.data.length>0) {
                             // response.data would looke like [{column:value, ...}]

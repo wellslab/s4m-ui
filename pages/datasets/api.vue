@@ -65,7 +65,7 @@
             <div v-for="api in apis" :key="api.url" :class="('insertMargin' in api)? 'mt-3 mb-1' : 'mb-1'">
                 <b-link v-if="!api.show" @click="api.show = !api.show"><b-icon-chevron-right></b-icon-chevron-right></b-link>
                 <b-link v-else @click="api.show = !api.show"><b-icon-chevron-down></b-icon-chevron-down></b-link>
-                {{api.url}}
+                <b-link @click="api.show = !api.show">{{api.url}}</b-link>
                 <b-collapse v-model="api.show" class="mt-0"><b-card class="mt-1">
                     <p>{{api.heading}}</p>
                     <pre><code>
@@ -150,13 +150,12 @@ export default {
                 },
                
                 {show: false, url:'/datasets/{dataset_id}/expression?gene_id={Ensembl_gene_id}&key=cpm&log2=false&orient=records&as_file=false', 
-                 heading: 'Fetches expression values for a gene in the dataset. key may be ' +
-                    'one of [raw,genes] for Microarray data, where you should specify probe id for gene_id ' +
-                    'if key=raw, and one of [raw,cpm] for RNASeq data, where raw means unnormalised ' +
-                    'count values. Note that key=genes will also work with RNASeq data and will just fetch raw version of it. ' + 
-                    "This way you don't need to check for platform_type before making the query. Similarly, key=cpm also works for " +
-                    "Microarray data to fetch its genes version. If log2=true, numpy.log2(exp+1) will be applied, but if the values are " +
-                    "already logged, such as for microarray data, it will not log again. If as_file=true, the entire expression matrix can be downloaded for the matching key.",
+                 heading: 'Fetches expression values for a gene in the dataset. key may be one of [raw,genes,cpm]. ' +
+                    'For Microarray data, raw refers to probe level expression while genes refers to expression summarised at the ' +
+                    'gene level (max value used for multiple probe matches to a gene). For RNASeq data, where raw means unnormalised ' +
+                    'count values (genes is the same as raw), while cpm calculates cpm values.  ' + 
+                    "If log2=true, numpy.log2(exp+1) will be applied, but if the values are already logged, such as for microarray data, " +
+                    "it will not log again. If as_file=true, the entire expression matrix can be downloaded for the matching key.",
                  example:
     `[
         {
@@ -195,16 +194,37 @@ export default {
     }`       
                 },
 
-                {show: false, url:'/search/datasets?dataset_id={datasetId}&query_string={queryString}&platform_type={platformType}&projects={projects}&name={name}&limit={limit}', 
-                 heading: 'Fetches dataset metadata for datasets matching the search parameters. ' +
+                {show: false, url:'/datasets/{dataset_id}/correlated-genes?gene_id={Ensembl_gene_id}&cutoff=30', 
+                 heading: 'Fetches a list of genes correlated to the specified gene within the dataset. ' +
+                    'A dictionary is returned in {gene_id: correlation_value} format, sorted with highest to lowest correlation values.  ' +
+                    'Cutoff controls the number of genes returned.',
+                 example:
+    `{
+        "ENSG00000102145": 0.9999999999999999,
+        "ENSG00000029534": 0.9218905803378692,
+        "ENSG00000222915": 0.9131896759304162,
+        ...
+    }`       
+                },
+
+                {show: false, url:"/search/datasets", 
+                 heading: 'Fetches dataset metadata for datasets matching the search parameters. See below for parameters. ' +
                     'Note that some sample metadata are included in the results here, unlike /datasets/{dataset_id}/metadata ' +
                     'which only contains dataset metadata. If no parameters are specified, metadata for all datasets will be fetched. ' +
-                    'platform_type may be one of [Microarray,RNASeq], projects may be one or more of [myeloid_atlas,blood_atlas,dc_atlas]. ' +
                     'Multiple parameters work as "AND" operator, so platform_type=Microarray&projects=myeloid_atlas,blood_atlas will fetch ' +
                     'Microarray datasets under myeloid and blood atlas projects.',
                  insertMargin: true,
                  example:
-    `[
+    `Optional parameters:
+        dataset_id: comma separated list of dataset ids to restrict the search on
+        query_string: perform text search on this query string on both dataset and sample metadata
+        platform_type: one of [Microarray,RNASeq,scRNASeq,other]
+        projects: one of [myeloid_atlas,blood_atlas,dc_atlas]
+        name: short name of dataset
+        limit: total number of records to return
+
+    Example data returned
+    [
         {
             "dataset_id": 6741,
             "title": "Transcriptional specialization of human dendritic cell subsets in response to microbial vaccines",
@@ -293,6 +313,148 @@ export default {
         "Day_6": 415,
         ...
     }` 
+                },
+
+                {show: false, url:'/download?dataset_id={comma separated dataset ids}', 
+                 heading: 'Creates one zip file containing all the files for each dataset specified. ' +
+                    'Note that this operation may take a long time for many datasets.',
+                 insertMargin: true,
+                 example:
+    `
+    Downloaded files look like this:
+        2000_expression_genes.tsv
+        2000_expression_probes.tsv
+        2000_metadata.tsv
+        2000_samples.tsv
+    `       
+                },
+
+                {show: false, url:'/genes/sample-group-to-genes?sample_group={sample_group}&sample_group_item={sample_group_item}&cutoff=10', 
+                 heading: 'Returns highly expressed genes in specified sample_group and ' +
+                    'sample_group_item (eg. cell_type=monocyte). The algorithm first finds all ' +
+                    'datasets where the sample_group_item is defined and find genes with ' +
+                    'high difference in mean, which is returned as rankScore.',
+                 insertMargin: true,
+                 example:
+    `{
+        "sampleGroup": "cell_type",
+        "sampleGroupItem": "monocyte",
+        "rankScore": [
+            {
+                "geneId": "ENSG00000215458",
+                "meanRank": 0.8999700898495135,
+                "datasetIds": "1000,6003,6463,6638",
+                "count": 4
+            },
+            {
+                "geneId": "ENSG00000174791",
+                "meanRank": 0.83232307575388,
+                "datasetIds": "1000,6003,6463,6638",
+                "count": 4
+            },
+            ...
+        ]
+    }`       
+                },
+
+                {show: false, url:'/genes/gene-to-sample-groups?gene_id={Ensembl_gene_id}&sample_group=cell_type', 
+                 heading: 'Returns highly expressed sample group items within sample_group ' +
+                    'for selected gene. Higher score indicates higher expression within a dataset ' +
+                    'as well as more datasets where similar pattern is observed. ',
+                 example:
+    `{
+        "CML hematopoietic progenitor cell": {
+            "score": [1.0],
+            "datasetIds": [6610],
+            "count": 1
+        },
+        "HepG2": {
+            "score": [3.0],
+            "datasetIds": [6245],
+            "count": 1
+        },
+        ...
+    } `       
+                },
+
+                {show: false, url:"/atlas-types", 
+                 heading: 'Return a dictionary of available atlas types and versions. ',
+                 insertMargin: true,
+                 example:
+    `{
+        "myeloid": {
+            "current_version": "1.0",
+            "versions": [
+                "1.0"
+            ],
+            "release_notes": [
+                "These files correspond to those from www1.stemformatics.org:/var/www/pylons-data/prod/PCAFiles/atlas/, copied on 2021-02-11, and correspond to v7.3 in this versioning system.\n"
+            ]
+        },
+        ...
+    }`       
+                },
+
+                {show: false, url:"/atlases/{atlas_type}/{item}?version=''&orient=records&filtered=false&query_string=''&gene_id=''&as_file=false", 
+                 heading: 'Fetches atlas data for atlas_type (one of myeloid,blood,dc). ' +
+                    'Additional parameters are applicable depending on the item. version specifies a particular version of ' +
+                    'the atlas to fetch. ',
+                 insertMargin: true,
+                 example:
+    `For item=coordinates, returns PCA coordinates used by the atlas:
+    [
+        {
+            "index": "1000_1674120023_B",
+            "0": -0.3089953429523829,
+            "1": -2.331254360290466,
+            "2": -3.708666728816238
+        },
+        {
+            "index": "1000_1674120023_F",
+            "0": -1.6988969119278687,
+            "1": -3.539426275611378,
+            "2": -3.028939281330146
+        },
+        ...
+    ]
+
+    For item=samples, returns the sample table:
+    [
+        {
+            "index": "7268_GSM2360259",
+            "Cell Type": "hematopoietic multipotent progenitor",
+            "Sample Source": "in vitro",
+            "Progenitor Type": "pluripotent stem cell",
+            "Activation Status": "growth factor",
+            "Tissue": "in vitro",
+            "Disease State": "normal",
+            "Platform Category": "RNASeq"
+        },
+        ...
+    ]
+
+    For item=expression-values, returns expression values for gene_id.
+    [
+        {
+            "index": "ENSG00000118513",
+            "1000_1674120023_B": 0.9276657500763824,
+            "1000_1674120023_F": 0.6500152765047357,
+            "1000_1674120053_B": 0.7045142071494043,
+            ...
+        }
+    ]
+
+    For item=possible-genes, returns matching genes in the atlas for query_string:
+    [
+        {
+            "ensembl": "ENSG00000118513",
+            "inclusion": false,
+            "symbol": "MYB"
+        },
+        ...
+    ]
+
+    `       
                 },
 
             ],

@@ -16,9 +16,9 @@
     <b-card-group deck>
         <b-card no-body img-src="/img/StemCells.png" img-alt="Stem cells image" img-top>
             <b-card-body>
-                <b-link @click="showDatasetCollection('iPSC')"><h4>iPSC Derived Samples</h4></b-link>
+                <b-link @click="showDatasetCollection('all')"><h4>All datasets</h4></b-link>
                 <b-card-text>
-                    Show datasets containing the term 'induced pluripotent'. 
+                    Show all publicly available human datasets. 
                 </b-card-text>
             </b-card-body>
         </b-card>
@@ -61,9 +61,9 @@ export default {
             ],
             searchString: null,
             datasetCollection: {
-                "iPSC": {title: "iPSC datasets",
-                        description: "All datasets containing the term 'induced pluripotent'.",
-                        apiParams: {'query_string':'induced pluripotent'}},
+                "all": {title: "All datasets",
+                        description: "All public datasets (human).",
+                        apiParams: {}},
                 "atlas": {title: "All atlas datasets",
                         description: "Datasets which have been used to contruct any of our integrated atlases.",
                         apiParams: {'projects':'atlas'}},
