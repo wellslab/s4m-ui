@@ -14,6 +14,23 @@
             </b-link>
         </li></ul>
     </b-col>
+
+    <!-- Download plot (modal) -->
+    <b-modal v-model="downloadPlot_showDialog" title="Download plot" hide-footer>
+        <b-card-text>
+            You can download the plot at high resolution here, rather than relying the low resolution png download
+            button provided by plotly.
+        </b-card-text>
+        <b-form-group label="Image type" v-slot="{ ariaDescribedby }">
+            <b-form-radio-group v-model="downloadPlot_selectedImageType" :options="downloadPlot_imageTypes" :aria-describedby="ariaDescribedby"></b-form-radio-group>
+        </b-form-group>
+        <b-form inline>
+            <b-form-group label="width (pixels)"><b-form-input v-model="downloadPlot_width"></b-form-input></b-form-group>
+            <b-form-group label="height (pixels)"><b-form-input v-model="downloadPlot_height"></b-form-input></b-form-group>
+        </b-form>
+        <b-button @click="downloadPlot" class="mt-2">Download</b-button>
+    </b-modal>
+   
 </b-row>  
 </template>
 
@@ -51,6 +68,12 @@ export default {
             legends: {},
             visibleLegends:[],
             //currentLegends: []
+
+            downloadPlot_showDialog: false,
+            downloadPlot_imageTypes: ['svg','jpeg','webp'],
+            downloadPlot_selectedImageType: "svg",
+            downloadPlot_width: 1200,
+            downloadPlot_height: 900,
         }
     },
 
@@ -106,14 +129,9 @@ export default {
 
                     this.$axios.get("/api/datasets/" + this.dataset_id + "/expression?orient=index&key=cpm&log2=true&gene_id=" + this.gene_id).then(res3 => {
                         this.expressionValues = res3.data;
-                        if (this.datasetMetadata.platform_type=='RNASeq') // apply log
-                            Object.keys(this.expressionValues[this.gene_id]).forEach(sampleId => {
-                                const value = this.expressionValues[this.gene_id][sampleId];
-                                this.expressionValues[this.gene_id][sampleId] = Math.log2(value + 1);
-                            })
                         this.updatePlot();
                     }).catch(error => {
-                        alert("No expression value for this gene in this dataset");
+                        this.$bvModal.msgBoxOk("No expression value for this gene in this dataset");
                     }).then(() => {
                         //this.loading = false;
                     });
@@ -135,7 +153,7 @@ export default {
                 const layout = {yaxis: {title: title}, showlegend:false};
                 Plotly.newPlot(this.plotDivId, traces, layout);
             }
-            else if (selectedLegend=='restyle') {
+            else if (selectedLegend=='restyle') {   // change plot type or show/hide points
                 const params = this.plot_type=='box'? {boxpoints:this.show_points? 'all':false} : {points: this.show_points? 'all':false};
                 params['type'] = this.plot_type;
                 Plotly.restyle(this.plotDivId, params);
@@ -146,7 +164,43 @@ export default {
                 this.legends[this.selectedSampleGroup][index].visible = !selectedLegend.visible;
             }
             this.visibleLegends = this.legends[this.selectedSampleGroup].filter(item => item.visible).map(item => item.value);
+
+            // Emit event to parent, if interested in updated plot
+            this.$emit('gene-expression-plot-updated', {selectedSampleGroup: this.selectedSampleGroup});
         },
+
+        addPvalueAnnotation(sampleGroupItem1, sampleGroupItem2, text) {
+            // Find mathcing columns
+            let traces = document.getElementById(this.plotDivId).data;
+            const names = traces.map(item => item.name);
+            const columns = [names.indexOf(sampleGroupItem1), names.indexOf(sampleGroupItem2)];
+            
+            // get max y of both columns
+            //const maxY = Math.max(...columns.map(item => Math.max(...traces[item].y)));
+            const maxY = Math.max(...traces.map(item => Math.max(...item.y)));
+            const maxYOffset = 1.02*maxY;   // how much offset used by vertical lines
+
+            let shapes = [{type:"line", x0:columns[0], y0:1.01*maxY, x1:columns[0], y1:maxYOffset, line:{color:"#212529"}},
+                          {type:"line", x0:columns[1], y0:1.01*maxY, x1:columns[1], y1:maxYOffset, line:{color:"#212529"}},
+                          {type:"line", x0:columns[0], y0:maxYOffset, x1:columns[1], y1:maxYOffset, line:{color:"#212529"}},
+            ];
+            let annotations = [{text: text==null? "*" : text, x:(columns[0]+columns[1])/2, y:1.03*maxYOffset, showarrow:false}];
+            Plotly.relayout(this.plotDivId, {annotations:annotations, shapes:shapes});            
+        },
+
+        removePvalueAnnotation() {
+            Plotly.relayout(this.plotDivId, {annotations:[], shapes:[]});            
+        },
+
+        downloadPlot() {
+            Plotly.downloadImage(document.getElementById(this.plotDivId), {
+                format: this.downloadData_selectedImageType,
+                height: parseInt(this.downloadData_height),
+                width: parseInt(this.downloadData_width),
+                filename: 'Stemformatics_GeneExpression_' + this.dataset_id + '_' + this.gene_id
+            });
+        },
+
     },
 
     watch: {
