@@ -69,7 +69,7 @@
 
         <b-tab title="Samples" class="text-center m-auto">
                 {{samples.length}} samples
-                <b-dropdown text="project onto">
+                <b-dropdown v-if="false" text="project onto">
                     <b-dropdown-item @click="projectData('myeloid')">Myeloid atlas</b-dropdown-item>
                     <b-dropdown-item @click="projectData('blood')">Blood atlas</b-dropdown-item>
                     <b-dropdown-item @click="projectData('dc')">DC atlas</b-dropdown-item>
@@ -82,20 +82,21 @@
             <b-form inline class="justify-content-center mt-3">
                 <div v-if="genes_loading"><b-spinner label="Loading..." variant="secondary" style="width:1.5rem; height:1.5rem;"></b-spinner></div>
                 <div v-else>gene:</div>
-                <GeneSearch form-group-description="" @gene-selected="updateSelectedGene" @keyup-enter="updateSelectedGene" size="sm" class="ml-1"></GeneSearch>
-                <b-button variant="dark" @click="updateSelectedGene" size="sm">show</b-button>
-                <b-dropdown right text="functions" class="col-md-2 px-0 m-1 text-left" variant="secondary" size="sm">
+                <GeneSearch form-group-description="" @gene-selected="genes_updateSelectedGene" @keyup-enter="genes_updateSelectedGene" size="sm" class="ml-1"></GeneSearch>
+                <b-button variant="dark" @click="genes_updateSelectedGene" size="sm">show</b-button>
+                <b-dropdown right text="tools" class="col-md-2 px-0 m-1 text-left" variant="secondary" size="sm">
                     <b-dropdown-item v-if="genes_selectedPlotType=='violin'" @click="genes_selectedPlotType='box'">change to box plot</b-dropdown-item>
                     <b-dropdown-item v-if="genes_selectedPlotType=='box'" @click="genes_selectedPlotType='violin'">change to violin plot</b-dropdown-item>
                     <b-dropdown-item v-if="!genes_showPoints" @click="genes_showPoints=true">show data points</b-dropdown-item>
                     <b-dropdown-item v-if="genes_showPoints" @click="genes_showPoints=false">hide data points</b-dropdown-item>
                     <b-dropdown-item @click="genes_showSimilarGenesDialog=true">find similar genes...</b-dropdown-item>
-                    <b-dropdown-item @click="genes_showTtestDialog=true">apply T-test...</b-dropdown-item>
+                    <b-dropdown-item @click="$refs.geneExpressionPlot.ttest_showDialog=true">apply T-test...</b-dropdown-item>
                     <b-dropdown-item @click="$refs.geneExpressionPlot.downloadPlot_showDialog=true">download plot...</b-dropdown-item>
                 </b-dropdown>
+                <b-link v-b-tooltip.hover.right title="More info and tips" v-b-toggle.sidebar class="ml-2"><b-icon-info-circle></b-icon-info-circle></b-link>
             </b-form>
             <GeneExpressionPlot v-show="'geneId' in genes_selectedGene" ref="geneExpressionPlot" :gene_id="genes_selectedGene.geneId" :dataset_id="datasetId" 
-                :plot_type="genes_selectedPlotType" :show_points="genes_showPoints" @gene-expression-plot-updated="genes_updateSampleGroupItems"/>
+                :plot_type="genes_selectedPlotType" :show_points="genes_showPoints"/>
 
             <!-- similar genes (modal), shown first before correlation calculation is done -->
             <b-modal v-model="genes_showSimilarGenesDialog" title="Find similar genes" hide-footer>
@@ -150,24 +151,17 @@
                 </div>
             </draggable-div>
 
-            <!-- apply T-test (modal) -->
-            <b-modal v-model="genes_showTtestDialog" title="Apply t-test" hide-footer>
-                <p>You can apply a T-test and show the p value if you select 2 groups to compare.
-                    We use <b-link href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.ttest_ind.html" target="_blank">
-                    scipy.stats.ttest_ind</b-link> function for this, which assumes independent samples with equal variances.
-                </p>
-                <div v-if="'geneId' in this.genes_selectedGene">
-                    <b-form-select size="sm" v-model="genes_selectedSampleGroupItem1" :options="genes_sampleGroupItems" class="mt-2"></b-form-select>
-                    <div class="text-center my-1">vs</div>   
-                    <b-form-select size="sm" v-model="genes_selectedSampleGroupItem2" :options="genes_sampleGroupItems" class="mb-2"></b-form-select>
-                    <b-button @click="genes_showTtest" class="mt-2">Show</b-button>
-                    <b-button @click="genes_hideTtest" class="mt-2">Hide</b-button>
-                    <b-spinner v-if="genes_loading" label="Calculating..." variant="secondary" class="ml-2" style="width:1.5rem; height:1.5rem;"></b-spinner>
-                </div>
-                <div v-else>
-                    (First select a gene and show its expression before using this function.)
-                </div>
-            </b-modal>
+            <b-sidebar id="sidebar" title="More info and tips" shadow class="text-left">
+                <div class="px-3 py-2">
+                    <h4>Tips on gene searches</h4> 
+                    <p>Stemformatics uses Ensembl gene ids as the main gene identifier in the system.
+                        When you search for a gene using a basic text search, it's possible that multiple gene ids are matched,
+                        in which case these are shown in the list of suggestions. If there are too many to
+                        choose from there, it may be easier to search at <b-link href='http://ensembl.org' target="_blank">ensembl.org</b-link>
+                        and copy and paste the Ensembl id into the search box.
+                    </p>
+            </div>
+            </b-sidebar>
 
         </b-tab>
 
@@ -255,12 +249,6 @@ export default {
             genes_selectedCorrelatedGene:{},
             genes_selectedGeneNameInCorrelated: '',
 
-            genes_showTtestDialog: false,
-            genes_sampleGroupItems: [],
-            genes_selectedSampleGroup: null,
-            genes_selectedSampleGroupItem1: null,
-            genes_selectedSampleGroupItem2: null,
-
             genes_loading:false,
         }
     },
@@ -332,7 +320,7 @@ export default {
         // ------------ Genes tab ---------------
         // Should run when gene-selected event is triggered from GeneSearch component.
         // Note that this automatically triggers expression plot, as GeneExpressionPlot has a watcher on selectedGene.geneId
-        updateSelectedGene(selectedGene) {
+        genes_updateSelectedGene(selectedGene) {
             this.genes_selectedGene = selectedGene;
         },
 
@@ -365,41 +353,6 @@ export default {
                 this.genes_loading = false;
                 this.genes_showSimilarGenesDialog = false;
             });
-        },
-
-        // Should update when gene expression component changes sample group. Update list of sample group items for T test dialog
-        genes_updateSampleGroupItems(data) {
-            this.genes_selectedSampleGroup = data.selectedSampleGroup;
-            // loop through sample table and collect all sample group items
-            let sampleGroupItems = this.samples.map(item => item[this.genes_selectedSampleGroup]);
-            this.genes_sampleGroupItems = Array.from(new Set(sampleGroupItems));
-            this.genes_sampleGroupItems.sort();
-            this.genes_selectedSampleGroupItem1 = this.genes_sampleGroupItems[0];
-            if (this.genes_sampleGroupItems.length>1)
-                this.genes_selectedSampleGroupItem2 = this.genes_sampleGroupItems[1];
-        },
-
-        genes_showTtest() {
-            if (this.genes_sampleGroupItems.length<2) {
-                this.$bvModal.msgBoxOk("Can't perform this task on less than 2 groups.");
-                return;
-            }
-            this.genes_loading = true;
-            this.$axios.get('/api/datasets/' + this.datasetId + '/ttest?gene_id=' + this.genes_selectedGene.geneId + '&sample_group=' + 
-                            this.genes_selectedSampleGroup + '&sample_group_item1=' + encodeURIComponent(this.genes_selectedSampleGroupItem1) +
-                            '&sample_group_item2=' + encodeURIComponent(this.genes_selectedSampleGroupItem2)).then(res => {
-                const textDisplay =  "p=" + Math.round(10000*res.data.pvalue)/10000;
-                this.$refs.geneExpressionPlot.addPvalueAnnotation(this.genes_selectedSampleGroupItem1, this.genes_selectedSampleGroupItem2, textDisplay);
-            })
-            .catch().then(() => {
-                this.genes_loading = false;
-                this.genes_showTtestDialog = false;
-            });
-        },
-
-        genes_hideTtest() {
-            this.$refs.geneExpressionPlot.removePvalueAnnotation();
-            this.genes_showTtestDialog = false;
         },
 
         // ------------ Samples tab ---------------

@@ -15,6 +15,25 @@
         </li></ul>
     </b-col>
 
+    <!-- apply T-test (modal) -->
+    <b-modal v-model="ttest_showDialog" title="Apply t-test" hide-footer>
+        <p>You can apply a T-test and show the p value if you select 2 groups to compare.
+            We use <b-link href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.ttest_ind.html" target="_blank">
+            scipy.stats.ttest_ind</b-link> function for this, which assumes independent samples with equal variances.
+        </p>
+        <div v-if="gene_id!=null">
+            <b-form-select size="sm" v-model="ttest_selectedSampleGroupItem1" :options="sampleGroupItems" class="mt-2"></b-form-select>
+            <div class="text-center my-1">vs</div>   
+            <b-form-select size="sm" v-model="ttest_selectedSampleGroupItem2" :options="sampleGroupItems" class="mb-2"></b-form-select>
+            <b-button @click="addPvalueAnnotation" class="mt-2">Show</b-button>
+            <b-button @click="removePvalueAnnotation" class="mt-2">Hide</b-button>
+            <b-spinner v-if="loading" label="Calculating..." variant="secondary" class="ml-2" style="width:1.5rem; height:1.5rem;"></b-spinner>
+        </div>
+        <div v-else>
+            (First select a gene and show its expression before using this function.)
+        </div>
+    </b-modal>
+
     <!-- Download plot (modal) -->
     <b-modal v-model="downloadPlot_showDialog" title="Download plot" hide-footer>
         <b-card-text>
@@ -60,6 +79,8 @@ export default {
 
     data() {
         return {
+            loading:false,
+
             datasetMetadata: {},
             samples: [],
             sampleGroups: [],
@@ -68,6 +89,10 @@ export default {
             legends: {},
             visibleLegends:[],
             //currentLegends: []
+
+            ttest_showDialog: false,
+            ttest_selectedSampleGroupItem1: null,
+            ttest_selectedSampleGroupItem2: null,
 
             downloadPlot_showDialog: false,
             downloadPlot_imageTypes: ['svg','jpeg','webp'],
@@ -80,6 +105,9 @@ export default {
     computed: {
         currentLegends() {
             return this.legends[this.selectedSampleGroup];
+        },
+        sampleGroupItems() {
+            return this.legends[this.selectedSampleGroup]!=null? this.legends[this.selectedSampleGroup].map(item => item.value): [];
         }
     },
 
@@ -152,6 +180,8 @@ export default {
                 const title = this.datasetMetadata.platform_type=='RNASeq'? 'log2(cpm+1)' : 'log2';
                 const layout = {yaxis: {title: title}, showlegend:false};
                 Plotly.newPlot(this.plotDivId, traces, layout);
+                this.ttest_selectedSampleGroupItem1 = this.sampleGroupItems[0];
+                this.ttest_selectedSampleGroupItem2 = this.sampleGroupItems.length>1? this.sampleGroupItems[1]: this.sampleGroupItems[0];                
             }
             else if (selectedLegend=='restyle') {   // change plot type or show/hide points
                 const params = this.plot_type=='box'? {boxpoints:this.show_points? 'all':false} : {points: this.show_points? 'all':false};
@@ -166,33 +196,59 @@ export default {
             this.visibleLegends = this.legends[this.selectedSampleGroup].filter(item => item.visible).map(item => item.value);
 
             // Emit event to parent, if interested in updated plot
-            this.$emit('gene-expression-plot-updated', {selectedSampleGroup: this.selectedSampleGroup});
+            //this.$emit('gene-expression-plot-updated', {selectedSampleGroup: this.selectedSampleGroup});
         },
 
-        addPvalueAnnotation(sampleGroupItem1, sampleGroupItem2, text) {
-            // Find mathcing columns
-            let traces = document.getElementById(this.plotDivId).data;
-            const names = traces.map(item => item.name);
-            const columns = [names.indexOf(sampleGroupItem1), names.indexOf(sampleGroupItem2)];
-            
-            // get max y of both columns
-            //const maxY = Math.max(...columns.map(item => Math.max(...traces[item].y)));
-            const maxY = Math.max(...traces.map(item => Math.max(...item.y)));
-            const maxYOffset = 1.02*maxY;   // how much offset used by vertical lines
+        // Inspired by https://stackoverflow.com/questions/67505252/plotly-box-p-value-significant-annotation
+        addPvalueAnnotation() {
+            const sampleGroupItem1 = this.ttest_selectedSampleGroupItem1;
+            const sampleGroupItem2 = this.ttest_selectedSampleGroupItem2;
+            if (sampleGroupItem1==sampleGroupItem2) {
+                this.$bvModal.msgBoxOk("Chosen groups are the same.");
+                return;
+            }
+            this.$axios.get('/api/datasets/' + this.dataset_id + '/ttest?gene_id=' + this.gene_id + '&sample_group=' + 
+                            this.selectedSampleGroup + '&sample_group_item1=' + encodeURIComponent(sampleGroupItem1) +
+                            '&sample_group_item2=' + encodeURIComponent(sampleGroupItem2)).then(res => {
+                const pvalue = res.data.pvalue;
 
-            let shapes = [{type:"line", x0:columns[0], y0:1.01*maxY, x1:columns[0], y1:maxYOffset, line:{color:"#212529"}},
-                          {type:"line", x0:columns[1], y0:1.01*maxY, x1:columns[1], y1:maxYOffset, line:{color:"#212529"}},
-                          {type:"line", x0:columns[0], y0:maxYOffset, x1:columns[1], y1:maxYOffset, line:{color:"#212529"}},
-            ];
-            let annotations = [{text: text==null? "*" : text, x:(columns[0]+columns[1])/2, y:1.03*maxYOffset, showarrow:false}];
-            Plotly.relayout(this.plotDivId, {annotations:annotations, shapes:shapes});            
+                // Find mathcing columns
+                let traces = document.getElementById(this.plotDivId).data;
+                const names = traces.map(item => item.name);
+                const columns = [names.indexOf(sampleGroupItem1), names.indexOf(sampleGroupItem2)];
+                
+                // get max y of both columns
+                //const maxY = Math.max(...columns.map(item => Math.max(...traces[item].y)));
+                const maxY = Math.max(...traces.map(item => Math.max(...item.y)));
+                const maxYOffset = 1.03*maxY;   // how much offset used by vertical lines
+
+                let shapes = [{type:"line", x0:columns[0], y0:1.01*maxY, x1:columns[0], y1:maxYOffset, line:{color:"#212529"}},
+                              {type:"line", x0:columns[1], y0:1.01*maxY, x1:columns[1], y1:maxYOffset, line:{color:"#212529"}},
+                              {type:"line", x0:columns[0], y0:maxYOffset, x1:columns[1], y1:maxYOffset, line:{color:"#212529"}},
+                ];
+
+                const hovertext =  "p=" + Math.round(10000*pvalue)/10000;
+                let symbol = '';
+                if (pvalue > 0.05) symbol = 'ns'
+                else if (pvalue > 0.01) symbol = '*'
+                else if (pvalue > 0.001) symbol = '**'
+                else symbol = '***';
+
+                let annotations = [{text:symbol, x:(columns[0]+columns[1])/2, y:1.035*maxYOffset, showarrow:false, hovertext:hovertext}];
+                Plotly.relayout(this.plotDivId, {annotations:annotations, shapes:shapes});
+            })
+            .catch().then(() => {
+                this.ttest_showDialog = false;
+            });
         },
 
         removePvalueAnnotation() {
-            Plotly.relayout(this.plotDivId, {annotations:[], shapes:[]});            
+            Plotly.relayout(this.plotDivId, {annotations:[], shapes:[]});
+            this.ttest_showDialog = false;
         },
 
         downloadPlot() {
+            if (this.dataset_id==null || this.gene_id==null) return;
             Plotly.downloadImage(document.getElementById(this.plotDivId), {
                 format: this.downloadData_selectedImageType,
                 height: parseInt(this.downloadData_height),

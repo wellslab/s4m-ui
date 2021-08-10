@@ -26,22 +26,32 @@ export default {
     },
 
     methods: {
+        // Fetch a list of possible gene objects by querying mygene api. Should run when user types into the input field.
         getPossibleGenes() {
             if (this.selectedGeneSymbol.length<=1) return;    // ignore 1 or less characters entered
             // Search for human genes only, returning 
             this.$axios.get('/mygene/v3/query?species=human&fields=symbol,summary,ensembl.gene&size=50&q=' + this.selectedGeneSymbol).then(res => {
                 if (res.data.total>0) {
-                    // Note that some genes may not have ensembl ids, so lack the ensembl field
+                    // Note that some genes may not have ensembl ids, so lack the ensembl field - filter these out
                     const genes = res.data['hits'].filter(item => 'ensembl' in item);
-                    if (genes.length>0)
-                        this.possibleGenes = genes.map(item => {
-                            return {geneId: item.ensembl.gene, geneSymbol: item.symbol, geneDescription: item.summary}
+
+                    if (genes.length>0)  { // Note that some entries have multiple ensemble ids - can't resolve just on info from mygene
+                        this.possibleGenes = [];
+                        genes.forEach(gene => {
+                            if (Array.isArray(gene.ensembl)) {  // create multiple matches
+                                gene.ensembl.forEach(item => {
+                                    this.possibleGenes.push({geneId: item.gene, geneSymbol: gene.symbol + ' (' + item.gene + ')', geneDescription: gene.summary})
+                                })
+                            } else
+                                this.possibleGenes.push({geneId: gene.ensembl.gene, geneSymbol: gene.symbol, geneDescription: gene.summary})
                         });
+                    }
                 }
             }).catch().then(() => {
             });
         },
 
+        // Should run when user makes a selection from a list of options - this could be a mouse selection or enter key
         setSelectedGene() {
             this.selectedGeneSymbol = this.selectedGeneSymbol.trim();
             if (this.selectedGeneSymbol.startsWith('ENSG')) {   // user entered ensembl id, which we support
@@ -54,7 +64,8 @@ export default {
             }
         },
 
-        // should run on user pressing enter after gene selection
+        // Should run on user pressing enter after gene selection. This is a little different from
+        // pressing enter on the list of options - this runs on enter inside the input form.
         emitSelectedGene() {
             if (Object.keys(this.selectedGene).length==0)
                 this.$bvModal.msgBoxOk("No matching gene - please select from the list of suggestions.");
