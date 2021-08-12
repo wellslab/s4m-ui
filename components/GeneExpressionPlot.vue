@@ -10,7 +10,7 @@
         <ul class="mt-3 list-unstyled p-0"><li v-for="legend in legends[selectedSampleGroup]" :key="legend.value">
             <b-link href="#" @click="updatePlot(legend);" style="font-size:13px;">
             <b-icon-circle-fill :style="{'color': legend.colour, 'opacity': visibleLegends.indexOf(legend.value)!=-1? 1:0.6}" scale="0.6"></b-icon-circle-fill>
-            <span :style="visibleLegends.indexOf(legend.value)!=-1? 'color:black' : 'color:#a7a7a7'">{{legend.value}} ({{legend.number}})</span>
+            <span :style="legendStyle(legend)">{{legend.value}} ({{legend.number}})</span>
             </b-link>
         </li></ul>
     </b-col>
@@ -72,9 +72,11 @@ export default {
     props: {
         dataset_id: {}, // could be string or number
         gene_id: String,
+        selected_sample_group: String,  // eg. 'cell_type' to specify what to select on load
         plot_type: {default:'box', type:String},
         show_points: {default:true, type:Boolean},
         plotDivId: {default:'genePlotDiv', type:String},
+        highlightSampleGroupItems: [],  // highlight these items
     },
 
     data() {
@@ -108,10 +110,11 @@ export default {
         },
         sampleGroupItems() {
             return this.legends[this.selectedSampleGroup]!=null? this.legends[this.selectedSampleGroup].map(item => item.value): [];
-        }
+        },
     },
 
     methods: {
+        // Set legends object, which can hold all the information about each sample group item
         setLegends() {
             const exampleColours = ['#64edbc', '#6495ed', '#ed6495', '#edbc64', '#8b8b00', '#008b00', '#8b008b', '#00008b', 
                                   '#708090', '#908070', '#907080', '#709080', '#008080', '#008000', '#800000', '#bca68f', 
@@ -129,6 +132,16 @@ export default {
                             'colour': exampleColours[i % exampleColours.length], 'visible': true,};
                 });
             });
+        },
+
+        // Return in-line style to use for legend item
+        legendStyle(legend) {
+            let style = this.visibleLegends.indexOf(legend.value)!=-1? {color:'black'} : {color:'#a7a7a7'};
+            if (this.highlightSampleGroupItems && this.highlightSampleGroupItems.length>0) {
+                if (this.highlightSampleGroupItems[0]==legend.value || this.highlightSampleGroupItems.length>1 && this.highlightSampleGroupItems[1]==legend.value)
+                    style['font-weight'] = 'bold';
+            }
+            return style;
         },
 
         plotExpression() {
@@ -152,7 +165,8 @@ export default {
                         const index2 = sorted.indexOf(b);
                         return (index1 > -1 ? index1 : Infinity) - (index2 > -1 ? index2 : Infinity);
                     });
-                    this.selectedSampleGroup = this.sampleGroups[0];
+                    this.selectedSampleGroup = (this.selected_sample_group && this.sampleGroups.indexOf(this.selected_sample_group)!=-1)? 
+                        this.selected_sample_group : this.sampleGroups[0];
                     this.setLegends();
 
                     this.$axios.get("/api/datasets/" + this.dataset_id + "/expression?orient=index&key=cpm&log2=true&gene_id=" + this.gene_id).then(res3 => {

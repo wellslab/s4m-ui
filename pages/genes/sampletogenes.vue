@@ -7,17 +7,41 @@
             <b-link v-b-tooltip.hover.right="'Background and more information'" v-b-toggle.sidebar class="mx-2"><b-icon-info-circle></b-icon-info-circle></b-link>
         </small>
     </h3>
-    <b-form inline class="justify-content-center mt-3">
-        Find highly expressed genes in: 
-        <b-form-select v-model="selectedSampleGroup" :options="sampleGroups" @change="getSampleGroupItems" class="ml-2"></b-form-select>
-        <b-form-select v-model="selectedSampleGroupItem" :options="sampleGroupItems" class="mx-2"></b-form-select>
-        <b-button variant="dark" @click="search">Search</b-button>
-        <b-dropdown text="tools" class="ml-2">
-            <b-dropdown-item @click="gotoReactome">Go to Reactome</b-dropdown-item>
-            <b-dropdown-item>Download Data</b-dropdown-item>
-        </b-dropdown>
-        <b-spinner v-if="loading" label="Loading..." variant="secondary" style="width:1.5rem; height:1.5rem;" class="ml-2"></b-spinner>
-    </b-form>
+
+    <b-row class="mt-3" align-v="start" no-gutters>
+        <b-col md="5" class="d-flex justify-content-end">
+            <b-form inline>
+                Find highly expressed genes in: 
+                <b-form-select v-model="selectedSampleGroup" :options="sampleGroups" @change="getSampleGroupItems" class="ml-1"></b-form-select>
+            </b-form>
+        </b-col>
+        <b-col md="4" class="pl-2">
+            <b-form-select v-model="selectedSampleGroupItem">
+                <b-form-select-option v-for="item in sampleGroupItems" :key="item.text" :value="item.text">{{item.text}} ({{item.count}})</b-form-select-option>
+            </b-form-select>
+            <span class="my-2 ml-4">vs</span>
+            <b-form-select v-model="selectedSampleGroupItem2" class="mt-1">
+                <template #first>
+                    <b-form-select-option :value="null">--any other in the dataset--</b-form-select-option>
+                </template>
+                <b-form-select-option v-for="item in sampleGroupItems" :key="item.text" :value="item.text">{{item.text}} ({{item.count}})</b-form-select-option>
+            </b-form-select>
+        </b-col>
+        <b-col md="3" class="mt-n2">
+            <b-button variant="dark" @click="search" class="ml-2">Search</b-button>
+            <b-dropdown text="tools">
+                <b-dropdown-item @click="sortSampleGroupItems('number')">Sort by number</b-dropdown-item>
+                <b-dropdown-item @click="sortSampleGroupItems('az')">Sort by A-Z</b-dropdown-item>
+                <b-dropdown-item @click="showMoreOptions=true">More options...</b-dropdown-item>
+            </b-dropdown>
+            <b-spinner label="Loading..." variant="secondary" :style="{visibility: loading ? 'visible' : 'hidden'}" class="ml-2 pt-2"></b-spinner>
+        </b-col>
+    </b-row>
+
+    <b-container v-if="genes.length==0" class="text-center mt-4">
+        <b-img src="/img/Genes_SamplesToGenes.png" alt="Find genes from samples"></b-img>
+        <p>You can search for highly expressed genes here, starting from a cell type or a tissue of interest.</p>
+    </b-container>
 
     <b-row v-show="genes.length>0" class="mt-2">
         <b-col class="px-0" md="2">
@@ -55,21 +79,37 @@
                         {{selectedGene.geneSymbol}}</b-link> in <b-link :to="'/datasets/view?id=' + selectedDatasetId" target="_blank">{{datasetDisplayName[selectedDatasetId]}}</b-link>
                 </b-card-header>
                 <b-card-body>
-                    <GeneExpressionPlot :gene_id="selectedGene.geneId" :dataset_id="selectedDatasetId"/>
+                    <GeneExpressionPlot :gene_id="selectedGene.geneId" :dataset_id="selectedDatasetId" :selected_sample_group="selectedSampleGroup"
+                        :highlight-sample-group-items="[selectedSampleGroupItem, selectedSampleGroupItem2]"/>
                 </b-card-body>
             </b-card>
         </b-col>
     </b-row>
 
+    <!-- Show more options (modal) -->
+    <b-modal v-model="showMoreOptions" title="More options" hide-footer>
+        <b-card no-body class="border-0">
+            <p>You can fine-tune the search here.
+            </p>
+            <b-form inline>Maximum number of genes returned
+                <b-form-input number v-model="cutoff" min="10" max="500" class="ml-2" :placeholder="String(cutoff)"></b-form-input>
+            </b-form>
+            <b-button @click="showMoreOptions=false" variant="dark" class="mt-3 col-md-4">Close</b-button>
+        </b-card>
+    </b-modal>
+
+    <!-- Sidebar for help text -->
     <b-sidebar id="sidebar" title="Help and more info" shadow>
         <div class="px-3 py-2">
             <p>This page shows genes with high expression for a selected sample group, such as cell_type=monocyte. 
-            On the far left is the list of genes with this high expression pattern. The number in the brackets shows the number of
-                datasets in which this gene was found to have high expression in this sample group. Higher number here implies that 
-                this gene is found to have high expression in the selected sample group consistently across more datasets.
+            The results are displayed in a hierarchical manner, with genes on the far left, followed by datasets in which that
+            gene was found to have high expression.
             </p>
-            <p>The second column from the left is the list of datasets in which the selected gene show high expression. Simply select gene-dataset
-                combination to show the expression profile of that gene in that dataset.
+            <p>The number in the bracket after the gene is the number of datasets in which this gene was found to be
+                highly expressed for this search, and the list of genes is sorted on this number.
+            </p>
+            <p>You can get a preview on the gene description by hovering over the gene symbol just above the plot.
+                Clicking on it will open up the <b-link href="http://ensembl.org" target="_blank">Ensembl</b-link> site for this gene.
             </p>
         </div>
     </b-sidebar>
@@ -95,7 +135,13 @@ export default {
             selectedSampleGroup: 'cell_type',
             sampleGroupItems: [],
             selectedSampleGroupItem: 'blood',
+            selectedSampleGroupItem2: null,
+            cutoff: 20,
+
             loading: true,
+            showMoreOptions: false,
+            selectedSortKey: 'number',
+
             genes: [],
             selectedGene: {geneId:null, geneSymbol:'', datasetIds:[]},
             selectedDatasetId: null,
@@ -111,16 +157,29 @@ export default {
                 this.selectedSampleGroup = query.selectedSampleGroup;
 
             this.$axios.get("/api/values/samples/" + this.selectedSampleGroup + "?include_count=true").then(res => {
-                let combined = Object.keys(res.data).map(item => [item, res.data[item]]);
-                combined.sort((a,b) => a[1] > b[1]? -1 : 1);
+                // res.data looks like {'monocyte':1587, ...}
+
+                // Construct sampleGroupItems while discarding some items
                 let discard = ["","in vitro","undefined"];
-                this.sampleGroupItems = combined.filter((item,i) => i<20 && discard.indexOf(item[0])==-1 &&  !item[0].startsWith("Day")).map(item => item[0]);
-                this.selectedSampleGroupItem = Object.keys(query).indexOf('selectedSampleGroupItem')!=-1? query.selectedSampleGroupItem : this.sampleGroupItems[0];
+                this.sampleGroupItems = Object.keys(res.data).filter(item => discard.indexOf(item)==-1 && !item.startsWith("Day")).map(
+                    item => ({text: item, count: res.data[item]})
+                );
+                this.sortSampleGroupItems('number');
+                this.selectedSampleGroupItem = Object.keys(query).indexOf('selectedSampleGroupItem')!=-1? 
+                    query.selectedSampleGroupItem : this.sampleGroupItems[0].text;
+
                 if (query.search=="true")
                     this.search();
             });
         },
 
+        sortSampleGroupItems(key) {
+            if (key=='number') 
+                this.sampleGroupItems.sort((a,b) => a.count > b.count? -1 : 1);
+            else
+                this.sampleGroupItems.sort((a,b) => a.text < b.text? -1 : 1);            
+        },
+        
         gotoReactome() {
             if (this.genes.length==0) return;
             
@@ -139,12 +198,15 @@ export default {
 
         search() {
             this.loading = true;
-            this.$axios.get("/api/genes/sample-group-to-genes?sample_group=" + this.selectedSampleGroup + "&sample_group_item=" + this.selectedSampleGroupItem
+            let sampleGroupItem2 = this.selectedSampleGroupItem2 || '';
+            this.$axios.get("/api/genes/sample-group-to-genes?cutoff=" + this.cutoff + "&sample_group=" + this.selectedSampleGroup + "&sample_group_item=" + this.selectedSampleGroupItem +
+                "&sample_group_item2=" + sampleGroupItem2
             ).then(res => {
                 // First get gene symbols from gene ids and get symbols from mygene
                 let geneIds = res.data.rankScore.map(item => item.geneId);
                 if (geneIds.length==0) {
-                    this.$bvModal.msgBoxOk("No genes found.");
+                    this.$bvModal.msgBoxOk("No genes found for this query. This can happen when there are no datasets " + 
+                        "where at least two or more groups exist for the comparison to be made. Try a different item.");
                     return;
                 }
                 this.totalDatasets = res.data.totalDatasets;
@@ -189,6 +251,7 @@ export default {
             }).catch(error => this.$bvModal.msgBoxOk("Unexpected error while performing analysis: " + error.reponse.data)
             ).then(() => {
                 this.loading = false;
+                this.showMoreOptions = false;
             })
         }
     },
