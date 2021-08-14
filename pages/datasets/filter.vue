@@ -339,6 +339,8 @@ export default {
     mounted() {
         this.apiUrl = process.env.BASE_API_URL;
         this.getDatasets(this.$route.query);
+        
+        // Listen for this event and run function
         this.$root.$on('show_datasets_filter', data => {
             this.getDatasets(data);
         });

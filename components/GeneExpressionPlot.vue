@@ -10,7 +10,8 @@
         <ul class="mt-3 list-unstyled p-0"><li v-for="legend in legends[selectedSampleGroup]" :key="legend.value">
             <b-link href="#" @click="updatePlot(legend);" style="font-size:13px;">
             <b-icon-circle-fill :style="{'color': legend.colour, 'opacity': visibleLegends.indexOf(legend.value)!=-1? 1:0.6}" scale="0.6"></b-icon-circle-fill>
-            <span :style="legendStyle(legend)">{{legend.value}} ({{legend.number}})</span>
+            <span :style="{'color': visibleLegends.indexOf(legend.value)!=-1? 'black':'#a7a7a7', 'font-weight': legendToHighlight(legend)? 'bold':'normal'}">
+                {{legend.value}} ({{legend.number}})</span>
             </b-link>
         </li></ul>
     </b-col>
@@ -134,14 +135,12 @@ export default {
             });
         },
 
-        // Return in-line style to use for legend item
-        legendStyle(legend) {
-            let style = this.visibleLegends.indexOf(legend.value)!=-1? {color:'black'} : {color:'#a7a7a7'};
+        // Return true legend item matches highlightSampleGroupItems
+        legendToHighlight(legend) {
             if (this.highlightSampleGroupItems && this.highlightSampleGroupItems.length>0) {
-                if (this.highlightSampleGroupItems[0]==legend.value || this.highlightSampleGroupItems.length>1 && this.highlightSampleGroupItems[1]==legend.value)
-                    style['font-weight'] = 'bold';
+                return this.highlightSampleGroupItems[0]==legend.value || this.highlightSampleGroupItems.length>1 && this.highlightSampleGroupItems[1]==legend.value;
             }
-            return style;
+            return false;
         },
 
         plotExpression() {
@@ -187,7 +186,9 @@ export default {
             if (selectedLegend==undefined) { // new plot or user changed sample group, so create a new plot by showing all traces under the selected sample group
                 const traces = this.legends[this.selectedSampleGroup].map(legend => {
                     const y = legend.sampleIds.map(item => this.expressionValues[this.gene_id][item]);
-                    return {y:y, type:this.plot_type, boxpoints:this.show_points? 'all':false, name:legend.value, 
+                    return {y:y, type:this.plot_type, boxpoints:this.show_points? 'all':false, 
+                            //name:legendToHighlight(legend)? '<b>' + legend.value + '</b>' : legend.value, 
+                            name:legend.value, 
                             hoverinfo:"text", hovertext:legend.value,
                             points:this.show_points? 'all':false, marker:{color: legend.colour}}
                 });
@@ -228,7 +229,7 @@ export default {
 
                 // Find mathcing columns
                 let traces = document.getElementById(this.plotDivId).data;
-                const names = traces.map(item => item.name);
+                const names = traces.map(item => item.name.replace("<b>","").replace("</b>",""));
                 const columns = [names.indexOf(sampleGroupItem1), names.indexOf(sampleGroupItem2)];
                 
                 // get max y of both columns
@@ -296,5 +297,4 @@ export default {
 </script>
 
 <style>
-
 </style>

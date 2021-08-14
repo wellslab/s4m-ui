@@ -88,12 +88,35 @@
 
     <!-- Show more options (modal) -->
     <b-modal v-model="showMoreOptions" title="More options" hide-footer>
-        <b-card no-body class="border-0">
-            <p>You can fine-tune the search here.
+        <b-card no-body class="border-0 px-1">
+            <p>You can fine-tune the search here.</p>
+            <b-row no-gutters class="mt-2 mr-2" align-v="center">
+                <b-col class="text-right">
+                    Max genes returned
+                </b-col>
+                <b-col md="8">
+                    <b-form inline>
+                    <b-form-input number v-model="cutoff" min="10" max="500" class="ml-2 mr-2" :placeholder="String(cutoff)"></b-form-input>
+                    (500 max)
+                    </b-form>
+                </b-col>
+            </b-row>
+            <b-row class="mt-3 mr-2" no-gutters align-v="center">
+                <b-col class="text-right">
+                    Scoring method
+                </b-col>
+                <b-col md="8">
+                <b-form-select v-model="scoringMethod" class="ml-2">
+                    <b-form-select-option value="max">mean of selected - max of other</b-form-select-option>
+                    <b-form-select-option value="mean">mean of selected - mean of other</b-form-select-option>
+                </b-form-select>
+                </b-col>
+            </b-row>
+            <p class="mt-3">(mean - max) works by taking the mean of values for selected cell type or tissue and calculating the difference to the maximum
+                of the other samples, whereas (mean - mean) calculates the difference to the mean of the other samples. Hence the first option
+                produces stronger scores but may miss out on genes where the expression is still moderately high in the 
+                selected cell type or tissue, and also penalises datasets containing many different cell types/tissues.
             </p>
-            <b-form inline>Maximum number of genes returned
-                <b-form-input number v-model="cutoff" min="10" max="500" class="ml-2" :placeholder="String(cutoff)"></b-form-input>
-            </b-form>
             <b-button @click="showMoreOptions=false" variant="dark" class="mt-3 col-md-4">Close</b-button>
         </b-card>
     </b-modal>
@@ -136,7 +159,9 @@ export default {
             sampleGroupItems: [],
             selectedSampleGroupItem: 'blood',
             selectedSampleGroupItem2: null,
+
             cutoff: 20,
+            scoringMethod: 'max',
 
             loading: true,
             showMoreOptions: false,
@@ -199,8 +224,9 @@ export default {
         search() {
             this.loading = true;
             let sampleGroupItem2 = this.selectedSampleGroupItem2 || '';
-            this.$axios.get("/api/genes/sample-group-to-genes?cutoff=" + this.cutoff + "&sample_group=" + this.selectedSampleGroup + "&sample_group_item=" + this.selectedSampleGroupItem +
-                "&sample_group_item2=" + sampleGroupItem2
+            this.$axios.get("/api/genes/sample-group-to-genes?cutoff=" + this.cutoff + "&sample_group=" + this.selectedSampleGroup + 
+                "&sample_group_item=" + this.selectedSampleGroupItem + "&sample_group_item2=" + sampleGroupItem2 +
+                "&scoring_method=" + this.scoringMethod
             ).then(res => {
                 // First get gene symbols from gene ids and get symbols from mygene
                 let geneIds = res.data.rankScore.map(item => item.geneId);
