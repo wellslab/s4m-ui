@@ -15,11 +15,12 @@
     "@nuxtjs/google-analytics": "^2.4.0",
     "bootstrap": "^4.6.0",
     "bootstrap-vue": "^2.21.2",
-    "core-js": "^3.14.0",
+    "core-js": "^3.16.1",
     "node-sass": "^5.0.0",
-    "nuxt": "^2.15.7",
+    "npm": "^7.20.6",
+    "nuxt": "^2.15.8",
+    "pm2": "^5.1.0",
     "sass-loader": "^10.2.0",
     "vue-gtag": "^1.16.1"
-  },
-  "devDependencies": {}
+  }
 }

@@ -12,8 +12,12 @@
 ```bash
 # If installing in a conda env
 $ conda create --prefix /mnt/miniconda3/envs/s4m-ui  # create new env to specific loation
-$ conda activate s4m
+$ conda activate s4m-ui
 $ conda install nodejs
+
+# Run updates if necessary
+$ conda update --all
+$ npm install npm   # updating npm
 
 # install dependencies
 $ npm install nuxt
@@ -21,8 +25,7 @@ $ npm install bootstrap-vue
 $ npm add @nuxtjs/axios
 $ npm add @nuxtjs/auth
 $ npm add vue-gtag
-$ npm install pm2 -g  # see https://nuxtjs.org/docs/2.x/deployment/deployment-pm2/
-$ npm install @nuxtjs/google-analytics  # see https://google-analytics.nuxtjs.org/setup
+$ npm install pm2  # see https://nuxtjs.org/docs/2.x/deployment/deployment-pm2/
 $ npm install @nuxtjs/dotenv
 
 #$ npm install sass-loader 
