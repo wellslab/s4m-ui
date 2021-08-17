@@ -18,9 +18,13 @@
 
     <!-- apply T-test (modal) -->
     <b-modal v-model="ttest_showDialog" title="Apply t-test" hide-footer>
-        <p>You can apply a T-test and show the p value if you select 2 groups to compare.
-            We use <b-link href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.ttest_ind.html" target="_blank">
-            scipy.stats.ttest_ind</b-link> function for this, which assumes independent samples with equal variances.
+        <p>You can apply a T-test and show the p value if you select 2 groups to compare here.</p>
+        <p class="text-warning"><b>Note:</b> this is a <b>very basic T-test</b>, which uses 
+            <b-link href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.ttest_ind.html" target="_blank">
+            scipy.stats.ttest_ind</b-link> function, which assumes independent samples with equal variances. 
+            Covariates are also not taken into account here. The result would be more reliable for larger numbers of samples in each group.</p>
+        <p>If you want to perform a proper, more in-depth statistical analysis, you should extract the data and run a suitable package such as
+            <b-link href="https://bioconductor.org/packages/release/bioc/html/limma.html" target="_blank">limma</b-link>.
         </p>
         <div v-if="gene_id!=null">
             <b-form-select size="sm" v-model="ttest_selectedSampleGroupItem1" :options="sampleGroupItems" class="mt-2"></b-form-select>

@@ -16,7 +16,7 @@
                 <b-form-select-option :value="null" disabled>-- Outer circle --</b-form-select-option>
             </template>
         </b-form-select>
-        <b-button variant="dark" @click="showSunburst" class="ml-1">Search</b-button>
+        <b-button variant="dark" @click="showSunburst" class="ml-1">Run</b-button>
         <b-dropdown text="tools" class="ml-2">
             <b-dropdown-item @click="showMoreOptions=true">More options...</b-dropdown-item>
         </b-dropdown>
@@ -46,6 +46,7 @@
     </b-card>
 </b-modal>
     
+<!-- Sidebar for more help -->
 <b-sidebar id="sidebar" title="Help and more info" shadow>
   <div class="px-3 py-2">
     <p>Visual Data Explorer is a sunburst plot which shows a snapshot of the data in Stemformatics, where the relationship
@@ -62,6 +63,7 @@
   </div>
 </b-sidebar>
 
+<!-- Div for showing details of a clicked item (draggable) -->
 <draggable-div v-show="clickedItem.display!=''" class="border border-light bg-light" style="width:230px; opacity:0.8">
     <div slot="header" class="card-header" title="Drag me around by this area">
         <b>{{clickedItem.display}}</b>
@@ -70,7 +72,7 @@
         <div class="card-body">
         <ul class="pl-2">
         <li><b-link @click="gotoDatasetFilterPage()">{{clickedItem.value}} samples from {{datasetIds.length}} datasets</b-link> 
-            have this value as {{clickedItem.descriptor}}.</li>
+            have this value as <span v-html="clickedItem.descriptor + clickedItem.additionalDescriptor"></span>.</li>
         <li><b-link @click="gotoDatasetFilterPage('free_search')">Show all datasets</b-link> which contain this term in any of its samples.</li>
         </ul>
         </div>
@@ -85,7 +87,6 @@
 import Vue from 'vue'
 import { BootstrapVueIcons } from 'bootstrap-vue'
 Vue.use(BootstrapVueIcons)
-
 
 export default {
     head: {
@@ -110,12 +111,70 @@ export default {
 
         sunburst: {},
         clickedItem: {'display':'', 'value':'', 'descriptor':'', 'ids':[]},
-        acronym: {'induced pluripotent stem cell':'iPSC',
-                   'hematopoietic multipotent progenitor':'HMP',
-                   'chronic myeloid leukemia':'CML',
-                   'embryonic stem cell':'ESC',
-                   'peripheral blood mononuclear cell':'PBMC',
-                   'cord blood CD34+ haematopoietic progenitor cells':'CD34+ HPC'},
+        acronym: {
+            'acute myeloid leukemia cell':'AML',
+            'angioblastic mesenchymal cell':'AMC',
+            'astrocyte transitioning to induced pluripotent stem cell':'ast-iPSC',
+            'CD14-positive monocyte':'CD14+ monocyte',
+            'CD34-positive hematopoietic progenitor cell':'CD34+ HPP',
+            'CD4-positive T lymphocyte':'CD4+ T cell',
+            'CD8-positive T lymphocyte':'CD8+ T cell',
+            'CA1 field of hippocampus':'CA1',
+            'CA3 field of hippocampus':'CA3',
+            'cerebral cortex':'cerebral CTX',
+            'chronic myeloid leukemia':'CML',
+            'chronic myeloid leukemia cell':'CML cell',
+            'common myeloid progenitor':'CMP',
+            'common lymphoid progenitor':'CLP',
+            'conventional dendritic cell':'cDC',
+            'conventional dendritic cell type one':'cDC1',
+            'conventional dendritic cell type two':'cDC2',
+            'cord blood CD34+ haematopoietic progenitor cell':'CD34+ HPC',
+            'dendritic cell':'DC',
+            'dendritic cell precursor':'DC precursor',
+            'early embryonic cell':'EEC',
+            'embryonic stem cell':'ESC',
+            'endodermal cell':'endodermal',
+            'endothelial cell':'endothelial',
+            'entorhinal cortex':'entorhinal CTX',
+            'epithelial cell':'epithelial',
+            'epithelial cell transitioning to induced pluripotent stem cell':'ec-IPSC',
+            'fibroblast transitioning to induced pluripotent stem cell':'fib-iPSC',
+            'frontal cortex':'frontal CTX',
+            'granulocyte monocyte progenitor cell':'GM-progenitor',
+            'hematopoietic multipotent progenitor':'HMP',
+            'hematopoietic precursor cell':'HPC',
+            'induced pluripotent stem cell':'iPSC',
+            'induced pluripotent stem cell intermediate':'iPSC-intermediate',
+            'inner cell mass':'ICM',
+            'inner cell mass cell':'ICM',
+            'labial salivary gland':'LSG',
+            'lamina propria of small intestine':'sml intestine LP',
+            'megakaryocyte-erythroid progenitor':'ME-progenitor',
+            'mesenchymal stromal cell':'MSC',
+            'mesenchymal stromal cell transitioning to induced pluripotent stem cell':'MSC-iPSC',
+            'mesodermal cell':'mesodermal',
+            'microglial cell':'microglial',
+            'middle temporal gyrus':'mid TG',
+            'monocyte-derived dendritic cell':'MoDC',
+            'mononuclear cell':'mononuclear',
+            'mucosa of oral region':'oral mucosa',
+            'natural killer cell':'NK-cell',
+            'neural crest cell':'NCC',
+            'neural progenitor cell':'NPC',
+            'neuroectodermal cell':'neuroectodermal',
+            'olfactory lamina propria-derived progenitor':'OLP progenitor',
+            'peripheral blood mononuclear cell':'PBMC',
+            'plasmacytoid dendritic cell':'pDC',
+            'posterior cingulate cortex':'post-cingulate CTX',
+            'respiratory system lamina propria':'RSLP',
+            'small cell lung cancer':'SCLC',
+            'subcutaneous adipose tissue':'adipose',
+            'superior frontal gyrus':'superior FG',
+            'temporal cortex':'temporal CTX',
+            'trophoectodermal cell':'trophoectodermal',
+            'umbilical cord blood':'cord blood'
+            },
         }
     },
 
@@ -131,11 +190,13 @@ export default {
         // Function to perform plotly plot - separated from showSunburst in case we need to make updates to the plot later
         // without going back to the server.
         plot() {
-            let traces = [{ids:this.sunburst.ids, labels:this.sunburst.labels, parents:this.sunburst.parents, 
+            let traces = [{ids:this.sunburst.ids, labels:this.sunburst.labelDisplay, parents:this.sunburst.parents, 
                         values:this.sunburst.values.map(item => item.length), 
                         type:'sunburst', name:'click for more information',
                         branchvalues:'total',
-                        hovertemplate: '<b>%{label}</b>'
+                        hovertemplate: '<b>%{hovertext}</b>',
+                        hovertext:this.sunburst.labels,
+                        hoverinfo:'text'
                         }];
             let layout = {margin: {t:0, l:0, r:0, b:0},};
             Plotly.newPlot('plotDiv', traces, layout);
@@ -152,10 +213,11 @@ export default {
                 "&sunburst_inner_cutoff=" + this.innerCutoff + "&sunburst_outer_cutoff=" + this.outerCutoff).then(res => {
                 this.sunburst = res.data;
                 // substitute acronyms for labels wherever possible
-                this.sunburst.labels = this.sunburst.labels.map(item => (item in this.acronym)? this.acronym[item] : item);
+                this.sunburst.labelDisplay = this.sunburst.labels.map(item => (item in this.acronym)? this.acronym[item] : item);
 
                 this.plot();
                 this.loading = false;
+                this.showMoreOptions = false;
                 let plotDiv = document.getElementById("plotDiv");
                 document.getElementById("draggable-container").style.left = plotDiv.getBoundingClientRect().left + (plotDiv.offsetWidth *0.85) + 'px';
                 document.getElementById("draggable-container").style.top = plotDiv.getBoundingClientRect().top + 150 + 'px';
@@ -172,6 +234,9 @@ export default {
             this.clickedItem.display = trace.labels[index];
             this.clickedItem.value = trace.values[index];
             this.clickedItem.descriptor = trace.parents[index]==''? this.innerSelectedSampleGroup : this.outerSelectedSampleGroup;
+            this.clickedItem.additionalDescriptor = trace.parents[index]==''? '' : ' and <b>' + 
+                (trace.parents[index] in this.acronym? this.acronym[trace.parents[index]] : trace.parents[index]) + 
+                '</b> as ' + this.innerSelectedSampleGroup;
             this.clickedItem.ids = this.sunburst.values[index];
         },
 
