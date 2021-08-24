@@ -27,15 +27,8 @@
                     <div id="pcaPlotDiv"></div>
                 </b-col>
                 <b-col>
-                    <!-- Legend area. -->
-                    colour by: 
-                    <b-form-select size="sm" v-model="pca.selectedSampleGroup" :options="sampleGroups" @change="plotPCA()" class="ml-1"></b-form-select>
-                    <ul class="mt-3 list-unstyled p-0"><li v-for="(legend,i) in pca.currentLegends" :key="legend.value">
-                        <b-link href="#" @click="plotPCA(i);" style="font-size:13px;">
-                        <b-icon-circle-fill :style="{'color': legend.colour}" scale="0.6"></b-icon-circle-fill>
-                        <span :style="legend.visible? 'color:black' : 'color:#a7a7a7'">{{legend.value}} ({{legend.number}})</span>
-                        </b-link>
-                    </li></ul>
+                    <PlotLegend :legends="pca_legends" :sample-groups-ordered="sampleGroups"
+                        @legend-clicked="updatePCA" @sample-group-changed="plotPCA"></PlotLegend>
                 </b-col>
             </b-row>
             <draggable-div v-show="pca.showScreePlot" class="border border-light bg-light shadow">
@@ -218,16 +211,13 @@ export default {
             datasetId: 6277,
 
             // pca plot
-            // Note currentLegends is same as legends[pca.selectedSampleGroup], 
-            // because vue doesn't seem to like updating the dom for changes inside legends object, we make a copy here
             pca: {selectedSampleGroup: "",
                   coords: {},
                   attributes: {},
-                  legends: {},  // vue doesn't update dom when this changes
-                  currentLegends:[],    // vue will update dome when this changes - so this is a copy of legeneds[pca.selectedSampleGroup]
                   showScreePlot: false,
                   loading: false,
             },
+            pca_legends:{},
 
             // dataset metadata
             datasetMetadata: {},
@@ -260,52 +250,32 @@ export default {
         // },
         
         // ------------ Overview tab ---------------
-        // Set up legends object for use in PCA plot. This object contains all the info needed to render the plot for all sample groups
-        // Note that this same object will be used for gene expression plot, as the sample group related
-        // objects are common.
-        setPCALegends() {
-            const exampleColours = ['#64edbc', '#6495ed', '#ed6495', '#edbc64', '#8b8b00', '#008b00', '#8b008b', '#00008b', 
-                                  '#708090', '#908070', '#907080', '#709080', '#008080', '#008000', '#800000', '#bca68f', 
-                                  '#bc8fa6', '#bc8f8f', '#008160', '#816000', '#600081', '#ff1493', '#14ff80'];
-
-            this.sampleGroups.forEach(sampleGroup => {
-                // First collect sample ids based on sampleGroup
-                let sampleIds = this._sampleIdsFromSampleGroup(this.samples, sampleGroup);
-                let groupItems = Object.keys(sampleIds);
-                groupItems.sort();
-
-                // Keys of sampleIds form sample group items. Create a legend per sample group item
-                this.pca.legends[sampleGroup] = groupItems.map((value,i) => {
-                    return {'value': value, 'number': sampleIds[value].length, 'sampleIds': sampleIds[value],
-                            'colour': exampleColours[i % exampleColours.length], 'visible': true,
-                            'x': sampleIds[value].map(item => this.pca.coords['0'][item]),
-                            'y': sampleIds[value].map(item => this.pca.coords['1'][item]),
-                            'z': sampleIds[value].map(item => this.pca.coords['2'][item])};
-                });
-            })
+        // Create a new PCA plot. legend may also be a new selectedSampleGroup, which also creates a new plot
+        plotPCA(legend) {
+            if (legend && 'selectedSampleGroup' in legend)    // specified sample group
+                this.pca.selectedSampleGroup = legend.selectedSampleGroup;
+            
+            const traces = this.pca_legends[this.pca.selectedSampleGroup].map(legend => (
+                {x:legend.sampleIds.map(item => this.pca.coords['0'][item]), 
+                    y:legend.sampleIds.map(item => this.pca.coords['1'][item]),
+                    z:legend.sampleIds.map(item => this.pca.coords['2'][item]),
+                    mode:'markers', type:'scatter3d', text:legend.sampleIds, hoverinfo:'text', 
+                    marker:{color:legend.colour, size:5}, visible:legend.visible}
+            ));
+            const layout = {showlegend:false, margin: {t:20, l:0, r:0, b:0}, 
+                scene:{xaxis:{title:'PC1'}, yaxis:{title:'PC2'}, zaxis:{title:'PC3'}}};
+            Plotly.newPlot('pcaPlotDiv', traces, layout);
         },
 
-        // Create or update the PCA plot. If legendIndex is undefined, create a new plot,
-        // otherwise assume it's the index of clicked legend, and its corresponding trace will be toggled.
-        plotPCA(legendIndex) {
-            this.pca.currentLegends = this.pca.legends[this.pca.selectedSampleGroup];
-
-            // Different action depending on legendIndex
-            if (legendIndex==undefined) { // new plot or user changed sample group, so create a new plot by showing all traces under the selected sample group
-                const traces = this.pca.legends[this.pca.selectedSampleGroup].map(legend => {
-                    return {x:legend.x, y:legend.y, z:legend.z, mode:'markers', type:'scatter3d', text:legend.sampleIds, hoverinfo:'text', 
-                            marker:{color:legend.colour, size:5}, visible:legend.visible}
-                });
-                const layout = {showlegend:false, margin: {t:20, l:0, r:0, b:0}, scene:{xaxis:{title:'PC1'}, yaxis:{title:'PC2'}, zaxis:{title:'PC3'}}};
-                Plotly.newPlot('pcaPlotDiv', traces, layout);
-            }
-            else {  // legendIndex is a selected index - work out if we're adding or removing a trace
-                let legend = this.pca.currentLegends[legendIndex];
+        // Should run when a legend is clicked, so that its corresponding trace can be toggled.
+        updatePCA(legend) {
+            let legendIndex = this.pca_legends[this.pca.selectedSampleGroup].map(item => item.value).indexOf(legend.value);
+            if (legendIndex!=-1) {
                 Plotly.restyle('pcaPlotDiv',{visible: !legend.visible}, legendIndex);
                 legend.visible = !legend.visible;
             }
         },
-
+        
         plotPCAScree() {
             // Read explained variance and convert to percentages
             let expVar = Object.values(this.pca.attributes.explained_variance_);
@@ -409,24 +379,11 @@ export default {
             // PCA should be plotted after sample table construction
             this.$axios.get("/api/datasets/" + this.datasetId + "/pca?orient=dict").then(res2 => {
                 this.samples = res.data;
-                
-                // Extract sample groups to use, but don't include these
-                const hideKeys = ["sample_description","external_source_id"];
-                this.sampleGroups = this._sampleGroupsForPlotlyTrace(this.samples).filter(item => hideKeys.indexOf(item)==-1);
-
-                // Sort sample group with some preferences to certain fields 
-                // (from https://stackoverflow.com/questions/13304543/javascript-sort-array-based-on-another-array)
-                const sorted = ['cell_type','sample_type']; // remember that not all sampleGroups will have all these values
-                this.sampleGroups.sort((a,b) => {
-                    const index1 = sorted.indexOf(a);
-                    const index2 = sorted.indexOf(b);
-                    return (index1 > -1 ? index1 : Infinity) - (index2 > -1 ? index2 : Infinity);
-                });
-
+                this.sampleGroups = this._sampleGroupsForPlotlyTrace(this.samples);
                 this.pca.selectedSampleGroup = this.sampleGroups[0];
                 this.pca.coords = res2.data["coordinates"];
                 this.pca.attributes = res2.data["attributes"];
-                this.setPCALegends();
+                this.pca_legends = this._legendsFromSampleTable(this.samples);
                 this.plotPCA();
             }).catch().then(() => {
                 this.pca.loading = false;

@@ -1,19 +1,15 @@
+Component for plotting gene expression, which happens often in the application in different pages.
+Main input data are dataset and gene ids. When one of these changes, this component will fetch
+matching expression data and plot.
+
 <template>
 <b-row class="small justify-content-center">
     <b-col col md="9" class="overflow-auto text-center">
         <div :id="plotDivId"></div>
     </b-col>
     <b-col class="text-left">
-        <!-- Legend area. -->
-        colour by: 
-        <b-form-select size="sm" v-model="selectedSampleGroup" :options="sampleGroups" @change="updatePlot()" class="ml-1"></b-form-select>
-        <ul class="mt-3 list-unstyled p-0"><li v-for="legend in legends[selectedSampleGroup]" :key="legend.value">
-            <b-link href="#" @click="updatePlot(legend);" style="font-size:13px;">
-            <b-icon-circle-fill :style="{'color': legend.colour, 'opacity': visibleLegends.indexOf(legend.value)!=-1? 1:0.6}" scale="0.6"></b-icon-circle-fill>
-            <span :style="{'color': visibleLegends.indexOf(legend.value)!=-1? 'black':'#a7a7a7', 'font-weight': legendToHighlight(legend)? 'bold':'normal'}">
-                {{legend.value}} ({{legend.number}})</span>
-            </b-link>
-        </li></ul>
+        <PlotLegend :legends="legends" :initial-sample-group="selectedSampleGroup" :items-to-highlight="highlightSampleGroupItems"
+            @legend-clicked="updateTrace" @sample-group-changed="newPlot"></PlotLegend>
     </b-col>
 
     <!-- apply T-test (modal) -->
@@ -81,7 +77,7 @@ export default {
         plot_type: {default:'box', type:String},
         show_points: {default:true, type:Boolean},
         plotDivId: {default:'genePlotDiv', type:String},
-        highlightSampleGroupItems: [],  // highlight these items
+        highlightSampleGroupItems: Object,  // highlight these items
     },
 
     data() {
@@ -89,13 +85,9 @@ export default {
             loading:false,
 
             datasetMetadata: {},
-            samples: [],
-            sampleGroups: [],
             selectedSampleGroup: '',
             expressionValues: {},
             legends: {},
-            visibleLegends:[],
-            //currentLegends: []
 
             ttest_showDialog: false,
             ttest_selectedSampleGroupItem1: null,
@@ -110,43 +102,12 @@ export default {
     },
 
     computed: {
-        currentLegends() {
-            return this.legends[this.selectedSampleGroup];
-        },
         sampleGroupItems() {
             return this.legends[this.selectedSampleGroup]!=null? this.legends[this.selectedSampleGroup].map(item => item.value): [];
         },
     },
 
     methods: {
-        // Set legends object, which can hold all the information about each sample group item
-        setLegends() {
-            const exampleColours = ['#64edbc', '#6495ed', '#ed6495', '#edbc64', '#8b8b00', '#008b00', '#8b008b', '#00008b', 
-                                  '#708090', '#908070', '#907080', '#709080', '#008080', '#008000', '#800000', '#bca68f', 
-                                  '#bc8fa6', '#bc8f8f', '#008160', '#816000', '#600081', '#ff1493', '#14ff80'];
-
-            this.sampleGroups.forEach(sampleGroup => {
-                // First collect sample ids based on sampleGroup
-                let sampleIds = this._sampleIdsFromSampleGroup(this.samples, sampleGroup);
-                let groupItems = Object.keys(sampleIds);
-                groupItems.sort();
-
-                // Keys of sampleIds form sample group items. Create a legend per sample group item
-                this.legends[sampleGroup] = groupItems.map((value,i) => {
-                    return {'value': value, 'number': sampleIds[value].length, 'sampleIds': sampleIds[value],
-                            'colour': exampleColours[i % exampleColours.length], 'visible': true,};
-                });
-            });
-        },
-
-        // Return true legend item matches highlightSampleGroupItems
-        legendToHighlight(legend) {
-            if (this.highlightSampleGroupItems && this.highlightSampleGroupItems.length>0) {
-                return this.highlightSampleGroupItems[0]==legend.value || this.highlightSampleGroupItems.length>1 && this.highlightSampleGroupItems[1]==legend.value;
-            }
-            return false;
-        },
-
         plotExpression() {
             //this.loading = true;
             if (this.dataset_id==null || this.gene_id==null) return;
@@ -154,27 +115,16 @@ export default {
             this.$axios.get("/api/datasets/" + this.dataset_id + "/metadata").then(res1 => {
                 this.datasetMetadata = res1.data;            
                 this.$axios.get("/api/datasets/" + this.dataset_id + "/samples").then(res2 => {
-                    this.samples = res2.data;
-                    
-                    // Extract sample groups to use, but don't include these
-                    const hideKeys = ["sample_description","external_source_id"];
-                    this.sampleGroups = this._sampleGroupsForPlotlyTrace(this.samples).filter(item => hideKeys.indexOf(item)==-1);
+                    let samples = res2.data;
+                    let sampleGroups = this._sampleGroupsForPlotlyTrace(samples);
+                    this.legends = this._legendsFromSampleTable(samples);
 
-                    // Sort sample group with some preferences to certain fields 
-                    // (from https://stackoverflow.com/questions/13304543/javascript-sort-array-based-on-another-array)
-                    const sorted = ['cell_type','sample_type']; // remember that not all sampleGroups will have all these values
-                    this.sampleGroups.sort((a,b) => {
-                        const index1 = sorted.indexOf(a);
-                        const index2 = sorted.indexOf(b);
-                        return (index1 > -1 ? index1 : Infinity) - (index2 > -1 ? index2 : Infinity);
-                    });
-                    this.selectedSampleGroup = (this.selected_sample_group && this.sampleGroups.indexOf(this.selected_sample_group)!=-1)? 
-                        this.selected_sample_group : this.sampleGroups[0];
-                    this.setLegends();
+                    this.selectedSampleGroup = (this.selected_sample_group && sampleGroups.indexOf(this.selected_sample_group)!=-1)? 
+                        this.selected_sample_group : sampleGroups[0];                    
 
                     this.$axios.get("/api/datasets/" + this.dataset_id + "/expression?orient=index&key=cpm&log2=true&gene_id=" + this.gene_id).then(res3 => {
                         this.expressionValues = res3.data;
-                        this.updatePlot();
+                        this.newPlot();
                     }).catch(error => {
                         this.$bvModal.msgBoxOk("No expression value for this gene in this dataset");
                     }).then(() => {
@@ -184,41 +134,43 @@ export default {
                 });
             });
         },
-        
-        updatePlot(selectedLegend) {
-            // Different action depending on legendIndex
-            if (selectedLegend==undefined) { // new plot or user changed sample group, so create a new plot by showing all traces under the selected sample group
-                const traces = this.legends[this.selectedSampleGroup].map(legend => {
-                    const y = legend.sampleIds.map(item => this.expressionValues[this.gene_id][item]);
-                    return {y:y, type:this.plot_type, boxpoints:this.show_points? 'all':false, 
-                            //name:legendToHighlight(legend)? '<b>' + legend.value + '</b>' : legend.value, 
-                            name:legend.value, 
-                            hoverinfo:"text", hovertext:legend.value,
-                            points:this.show_points? 'all':false, marker:{color: legend.colour}}
-                });
-                const title = this.datasetMetadata.platform_type=='RNASeq'? 'log2(cpm+1)' : 'log2';
-                const layout = {yaxis: {title: title}, showlegend:false};
-                Plotly.newPlot(this.plotDivId, traces, layout);
-                this.ttest_selectedSampleGroupItem1 = this.sampleGroupItems[0];
-                this.ttest_selectedSampleGroupItem2 = this.sampleGroupItems.length>1? this.sampleGroupItems[1]: this.sampleGroupItems[0];                
-            }
-            else if (selectedLegend=='restyle') {   // change plot type or show/hide points
-                const params = this.plot_type=='box'? {boxpoints:this.show_points? 'all':false} : {points: this.show_points? 'all':false};
-                params['type'] = this.plot_type;
-                Plotly.restyle(this.plotDivId, params);
-            }
-            else {  // selectedLegend comes from user click - toggle visibility of the matching trace after working out its index
-                const index = this.legends[this.selectedSampleGroup].map(legend => legend.value).indexOf(selectedLegend.value);
-                Plotly.restyle(this.plotDivId,{visible: !selectedLegend.visible}, index);
-                this.legends[this.selectedSampleGroup][index].visible = !selectedLegend.visible;
-            }
-            this.visibleLegends = this.legends[this.selectedSampleGroup].filter(item => item.visible).map(item => item.value);
 
-            // Emit event to parent, if interested in updated plot
-            //this.$emit('gene-expression-plot-updated', {selectedSampleGroup: this.selectedSampleGroup});
+        // Make a new plot (from expression values changed or from sample group changed)
+        newPlot(params) {
+            if (params && 'selectedSampleGroup' in params)
+                this.selectedSampleGroup = params.selectedSampleGroup;
+
+            const traces = this.legends[this.selectedSampleGroup].map(legend => {
+                const y = legend.sampleIds.map(item => this.expressionValues[this.gene_id][item]);
+                return {y:y, type:this.plot_type, boxpoints:this.show_points? 'all':false, 
+                        //name:legendToHighlight(legend)? '<b>' + legend.value + '</b>' : legend.value, 
+                        name:legend.value, 
+                        hoverinfo:"text", hovertext:legend.value,
+                        points:this.show_points? 'all':false, marker:{color: legend.colour}}
+            });
+            const title = this.datasetMetadata.platform_type=='RNASeq'? 'log2(cpm+1)' : 'log2';
+            const layout = {yaxis: {title: title}, showlegend:false};
+            Plotly.newPlot(this.plotDivId, traces, layout);
+            this.ttest_selectedSampleGroupItem1 = this.sampleGroupItems[0];
+            this.ttest_selectedSampleGroupItem2 = this.sampleGroupItems.length>1? this.sampleGroupItems[1]: this.sampleGroupItems[0];                
         },
 
-        // Inspired by https://stackoverflow.com/questions/67505252/plotly-box-p-value-significant-annotation
+        // For plot type change or show/hide points
+        restylePlot() {
+            const params = this.plot_type=='box'? {boxpoints:this.show_points? 'all':false} : {points: this.show_points? 'all':false};
+            params['type'] = this.plot_type;
+            Plotly.restyle(this.plotDivId, params);
+        },
+
+        // For show/hide trace when legend is clicked
+        updateTrace(selectedLegend) {
+            const index = this.legends[this.selectedSampleGroup].map(legend => legend.value).indexOf(selectedLegend.value);
+            Plotly.restyle(this.plotDivId,{visible: !selectedLegend.visible}, index);
+            this.legends[this.selectedSampleGroup][index].visible = !selectedLegend.visible;
+        },
+
+        // Calculate p-value for groups to contrast and show on the plot.
+        // Inspired by https://stackoverflow.com/questions/67505252/plotly-box-p-value-significant-annotation.
         addPvalueAnnotation() {
             const sampleGroupItem1 = this.ttest_selectedSampleGroupItem1;
             const sampleGroupItem2 = this.ttest_selectedSampleGroupItem2;
@@ -286,10 +238,10 @@ export default {
             this.plotExpression();
         },
         plot_type: function() {
-            this.updatePlot('restyle');
+            this.restylePlot();
         },
         show_points: function() {
-            this.updatePlot('restyle');
+            this.restylePlot();
         }
     },
 

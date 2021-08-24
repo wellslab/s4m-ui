@@ -62,7 +62,7 @@
                 </b-card-header>
                 <b-card-body>
                     <GeneExpressionPlot :gene_id="selectedGene.geneId" :dataset_id="selectedDataset.datasetId" :selected_sample_group="selectedSampleGroup"
-                        :highlight-sample-group-items="[selectedSampleGroupItem.value]"/>
+                        :highlight-sample-group-items="itemsToHighlight"/>
                 </b-card-body>
             </b-card>
         </b-col>
@@ -129,6 +129,14 @@ export default {
             datasets: [],
             selectedDataset: {},
         }
+    },
+
+    computed: {
+        itemsToHighlight() {
+            let items = {};
+            items[this.selectedSampleGroup] = [this.selectedSampleGroupItem.value];
+            return items;
+        },
     },
 
     methods: {

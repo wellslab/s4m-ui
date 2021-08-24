@@ -3,9 +3,9 @@
     <!-- Area for controls. -->
     <div class="text-center mt-1">
         <h3 class="mb-2">Integrated Atlas: <b-link @click="showVersionInfo" v-b-tooltip.hover title="Click to show atlas version">{{displayName}}</b-link>
-            <small>
+            <small class="align-middle">
                 <b-link v-b-tooltip.hover.right title="Background and more information" v-b-toggle.sidebar class="ml-2"><b-icon-info-circle></b-icon-info-circle></b-link>
-                <b-spinner v-if="loading" label="Loading..." variant="secondary" style="width:1.5rem; height:1.5rem;"></b-spinner>
+                <b-spinner label="Loading..." variant="secondary" :style="{visibility: loading ? 'visible' : 'hidden'}" class="ml-1" style="width:1.5rem; height:1.5rem;"></b-spinner>
             </small>
         </h3>
 
@@ -31,7 +31,7 @@
             </b-dropdown>
             <b-dropdown right text="tools" class="col-md-2 px-0 m-1">
                 <b-dropdown-item v-b-modal.downloadDataModal>download data/plots</b-dropdown-item>
-                <b-dropdown-item @click="datasetInfo.show=true">find dataset</b-dropdown-item>
+                <b-dropdown-item @click="datasetInfo.show=true; highlightDatasets(datasetInfo.selectedDatasetId)">find dataset</b-dropdown-item>
                 <b-dropdown-item v-b-modal.projectDataModal>project other data</b-dropdown-item>
                 <b-dropdown-item @click="customSampleGroup.show=true">combine sample groups</b-dropdown-item>
             </b-dropdown>
@@ -46,21 +46,15 @@
         <b-col v-show="showTwoPlots" col :md="showColourByAsDraggable? 6: 4" class="overflow-auto text-center">
             <div id="rightPlotDiv"></div>
         </b-col>
-        <b-col v-if="!showColourByAsDraggable && (showTwoPlots || selectedPlotBy=='sample type' || geneExpression.length==0)" md="3">
+        <b-col v-show="!showColourByAsDraggable && (showTwoPlots || selectedPlotBy=='sample type' || geneExpression.length==0)" md="3">
             <!-- Legend area, only shown if selectedPlot is sample type. -->
-            colour by: <b-link @click="showColourByAsDraggable=true" v-b-tooltip.hover title="pop out this area as a draggable box">
-                <b-icon-box-arrow-in-up-right></b-icon-box-arrow-in-up-right></b-link>
-            <b-form-select v-model="selectedColourBy" :options="colourBy" @change="updateLegends(); updatePlot()" 
-                data-step="1" data-intro="Colour each sample by a sample group here.">
-            </b-form-select>
-            <ul class="mt-3 list-unstyled p-0" data-step="2" data-intro="Click on a legend to show/hide samples in the plot.">
-                <li v-for="(legend,i) in legends" :style="sampleTypeBreakPoint[selectedColourBy].indexOf(legend.value)!=-1? 'margin-top:10px' : ''" :key="legend.value">
-                <b-link href="#" @click="updateLegends(i); updatePlot();" style="font-size:13px;">
-                <b-icon-circle-fill v-if="uploadData.projectedSampleIds.indexOf(legend.sampleIds[0])==-1" :style="{'color': legend.colour}" scale="0.6"></b-icon-circle-fill>
-                <b-icon-diamond v-if="uploadData.projectedSampleIds.indexOf(legend.sampleIds[0])!=-1" :style="{'color': legend.colour}" scale="0.6"></b-icon-diamond>
-                <span :style="legend.visible? 'color:black' : 'color:#a7a7a7'">{{legend.value}} ({{legend.number}})</span>
-                </b-link>
-            </li></ul>
+            <PlotLegend :legends="allLegends" :initial-sample-group="selectedColourBy" :items-with-margins="itemsWithMargins"
+                @legend-clicked="updatePlot" @sample-group-changed="updatePlot">
+                <template #header>
+                    colour by: <b-link @click="toggleLegend" v-b-tooltip.hover title="pop out this area as a draggable box">
+                        <b-icon-box-arrow-in-up-right></b-icon-box-arrow-in-up-right></b-link>
+                </template>
+            </PlotLegend>
         </b-col>
     </b-row>
     
@@ -69,25 +63,16 @@ of the same code for legend area above. -->
 <draggable-div v-show="showColourByAsDraggable" class="border border-light bg-light" style="width:350px; opacity:0.95; left:70%">
     <div slot="header" class="card-header bg-dark" title="Drag me around by this area">
         <span class="text-white">Colour by</span>
-        <b-link href="#" @click="showColourByAsDraggable=false" class="float-right font-weight-bold text-white"
+        <b-link href="#" @click="toggleLegend" class="float-right font-weight-bold text-white"
             v-b-tooltip.hover title="Pop this box back into the page">
             <b-icon-box-arrow-in-down-left></b-icon-box-arrow-in-down-left>
         </b-link>
     </div>
     <div slot="main">
-        <div class="card-body">
-            <b-form-select v-model="selectedColourBy" :options="colourBy" @change="updateLegends(); updatePlot()" 
-                data-step="1" data-intro="Colour each sample by a sample group here.">
-            </b-form-select>
-            <ul class="mt-3 list-unstyled p-0" data-step="2" data-intro="Click on a legend to show/hide samples in the plot.">
-                <li v-for="(legend,i) in legends" :style="sampleTypeBreakPoint[selectedColourBy].indexOf(legend.value)!=-1? 'margin-top:10px' : ''" :key="legend.value">
-                <b-link href="#" @click="updateLegends(i); updatePlot();" style="font-size:13px;">
-                <b-icon-circle-fill v-if="uploadData.projectedSampleIds.indexOf(legend.sampleIds[0])==-1" :style="{'color': legend.colour}" scale="0.6"></b-icon-circle-fill>
-                <b-icon-diamond v-if="uploadData.projectedSampleIds.indexOf(legend.sampleIds[0])!=-1" :style="{'color': legend.colour}" scale="0.6"></b-icon-diamond>
-                <span :style="legend.visible? 'color:black' : 'color:#a7a7a7'">{{legend.value}} ({{legend.number}})</span>
-                </b-link>
-            </li></ul>
-        </div>
+        <PlotLegend :legends="allLegends" :initial-sample-group="selectedColourBy" :items-with-margins="itemsWithMargins"
+            @legend-clicked="updatePlot" @sample-group-changed="updatePlot">
+                <template #header><span></span></template>
+        </PlotLegend>
     </div>
 </draggable-div>
 
@@ -155,19 +140,19 @@ of the same code for legend area above. -->
 <draggable-div v-show="datasetInfo.show" class="border border-light bg-light" style="width:350px; opacity:0.95; left:70%">
     <div slot="header" class="card-header bg-dark" title="Drag me around by this area">
         <span class="text-white">Find dataset</span>
-        <b-link href="#" @click="datasetInfo.show=false" class="float-right font-weight-bold text-white">X</b-link>
+        <b-link href="#" @click="datasetInfo.show=false; clearHighlight();" class="float-right font-weight-bold text-white">X</b-link>
     </div>
     <div slot="main">
         <div class="card-body">
             <p>All the datasets which were used for the construction of this atlas are shown below. 
-            Hover over the name to highlight matching samples in the plot. You can drag this box by its top area.</p>
+            Click on the radio button to highlight matching samples in the plot. Click on the dataset name to view
+            details of the dataset. You can drag this box by its top area.</p>
             <div style="height:300px; overflow:auto;">
-                <ul class="list-unstyled">
-                    <li v-for="item in datasetInfo.allData" :key="item.dataset_id">
-                        <b-link href="#" @mouseover="highlightDatasets(item.dataset_id)" @mouseleave="clearHighlight">{{item.display_name}}</b-link>
+                    <b-form-radio v-for="item in datasetInfo.allData" :key="item.dataset_id" v-model="datasetInfo.selectedDatasetId" 
+                        :value="item.dataset_id" @change="highlightDatasets(item.dataset_id)">
+                        <b-link :to="'/datasets/view?id=' + item.dataset_id" target="_blank">{{item.display_name}}</b-link>
                         ({{item.sampleIds.length}} samples)
-                    </li>
-                </ul>
+                    </b-form-radio>
             </div>
         </div>
     </div>
@@ -252,11 +237,13 @@ import Vue from 'vue'
 import { BootstrapVueIcons } from 'bootstrap-vue'
 Vue.use(BootstrapVueIcons)
 
+import data_functions from "~/mixins/data_functions.js"
+
 export default {
     head: {
         script: [ { src: 'https://cdn.plot.ly/plotly-latest.min.js' } ],
     },
-
+    mixins: [data_functions],
     props: ["atlasType", "displayName"],
 
     data() {
@@ -292,15 +279,16 @@ export default {
             camera: {up: {x:0, y:0, z:1}, center: {x:0, y:0, z:0}, eye: {x:1.25, y:1.25, z:1.25}},
             showTwoPlots: false,
 
-            legends: [],
-            loading: true,
+            allLegends: {},
+            itemsWithMargins: {},
+            loading: false,
             showInfo: false,
 
             // variables used by the find dataset div which can be used to show a table of datasets
             datasetInfo: {
                 allData: [], // [{"dataset_id":7268,"author":"Abud","pubmed_id":"28426964","platform":"RNAseq",...},...]
                 show: false,
-                selectedDatasetInfo: "",
+                selectedDatasetId: '',
             },
 
             // variables used by the sample info div which is shown when a sample is double-clicked
@@ -380,21 +368,6 @@ export default {
     },
 
     computed: {
-        // For a long list of sample types, it's good to place a gap between groups of them as a visual aid.
-        // This returns the items where breaks should occur.
-        sampleTypeBreakPoint() {
-            let itemsWithBreaks = {};
-            this.colourBy.forEach(key => {
-                itemsWithBreaks[key] = [];
-                if (key in this.sampleTypeOrdering) {
-                    for (let j=1; j<this.sampleTypeOrdering[key].length; j++) {
-                        if (this.sampleTypeOrdering[key][j-1]=="")
-                            itemsWithBreaks[key].push(this.sampleTypeOrdering[key][j]);
-                    }
-                }
-            });
-            return itemsWithBreaks;
-        },
     },
 
     methods: {
@@ -439,8 +412,16 @@ export default {
             });
         },
         
+        toggleLegend() {
+            this.allLegends = JSON.parse(JSON.stringify(this.allLegends));  // PlotLegend component will refresh when allLegends is refreshed
+            this.showColourByAsDraggable = !this.showColourByAsDraggable;
+        },
+
         // Run before sample group plot to populate the legends array, and when a legend is clicked to show/hide a trace
-        updateLegends(clickedLegendIndex) {
+        updateLegends() {
+            this.allLegends = this._legendsFromSampleTable(this.sampleTable, 
+                {orient:'dict', sampleGroupItemColours:this.sampleTypeColours, sampleGroupItemsOrdered:this.sampleTypeOrdering});
+            return;
             let self = this;
             let sampleIds = self.sampleIdsFromSampleGroup(self.selectedColourBy);
             let sampleGroupItems = self.sampleTypeOrdering[self.selectedColourBy].filter(item => item!="");
@@ -515,10 +496,11 @@ export default {
 
             // create traces
             let traces = [];
+            let legends = self.allLegends[self.selectedColourBy];
             if (type=="sample type") {
                 // one trace per item of availableValues
-                for (let i=0; i<self.legends.length; i++) {
-                    let legend = self.legends[i];
+                for (let i=0; i<legends.length; i++) {
+                    let legend = legends[i];
                     let trace = traceTemplate();
                     trace.x = legend.sampleIds.map(item => self.coords['0'][item]);
                     trace.y = legend.sampleIds.map(item => self.coords['1'][item]);
@@ -547,7 +529,7 @@ export default {
                     // Note that there's a bug in plotly where size specified as an array in marker is rendered differently to
                     // when specified as a number, even for the same size.
                     var defaultSize = self.is3d? 11 : 6;
-                    var visibleLegends = self.legends.filter(item => item.visible).map(item => item.value);
+                    var visibleLegends = legends.filter(item => item.visible).map(item => item.value);
                     trace.marker.size = self.sampleIds.map((item,i) =>
                         visibleLegends.indexOf(self.sampleTable[self.selectedColourBy][self.sampleIds[i]])==-1? 0 : defaultSize
                     );
@@ -576,14 +558,20 @@ export default {
             // Note that plotly doesn't really have double click event detection, so we're going to measure the interval between
             // two single clicks if it's on the sample id.
             div.on('plotly_click', function(data) { self.handlePlotlyClick(data); });
-            self.loading = false;
         },
 
         // Function to update the plot
-        updatePlot() {
+        updatePlot(legend) {
             let self = this;
             self.loading = true;
             let div = document.getElementById(self.rightPlotDiv);
+
+            if (legend && 'selectedSampleGroup' in legend)  // comes from PlotLegend component, changing colourBy
+                this.selectedColourBy = legend.selectedSampleGroup;
+            else if (legend && 'value' in legend) { // comes from PlotLegend compoenent, when a legend is clicked
+                const index = this.allLegends[this.selectedColourBy].map(legend => legend.value).indexOf(legend.value);
+                this.allLegends[this.selectedColourBy][index].visible = !legend.visible;
+            }
 
             if (self.selectedPlotBy=="sample type") // always show one plot for sample type
                 self.showTwoPlots = false;
@@ -713,7 +701,12 @@ export default {
 
         // ------------ datasetInfo methods ---------------
         // Should run when user hovers on the dataset in datasetInfo dialog, to highlight samples with matching dataset id
-        highlightDatasets(datasetId) {            
+        highlightDatasets(datasetId) {
+            if (!datasetId || datasetId=='') return;
+
+            // Clear all existing highlights first
+            this.clearHighlight();
+
             // Find samples with matching datasetId and hightlight these in the plot
             let sampleIds = this.datasetInfo.allData.filter(item => String(item.dataset_id)==String(datasetId))[0].sampleIds;
             
@@ -921,6 +914,7 @@ export default {
 
     mounted() {
         this.apiUrl = process.env.BASE_API_URL;
+        this.loading = true;
 
         // Fetch sample table
         this.$axios.get("/api/atlases/" + this.atlasType + "/samples?orient=dict").then(res => {
@@ -935,6 +929,17 @@ export default {
                 this.sampleTypeOrdering = res2.data.ordering;
                 this.updateSampleTypeColours();
                 this.updateSampleTypeOrdering();
+
+                // set itemsWithMargins
+                this.colourBy.forEach(key => {
+                    this.itemsWithMargins[key] = [];
+                    if (key in this.sampleTypeOrdering) {
+                        for (let j=1; j<this.sampleTypeOrdering[key].length; j++) {
+                            if (this.sampleTypeOrdering[key][j-1]=="")
+                                this.itemsWithMargins[key].push(this.sampleTypeOrdering[key][j]);
+                        }
+                    }
+                });
 
                 // Fetch coordinates
                 this.$axios.get("/api/atlases/" + this.atlasType + "/coordinates?orient=dict").then(res3 => {

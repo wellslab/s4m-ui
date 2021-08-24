@@ -209,7 +209,8 @@ export default {
                 return;
             }
             this.loading = true;
-            this.$axios.get("/api/search/datasets?sunburst_inner=" + this.innerSelectedSampleGroup + "&sunburst_outer=" + this.outerSelectedSampleGroup + 
+            this.$axios.get("/api/search/datasets?organism=homo sapiens&platform_type=Microarray,RNASeq&sunburst_inner=" + 
+                this.innerSelectedSampleGroup + "&sunburst_outer=" + this.outerSelectedSampleGroup + 
                 "&sunburst_inner_cutoff=" + this.innerCutoff + "&sunburst_outer_cutoff=" + this.outerCutoff).then(res => {
                 this.sunburst = res.data;
                 // substitute acronyms for labels wherever possible

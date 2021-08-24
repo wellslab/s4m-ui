@@ -80,7 +80,7 @@
                 </b-card-header>
                 <b-card-body>
                     <GeneExpressionPlot :gene_id="selectedGene.geneId" :dataset_id="selectedDatasetId" :selected_sample_group="selectedSampleGroup"
-                        :highlight-sample-group-items="[selectedSampleGroupItem, selectedSampleGroupItem2]"/>
+                        :highlight-sample-group-items="itemsToHighlight"/>
                 </b-card-body>
             </b-card>
         </b-col>
@@ -173,6 +173,14 @@ export default {
             datasetDisplayName: {},
             totalDatasets:0,    // total number of datasets where the sample group item was found
         }
+    },
+
+    computed: {
+        itemsToHighlight() {
+            let items = {};
+            items[this.selectedSampleGroup] = [this.selectedSampleGroupItem, this.selectedSampleGroupItem2];
+            return items;
+        },
     },
 
     methods: {

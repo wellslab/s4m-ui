@@ -1,13 +1,6 @@
-# Page list
+# Stemformatics UI Server
 
-## Genes
-- Gene search (table)
-- Gene expression profile
-- Gene vs gene plot?
-- Expression across samples/datasets (similar to yugene)? Atlas page does this in its own domain but something outside the atlas could be good.
-
-
-# Build Setup
+# Building the environment
 
 ```bash
 # If installing in a conda env
@@ -28,8 +21,6 @@ $ npm add vue-gtag
 $ npm install pm2  # see https://nuxtjs.org/docs/2.x/deployment/deployment-pm2/
 $ npm install @nuxtjs/dotenv
 
-#$ npm install sass-loader 
-#$ npm install node-sass
 # $ npm install plotly.js-dist  # Not sure how to make plotly work this way - currently just loading cdn into header
 
 # uninstalling
@@ -61,6 +52,7 @@ $ npm run generate
 $ npm start
 ```
 
+## Notes
 For detailed explanation on how things work, check out [Nuxt.js docs](https://nuxtjs.org).
 
 Open source svg icons:
@@ -184,3 +176,13 @@ params.append('value', 'val2');
 
 Inter-component communication via global events:
 https://stackoverflow.com/questions/38616167/communication-between-sibling-components-in-vue-js-2-0
+
+
+Using b-progress on file upload
+```
+this.$axios.post('/api/atlas-projection/' + this.atlasType + '/' + this.selectedDataSource, 
+                this.formData, { headers: {'Content-Type': 'multipart/form-data'},
+                                onUploadProgress: data => { //Set the progress value to show the progress bar
+                                    this.uploadProgress = Math.round((95 * data.loaded) / data.total)
+                                }
+```

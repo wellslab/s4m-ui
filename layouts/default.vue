@@ -10,7 +10,7 @@
           <b-link href="#" v-b-modal.release-notes class="text-white ml-3">{{versionNumber}}</b-link>
         </b-col>
         <b-col cols="4" class="text-right">
-          Website hosted by <b-link href="https://nectar.org.au/" target="_blank">
+          Website hosted at <b-link href="https://nectar.org.au/" target="_blank">
             <b-img src="/img/nectardirectorate-logo.png" height="18"></b-img></b-link>
         </b-col>
       </b-row>
@@ -22,6 +22,7 @@
         <li v-for="item in releaseNotes" :key="item.version">{{item.version}}
           <ul><li v-for="note in item.notes" :key="note">{{note}}</li></ul>
         </li>
+        <p class="mt-3">[{{serverEnv}}]</p>
     </ul>  
   </b-modal>
 </div>
@@ -33,7 +34,8 @@ export default {
     return {
       showReleaseNotes: false,
       versionNumber: '',
-      releaseNotes:[]
+      releaseNotes:[],
+      serverEnv:process.env.SERVER_ENV,
     }
   },
 

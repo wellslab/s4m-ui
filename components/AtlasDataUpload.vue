@@ -44,11 +44,13 @@
         </b-form-group>
     </b-card>
 
-    <b-card class="border-0 text-right">
-        <b-progress v-show="selectedDataSource!=null" :value="uploadProgress" :max="uploadProgressMax" class="mb-3"></b-progress>
-        <b-button @click="$emit('close')" class="mx-1">close</b-button>
+    <div class="mt-3">
         <b-button @click="projectData" :disabled="showLoading">project</b-button>
-    </b-card>
+        <b-button @click="$emit('close')" class="mx-1">close</b-button>
+        <b-spinner label="Loading..." variant="secondary" :style="{visibility: showLoading ? 'visible' : 'hidden'}" class="ml-2 align-middle"></b-spinner>
+        <span :style="{visibility: showLoading ? 'visible' : 'hidden', color:'#ced4da'}" class="ml-1 align-middle"
+            v-b-tooltip.hover title="It may take up to a minute for this analysis to complete">{{loadingTime}}s</span>
+    </div>
 </b-container>
 </template>
 
@@ -60,6 +62,8 @@ export default {
         return {
             selectedDataSource: null,   // one of ["Stemformatics","User"]
             showLoading: false,
+            loadingTime: 0,
+            interval: null,
             formData: new FormData(),   // this will be emitted with an event when ready to project
 
             // For Stemformatics datasets
@@ -71,9 +75,6 @@ export default {
             testDatasetExpression: null,
             testDatasetSamples: null,
             testDatasetColumn: '',
-
-            uploadProgress: 0,
-            uploadProgressMax: 100,
         }
     },
 
@@ -81,56 +82,52 @@ export default {
 
         // Should run when we want to project the dataset.
         projectData() {
-            let self = this;
-            self.formData.append("data_source", self.selectedDataSource);
+            this.formData.append("data_source", this.selectedDataSource);
 
-            if (self.selectedDataSource==null) {
+            if (this.selectedDataSource==null) {
                 this.$bvModal.msgBoxOk("Select data source first");
                 return;
             }
-            else if (self.selectedDataSource=="Stemformatics") {
-                if (self.selectedDataset==null) {
+            else if (this.selectedDataSource=="Stemformatics") {
+                if (this.selectedDataset==null) {
                     this.$bvModal.msgBoxOk("Select a dataset first from autocomplete drop-down (even if you paste the exact name of the dataset).");
                     return;
                 }
-                self.formData.append("name", self.selectedDataset);
+                this.formData.append("name", this.selectedDataset);
             }
             else {
                 // Validate some fields
-                if (self.testDatasetName==null || self.testDatasetName=="") {
+                if (this.testDatasetName==null || this.testDatasetName=="") {
                     this.$bvModal.msgBoxOk("Name must be supplied, as it is used to identify the projected samples.");
                     return;
                 }
-                else if (self.testDatasetExpression==null || self.testDatasetSamples==null) {
+                else if (this.testDatasetExpression==null || this.testDatasetSamples==null) {
                    this.$bvModal.msgBoxOk("Expression and samples files must be supplied.");
                    return;
                 }
-                self.formData.append("test_name", self.testDatasetName);
-                self.formData.append("test_expression", self.testDatasetExpression);
-                self.formData.append("test_samples", self.testDatasetSamples);
-                self.formData.append("test_sample_column", self.testDatasetColumn);
+                this.formData.append("test_name", this.testDatasetName);
+                this.formData.append("test_expression", this.testDatasetExpression);
+                this.formData.append("test_samples", this.testDatasetSamples);
+                this.formData.append("test_sample_column", this.testDatasetColumn);
             }
 
-            self.showLoading = true;
-            self.$axios.post('/api/atlas-projection/' + self.atlasType + '/' + self.selectedDataSource, 
-                             self.formData, { headers: {'Content-Type': 'multipart/form-data'},
-                                              onUploadProgress: data => { //Set the progress value to show the progress bar
-                                                  // We set max at 95 instead of 100 to leave a little room for projection time
-                                                  // since this just gives feedback for file upload time.
-                                                  this.uploadProgress = Math.round((95 * data.loaded) / data.total)
-                                              }
+            this.showLoading = true;
+            this.interval = setInterval(() => { this.loadingTime += 1; }, 1000)
+            this.$axios.post('/api/atlas-projection/' + this.atlasType + '/' + this.selectedDataSource, 
+                             this.formData, { headers: {'Content-Type': 'multipart/form-data'},
                 }).then(res => {
                     if ('data' in res && res.data.error=='') {
-                        self.$emit('project-data', res.data);
-                        self.$emit('close');
+                        this.$emit('project-data', res.data);
+                        this.$emit('close');
                     }
                     else {
                         this.$bvModal.msgBoxOk("There was an error while projecting this data: " + res.data.error);
                     }
                 }).catch(error => this.$bvModal.msgBoxOk("Unexpected error while projecting this data: " + error.reponse.data)
                 ).then(() => {
-                    self.showLoading = false;
-                    self.uploadProgress = 0;
+                    this.showLoading = false;
+                    clearInterval(this.interval);
+                    this.loadingTime = 0;
                 });
         },
     },
