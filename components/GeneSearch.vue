@@ -15,6 +15,7 @@ export default {
     props: {
         formGroupDescription: {default:'start typing then select from the list of genes', type:String},
         size: {default:'md', type:String},
+        species: {default:'human', type:String},
     },
 
     data() {
@@ -30,7 +31,7 @@ export default {
         getPossibleGenes() {
             if (this.selectedGeneSymbol.length<=1) return;    // ignore 1 or less characters entered
             // Search for human genes only, returning 
-            this.$axios.get('/mygene/v3/query?species=human&fields=symbol,summary,ensembl.gene&size=50&q=' + this.selectedGeneSymbol).then(res => {
+            this.$axios.get('/mygene/v3/query?species=' + this.species + '&fields=symbol,summary,ensembl.gene&size=50&q=' + this.selectedGeneSymbol).then(res => {
                 if (res.data.total>0) {
                     // Note that some genes may not have ensembl ids, so lack the ensembl field - filter these out
                     const genes = res.data['hits'].filter(item => 'ensembl' in item);

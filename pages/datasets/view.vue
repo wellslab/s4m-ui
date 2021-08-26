@@ -75,7 +75,8 @@
             <b-form inline class="justify-content-center mt-3">
                 <div v-if="genes_loading"><b-spinner label="Loading..." variant="secondary" style="width:1.5rem; height:1.5rem;"></b-spinner></div>
                 <div v-else>gene:</div>
-                <GeneSearch form-group-description="" @gene-selected="genes_updateSelectedGene" @keyup-enter="genes_updateSelectedGene" size="sm" class="ml-1"></GeneSearch>
+                <GeneSearch form-group-description="" @gene-selected="genes_updateSelectedGene" @keyup-enter="genes_updateSelectedGene" 
+                    :species="species" size="sm" class="ml-1"></GeneSearch>
                 <b-button variant="dark" @click="genes_updateSelectedGene" size="sm">show</b-button>
                 <b-dropdown right text="tools" class="col-md-2 px-0 m-1 text-left" variant="secondary" size="sm">
                     <b-dropdown-item v-if="genes_selectedPlotType=='violin'" @click="genes_selectedPlotType='box'">change to box plot</b-dropdown-item>
@@ -227,6 +228,7 @@ export default {
             // sample table
             samples: [],    // [{'sample_id':'7283_GSM1977399', 'cell_type':'', ...}, ...]
             sampleGroups: [],   // ["sample_type", "age", ...]
+            species: 'human',   // either 'human' or 'mouse', used for mygene.info search, hence different to our organism values
 
             // genes - most of these fields need to be reactive, in which case best to not be inside other objects
             genes_selectedGene: {},
@@ -379,6 +381,9 @@ export default {
             // PCA should be plotted after sample table construction
             this.$axios.get("/api/datasets/" + this.datasetId + "/pca?orient=dict").then(res2 => {
                 this.samples = res.data;
+                // work out species so we can target gene search
+                if (this.samples.filter(item => item.organism=='mus musculus').length>0)
+                    this.species = 'mouse';
                 this.sampleGroups = this._sampleGroupsForPlotlyTrace(this.samples);
                 this.pca.selectedSampleGroup = this.sampleGroups[0];
                 this.pca.coords = res2.data["coordinates"];

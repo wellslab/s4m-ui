@@ -32,8 +32,10 @@
             <b-dropdown right text="tools" class="col-md-2 px-0 m-1">
                 <b-dropdown-item v-b-modal.downloadDataModal>download data/plots</b-dropdown-item>
                 <b-dropdown-item @click="datasetInfo.show=true; highlightDatasets(datasetInfo.selectedDatasetId)">find dataset</b-dropdown-item>
-                <b-dropdown-item v-b-modal.projectDataModal>project other data</b-dropdown-item>
                 <b-dropdown-item @click="customSampleGroup.show=true">combine sample groups</b-dropdown-item>
+                <b-dropdown-divider></b-dropdown-divider>
+                <b-dropdown-item v-b-modal.projectDataModal>project other data</b-dropdown-item>
+                <b-dropdown-item @click="plotCapybara">show projection score</b-dropdown-item>
             </b-dropdown>
         </b-form>
     </div>
@@ -58,13 +60,11 @@
         </b-col>
     </b-row>
     
-<!-- Legend area can be "popped out" to be a draggable - this should be a component, as it's just a copy and paste
-of the same code for legend area above. -->
+<!-- Legend area can be "popped out" to be a draggable -->
 <draggable-div v-show="showColourByAsDraggable" class="border border-light bg-light" style="width:350px; opacity:0.95; left:70%">
     <div slot="header" class="card-header bg-dark" title="Drag me around by this area">
         <span class="text-white">Colour by</span>
-        <b-link href="#" @click="toggleLegend" class="float-right font-weight-bold text-white"
-            v-b-tooltip.hover title="Pop this box back into the page">
+        <b-link href="#" @click="toggleLegend" class="float-right font-weight-bold text-white" v-b-tooltip.hover title="Pop this box back into the page">
             <b-icon-box-arrow-in-down-left></b-icon-box-arrow-in-down-left>
         </b-link>
     </div>
@@ -135,6 +135,28 @@ of the same code for legend area above. -->
 <b-modal id="projectDataModal" title="Project other data" hide-footer>
     <AtlasDataUpload :atlas-type="atlasType" @project-data="projectData" @close="$bvModal.hide('projectDataModal')"></AtlasDataUpload>
 </b-modal>
+
+<!-- Capybara (draggable) -->
+<draggable-div v-show="projection_showScore" class="border border-light bg-light shadow overflow-hidden">
+    <div slot="header" class="card-header bg-dark" title="Drag me around by this area">
+        <span class="text-white">Projection score</span>
+        <b-link href="#" @click="projection_showScore=false" class="float-right font-weight-bold text-white">X</b-link>
+    </div>
+    <div slot="main">
+        <div class="card-body bg-white">
+            Each projected sample is scored using 
+            <b-link href="https://doi.org/10.1101/2020.02.17.947390" target="_blank">
+            Capybara</b-link> here, and the score is rendered as a heatmap. Higher values imply more closeness with that cell type.
+            Columns which were included in the sample table for projected data can be changed here.
+            <b-form inline class="justify-content-center mt-2">
+                Show rows as: <b-form-select v-model="projection_selectedSampleGroup" :options="projection_sampleGroups" @change="plotCapybara" class="ml-1"></b-form-select>
+            </b-form>
+        </div>
+        <div style="max-height:800px; overflow:auto;">
+            <div id="capybaraPlotDiv"></div>
+        </div>
+    </div>
+</draggable-div>
 
 <!-- Find dataset div (draggable) -->
 <draggable-div v-show="datasetInfo.show" class="border border-light bg-light" style="width:350px; opacity:0.95; left:70%">
@@ -284,6 +306,11 @@ export default {
             loading: false,
             showInfo: false,
 
+            projection_data: {},
+            projection_showScore: false,
+            projection_sampleGroups: [],
+            projection_selectedSampleGroup:'',
+
             // variables used by the find dataset div which can be used to show a table of datasets
             datasetInfo: {
                 allData: [], // [{"dataset_id":7268,"author":"Abud","pubmed_id":"28426964","platform":"RNAseq",...},...]
@@ -367,9 +394,6 @@ export default {
         }
     },
 
-    computed: {
-    },
-
     methods: {
         // ------------ Data wrangling methods ---------------
         // Return an object of sample ids (array), keyed on sample group item. eg. {'HPC':['6638_GSM868879',...], ...}
@@ -421,23 +445,6 @@ export default {
         updateLegends() {
             this.allLegends = this._legendsFromSampleTable(this.sampleTable, 
                 {orient:'dict', sampleGroupItemColours:this.sampleTypeColours, sampleGroupItemsOrdered:this.sampleTypeOrdering});
-            return;
-            let self = this;
-            let sampleIds = self.sampleIdsFromSampleGroup(self.selectedColourBy);
-            let sampleGroupItems = self.sampleTypeOrdering[self.selectedColourBy].filter(item => item!="");
-
-            let legends = [];
-            sampleGroupItems.forEach((value,i) => {
-                let legend  = {'value': value, 
-                               'number': sampleIds[value].length,
-                               'sampleIds': sampleIds[value],
-                               'colour': self.sampleTypeColours[self.selectedColourBy][value]};
-                legend.visible = (self.legends.length==sampleGroupItems.length && self.legends[i].value==value)? self.legends[i].visible : true;
-                if (clickedLegendIndex==i)
-                    legend.visible = !legend.visible;
-                legends.push(legend);
-            });
-            self.legends = legends;
         },
         
         // ------------ Plot related methods ---------------
@@ -657,6 +664,7 @@ export default {
                 if (isProjectedSample) {  // provide a simpler set of info
                     self.sampleInfo.shownData = [{key:'Projected Sample', value:sampleId},
                                                  {key:'dataset', value:self.uploadData.name}];
+                    console.log(JSON.stringify(self.sampleInfo.allData[sampleId]));
                 } else {
                     // First populate the info coming from sampleTable (these are atlas specific sample annotations)
                     self.sampleInfo.shownData = [];
@@ -861,12 +869,36 @@ export default {
                     self.sampleInfo.allData[sampleId][item] = sampleTypes[i];
                 }
             }
-            for (var i=0; i<projectionData.sampleIds.length; i++)
-                self.sampleIds.push(projectionData.sampleIds[i]);
+            projectionData.sampleIds.forEach(item => {
+                self.sampleIds.push(item);
+            })
 
             self.datasetInfo.allData.push(datasetAttributes);            
             self.updateLegends();
             self.updatePlot();
+
+            self.projection_data = projectionData;
+            self.projection_sampleGroups = Object.keys(projectionData.samples[0]);
+            self.projection_sampleGroups.sort();
+            self.projection_selectedSampleGroup = self.projection_sampleGroups[0];
+        },
+
+        plotCapybara() {
+            if (!this.projection_data.capybara) {
+                this.$bvModal.msgBoxOk("Use this function after projection to show quantitative scores.");
+                return;
+            }
+            this.projection_showScore = true;
+            let div = document.getElementById('capybaraPlotDiv');
+            const capybara = this.projection_data.capybara;
+
+            // y depends on projection_selectedSampleGroup
+            const sampleIds = capybara.index;
+            let y = this.projection_data.samples.map(item => item[this.projection_selectedSampleGroup]);
+
+            let traces = [{type:'heatmap', z:capybara.data, y:y, x:capybara.columns}];
+            let layout = {height:600, xaxis:{side:"top", automargin:true}, yaxis:{automargin:true}};
+            Plotly.newPlot(div, traces, layout);
         },
 
         // ------------ Custom sample group methods ---------------
