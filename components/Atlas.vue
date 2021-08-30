@@ -149,7 +149,10 @@
             Capybara</b-link> here, and the score is rendered as a heatmap. Higher values imply more closeness with that cell type.
             Columns which were included in the sample table for projected data can be changed here.
             <b-form inline class="justify-content-center mt-2">
-                Show rows as: <b-form-select v-model="projection_selectedSampleGroup" :options="projection_sampleGroups" @change="plotCapybara" class="ml-1"></b-form-select>
+                Show rows as: 
+                <b-form-select v-model="projection_selectedSampleGroup" size="sm"
+                    :options="projection_sampleGroups" @change="plotCapybara" class="ml-1">
+                </b-form-select>
             </b-form>
         </div>
         <div style="max-height:800px; overflow:auto;">
@@ -880,7 +883,7 @@ export default {
             self.projection_data = projectionData;
             self.projection_sampleGroups = Object.keys(projectionData.samples[0]);
             self.projection_sampleGroups.sort();
-            self.projection_selectedSampleGroup = self.projection_sampleGroups[0];
+            self.projection_selectedSampleGroup = column;
         },
 
         plotCapybara() {
@@ -893,11 +896,15 @@ export default {
             const capybara = this.projection_data.capybara;
 
             // y depends on projection_selectedSampleGroup
-            const sampleIds = capybara.index;
             let y = this.projection_data.samples.map(item => item[this.projection_selectedSampleGroup]);
 
-            let traces = [{type:'heatmap', z:capybara.data, y:y, x:capybara.columns}];
-            let layout = {height:600, xaxis:{side:"top", automargin:true}, yaxis:{automargin:true}};
+            // Round data
+            let data = [];
+            capybara.data.forEach(row => {
+                data.push(row.map(item => Math.round(100*item)/100));
+            })
+            let traces = [{type:'heatmap', z:data, y:y, x:capybara.columns}];
+            let layout = {xaxis:{side:"top", automargin:true}, yaxis:{automargin:true}};
             Plotly.newPlot(div, traces, layout);
         },
 

@@ -148,15 +148,15 @@ export default {
 
         // Peform search for sample groups by going to api
         search(query) {
+            if ('geneId' in query)
+                this.updateSelectedGene(query);
             if (Object.keys(this.selectedGene).length==0) {
                 return;
             }
-
+            
             this.loading = true;
             this.loadingTime = 0;
             this.interval = setInterval(() => { this.loadingTime += 1; }, 1000)
-            if ('geneId' in query)
-                this.updateSelectedGene(query);
 
             this.$axios.get("/api/genes/gene-to-sample-groups?gene_id=" + this.selectedGene.geneId + "&sample_group=" + this.selectedSampleGroup).then(res => {
                 this.sampleGroupItems = [];
