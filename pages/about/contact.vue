@@ -8,9 +8,10 @@
         </b-col>
         <b-col>
             <h3>Contact us</h3>
-            <p>Please do not hesitate to contact us with your enquiries in relation to expession data requests, 
-                protocol and biostats information or any other requests. We will endeavour to respond in a timely fashion. 
-                Thanks for your interest in Stemformatics!
+            <p>Please do not hesitate to contact us with your enquiries. We also welcome feedback (positive or negative). 
+              Alerting us with any bugs or functions can be extremely useful for us, as they can sometimes go undetected otherwise.
+              Feel free to also make new feature requests, as these could be community driven.
+              Thanks for your interest in Stemformatics!
             </p>
 
             <ul>

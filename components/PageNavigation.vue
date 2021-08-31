@@ -9,11 +9,11 @@
         <b-form-input v-model="searchString" placeholder="quick search" @keyup.enter="search" size="sm" class="my-auto w-10"></b-form-input>
         <b-dropdown text="About" variant="dark" class="ml-4">
           <b-dropdown-item to="/about">About Stemformatics</b-dropdown-item>
-          <b-dropdown-item to="/about/team">Team</b-dropdown-item>
+          <b-dropdown-item to="/about/team">Team and collaborators</b-dropdown-item>
           <b-dropdown-item to="/about/cite">How to cite us</b-dropdown-item>
           <b-dropdown-item to="/about/processing">About data processing</b-dropdown-item>
-          <b-dropdown-item to="/about/privacy">Privacy and disclaimer</b-dropdown-item>
-          <b-dropdown-item to="/about/funding">Funding and collaborators</b-dropdown-item>
+          <b-dropdown-item to="/about/privacy">Privacy, license and funding</b-dropdown-item>
+          <b-dropdown-item to="/about/developers">For developers</b-dropdown-item>
           <b-dropdown-item to="/about/contact">Contact us</b-dropdown-item>
         </b-dropdown>
         <b-dropdown text="Datasets" variant="dark" class="ml-4">

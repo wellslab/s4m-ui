@@ -110,4 +110,7 @@ export default {
 </script>
 
 <style>
+h3 {
+  color: #EE255F
+}
 </style>

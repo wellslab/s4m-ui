@@ -8,6 +8,7 @@
         <b-col cols="4">
           <span>&copy; 2021 Stemformatics</span>
           <b-link href="#" v-b-modal.release-notes class="text-white ml-3">{{versionNumber}}</b-link>
+          <span class="text-white ml-3">{{hostname}}</span>
         </b-col>
         <b-col cols="4" class="text-right">
           Website hosted at <b-link href="https://nectar.org.au/" target="_blank">
@@ -23,7 +24,7 @@
           <ul><li v-for="note in item.notes" :key="note">{{note}}</li></ul>
         </li>
         <p class="mt-3">[{{serverEnv}}]</p>
-    </ul>  
+    </ul>
   </b-modal>
 </div>
 </template>
@@ -36,6 +37,7 @@ export default {
       versionNumber: '',
       releaseNotes:[],
       serverEnv:process.env.SERVER_ENV,
+      hostname: process.env.BASE_API_URL.split("api-")[1].split(".")[0]
     }
   },
 
@@ -79,6 +81,9 @@ a:hover {
 }
 .btn-dark:hover, .open>.dropdown-toggle.btn-dark {
   background-color: #EE255F;
+}
+h5 {
+  font-weight: 400;
 }
 </style>
 

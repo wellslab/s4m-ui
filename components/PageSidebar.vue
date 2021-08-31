@@ -3,11 +3,11 @@
     <nav v-if="sidebarType=='about'">
         <b-list-group>
         <b-list-group-item to="/about" :class="{current: activeItem=='about'}">About Stemformatics</b-list-group-item>
-        <b-list-group-item to="/about/team" :class="{current: activeItem=='team'}">Team</b-list-group-item>
+        <b-list-group-item to="/about/team" :class="{current: activeItem=='team'}">Team and collaborators</b-list-group-item>
         <b-list-group-item to="/about/cite" :class="{current: activeItem=='cite'}">How to cite us</b-list-group-item>
         <b-list-group-item to="/about/processing" :class="{current: activeItem=='processing'}">About data processing</b-list-group-item>
-        <b-list-group-item to="/about/privacy" :class="{current: activeItem=='privacy'}">Privacy and disclaimer</b-list-group-item>
-        <b-list-group-item to="/about/funding" :class="{current: activeItem=='funding'}">Funding and collaborators</b-list-group-item>
+        <b-list-group-item to="/about/privacy" :class="{current: activeItem=='privacy'}">Privacy, license and funding</b-list-group-item>
+        <b-list-group-item to="/about/developers" :class="{current: activeItem=='developers'}">For developers</b-list-group-item>
         <b-list-group-item to="/about/contact" :class="{current: activeItem=='contact'}">Contact us</b-list-group-item>
         </b-list-group>
     </nav>

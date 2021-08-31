@@ -71,7 +71,7 @@ export default {
         breadcrumb: [
           { text: 'Home', to: '/' },
           { text: 'About', to: '/about' },
-          { text: 'Team', active: true }
+          { text: 'Team and collaborators', active: true }
         ],
       }
     }
