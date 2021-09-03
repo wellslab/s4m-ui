@@ -17,7 +17,7 @@
                 We also host our novel <b-link to="/atlas/myeloid">integrated atlases</b-link>, which can be explored directly or 
                 used as references in determining cell identity.
             </p>
-            <div class='text-center'><b-img src="/img/StemformaticsSchematic.png"></b-img></div>
+            <div class='text-center'><b-img src="/img/StemformaticsSchematic.png" fluid></b-img></div>
         
             <h5 class="mt-4">Data types in Stemformatics</h5>
             <p class="mt-2">Stemformatics was originally developed for the stem cell community, hence it has a major focus on pluripotency, 

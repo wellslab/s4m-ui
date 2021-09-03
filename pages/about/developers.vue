@@ -11,7 +11,8 @@
             <p>Stemformatics is built as 2 seperate applications: an API server which hosts all the data, and an UI server
                 which hosts the website. Some details about how the system has been designed can be read below.</p>
             <p>
-              <b-img class="my-2" src="/img/ServerInfrastructure.png" alt="Schematic of the server infrastructure design in Stemformatics"></b-img>
+              <b-img class="my-2" src="/img/ServerInfrastructure.png" fluid 
+                alt="Schematic of the server infrastructure design in Stemformatics"></b-img>
             </p>
             <p>Mongo db mainly holds dataset metadata and sample metadata in two separate collections.
                 Expression files are held mainly in text files, but also duplicated in hdf5 files for performance reasons.

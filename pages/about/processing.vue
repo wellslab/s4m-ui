@@ -14,7 +14,8 @@
               such as <b-link href="https://www.ncbi.nlm.nih.gov/geo/" target="_blank">GEO</b-link> or 
                 <b-link href="https://www.ebi.ac.uk/arrayexpress/" target="_blank">ArrayExpress</b-link>.</p>
             <figure class="text-center">
-              <b-img class="my-2" src="/img/StemformaticsPipelineSchematic.png" alt="Flowchart showing the data processing pipeline in Stemformatics"></b-img>
+              <b-img class="my-2" src="/img/StemformaticsPipelineSchematic.png" fluid 
+                alt="Flowchart showing the data processing pipeline in Stemformatics"></b-img>
               <figcaption class="mt-2">Stemformatics data processing workflow and failure points</figcaption>
             </figure>
             <p>We have found over the years that about 30% of all datasets we process fail our quality control

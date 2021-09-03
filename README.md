@@ -20,7 +20,7 @@ $ npm install bootstrap-vue
 $ npm add @nuxtjs/axios
 $ npm add @nuxtjs/auth
 $ npm add vue-gtag
-$ npm install pm2  # see https://nuxtjs.org/docs/2.x/deployment/deployment-pm2/
+$ npm install pm2 -g  # see https://nuxtjs.org/docs/2.x/deployment/deployment-pm2/
 $ npm install @nuxtjs/dotenv
 
 # $ npm install plotly.js-dist  # Not sure how to make plotly work this way - currently just loading cdn into header

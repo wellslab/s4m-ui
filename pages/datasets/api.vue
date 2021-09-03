@@ -1,81 +1,73 @@
 <template>
 <div>
 <Breadcrumb :breadcrumb="breadcrumb"/>
-<b-container class="py-4">
-    <b-row>
-        <b-col class="col-sm-12 col-md-6 col-lg-3 col-xl-3">
-            <PageSidebar :sidebarType="'datasets'" :activeItem="'api'" />
-        </b-col>
-        <b-col class="col-sm-12 col-md-6 col-lg-9 col-xl-9">
-            <h3>API access</h3>
-            <p>All Stemformatics data can be accessed via 
-                <b-link href="https://en.wikipedia.org/wiki/API" target="_blank">API</b-link>. 
-                Use your favourite tool, such as python or R to search for relevant datasets and download them
-                to do your own anayses. Or simply go to the api server and view the data in raw form.
-            </p>
+<b-container class="p-4">
+    <h3 class="text-center">API access</h3>
+    <p>All Stemformatics data can be accessed via 
+        <b-link href="https://en.wikipedia.org/wiki/API" target="_blank">API</b-link>. 
+        Use your favourite tool, such as python or R to search for relevant datasets and download them
+        to do your own anayses. Or simply go to the api server and view the data in raw form.
+    </p>
+    <pre class="px-3 border border-gray-500"><code>
+# cURL example
+curl https://api.stemformatics.org/datasets/2000/metadata
+
+# python examples
+import pandas, requests
+r = requests.get('https://api.stemformatics.org/datasets/2000/samples')
+df = pandas.DataFrame(r.json())
+print(df.head())
+        sample_id    cell_type parental_cell_type  ... developmental_stage treatment external_source_id
+0  2000_1787466030_H  neurosphere         epithelium  ...
+1  2000_1787466065_A  neurosphere         epithelium  ...
+2  2000_1787466030_E  neurosphere         epithelium  ...
+3  2000_1787466065_D  neurosphere         epithelium  ...
+4  2000_1699538158_H  neurosphere         epithelium  ...
+
+# Note that you can safely use spaces inside query string variable and requests will parse it for you
+r = requests.get('https://api.stemformatics.org/search/samples?query_string=%s&field=tissue_of_origin,dataset_id' % 'dendritic cell')
+print(r.json()[:2])
+[{'sample_id': '7277_GSM2067549', 'dataset_id': 7277, 'tissue_of_origin': 'umbilical cord blood'}, 
+    {'sample_id': '7277_GSM2067548', 'dataset_id': 7277, 'tissue_of_origin': 'umbilical cord blood'}]
+
+# To get expression matrix as file but read it into pandas directly
+import io
+r = requests.get('https://api.stemformatics.org/datasets/6756/expression?as_file=true')
+df = pandas.read_csv(io.StringIO(r.text), sep='\t', index_col=0)
+print(df.head())
+            GSM741192.CEL  GSM741193.CEL  GSM741194.CEL  GSM741195.CEL  \
+1415670_at         8.209027       8.262415       8.557468       9.205204   
+1415671_at        10.852328      11.100999      10.912304      10.836298   
+1415672_at        10.431524      10.364212      10.517259      11.122440   
+
+# R example
+library(httr)
+library(jsonlite)
+response = GET("https://api.stemformatics.org/datasets/2000/metadata")
+print(content(response))
+    </code></pre>
+
+    <b>Full list of APIs</b>
+    <p>Where you see the parameters, default vaules are given and these can be left out.
+        For example, /datasets/2000/samples will work the same as 
+        /datasets/2000/sample?orient=records&as_file=false. If default value is not given,
+        it is a required parameter and this is explained.
+    </p>
+    <p>The parameter 'orient' can have same values as specified by 
+        <b-link href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_dict.html" target="_blank">to_dict()</b-link> function
+        in <b-link href="https://pandas.pydata.org/" target="_blank">python pandas</b-link> package.
+    </p>
+    <div v-for="api in apis" :key="api.url" :class="('insertMargin' in api)? 'mt-3 mb-1' : 'mb-1'">
+        <b-link v-if="!api.show" @click="api.show = !api.show"><b-icon-chevron-right></b-icon-chevron-right></b-link>
+        <b-link v-else @click="api.show = !api.show"><b-icon-chevron-down></b-icon-chevron-down></b-link>
+        <b-link @click="api.show = !api.show">{{api.url}}</b-link>
+        <b-collapse v-model="api.show" class="mt-0"><b-card class="mt-1">
+            <p>{{api.heading}}</p>
             <pre><code>
-  # cURL example
-  curl https://api.stemformatics.org/datasets/2000/metadata
-
-  # python examples
-  import pandas, requests
-  r = requests.get('https://api.stemformatics.org/datasets/2000/samples')
-  df = pandas.DataFrame(r.json())
-  print(df.head())
-                sample_id    cell_type parental_cell_type  ... developmental_stage treatment external_source_id
-        0  2000_1787466030_H  neurosphere         epithelium  ...
-        1  2000_1787466065_A  neurosphere         epithelium  ...
-        2  2000_1787466030_E  neurosphere         epithelium  ...
-        3  2000_1787466065_D  neurosphere         epithelium  ...
-        4  2000_1699538158_H  neurosphere         epithelium  ...
-
-  # Note that you can safely use spaces inside query string variable and requests will parse it for you
-  r = requests.get('https://api.stemformatics.org/search/samples?query_string=%s&field=tissue_of_origin,dataset_id' % 'dendritic cell')
-  print(r.json()[:2])
-        [{'sample_id': '7277_GSM2067549', 'dataset_id': 7277, 'tissue_of_origin': 'umbilical cord blood'}, 
-         {'sample_id': '7277_GSM2067548', 'dataset_id': 7277, 'tissue_of_origin': 'umbilical cord blood'}]
-
-  # To get expression matrix as file but read it into pandas directly
-  import io
-  r = requests.get('https://api.stemformatics.org/datasets/6756/expression?as_file=true')
-  df = pandas.read_csv(io.StringIO(r.text), sep='\t', index_col=0)
-  print(df.head())
-                    GSM741192.CEL  GSM741193.CEL  GSM741194.CEL  GSM741195.CEL  \
-        1415670_at         8.209027       8.262415       8.557468       9.205204   
-        1415671_at        10.852328      11.100999      10.912304      10.836298   
-        1415672_at        10.431524      10.364212      10.517259      11.122440   
-
-  # R example
-  library(httr)
-  library(jsonlite)
-  response = GET("https://api.stemformatics.org/datasets/2000/metadata")
-  print(content(response))
+{{api.example}}
             </code></pre>
-
-            <b>Full list of APIs</b>
-            <p>Where you see the parameters, default vaules are given and these can be left out.
-                For example, /datasets/2000/samples will work the same as 
-                /datasets/2000/sample?orient=records&as_file=false. If default value is not given,
-                it is a required parameter and this is explained.
-            </p>
-            <p>The parameter 'orient' can have same values as specified by 
-                <b-link href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_dict.html" target="_blank">to_dict()</b-link> function
-                in <b-link href="https://pandas.pydata.org/" target="_blank">python pandas</b-link> package.
-            </p>
-            <div v-for="api in apis" :key="api.url" :class="('insertMargin' in api)? 'mt-3 mb-1' : 'mb-1'">
-                <b-link v-if="!api.show" @click="api.show = !api.show"><b-icon-chevron-right></b-icon-chevron-right></b-link>
-                <b-link v-else @click="api.show = !api.show"><b-icon-chevron-down></b-icon-chevron-down></b-link>
-                <b-link @click="api.show = !api.show">{{api.url}}</b-link>
-                <b-collapse v-model="api.show" class="mt-0"><b-card class="mt-1">
-                    <p>{{api.heading}}</p>
-                    <pre><code>
-    {{api.example}}
-                    </code></pre>
-                </b-card></b-collapse>
-            </div>
-
-        </b-col>
-    </b-row>
+        </b-card></b-collapse>
+    </div>
 </b-container>
 </div>
 </template>
@@ -90,7 +82,7 @@ export default {
         return {
             breadcrumb: [
                 { text: 'Home', to: '/' },
-                { text: 'Datasets', active: true },
+                { text: 'Datasets', to: '/datasets' },
                 { text: 'API access', active: true }
             ],
 

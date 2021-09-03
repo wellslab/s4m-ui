@@ -10,7 +10,10 @@
     </div>
 
     <b-card-group deck class="col-md-8 mx-auto">
-        <b-card no-body img-src="/img/Genes_SamplesToGenes.png" img-alt="Find genes from samples" img-top>
+        <b-card no-body>
+            <b-link to="/genes/sampletogenes">
+                <b-card-img src="/img/Genes_SamplesToGenes.png" alt="Find genes from samples"></b-card-img>
+            </b-link>
             <b-card-body class="border-top border-gray-200">
                 <h4><b-link to="/genes/sampletogenes">Sample group to genes</b-link></h4>
                 <b-card-text>
@@ -22,7 +25,10 @@
             </b-card-body>
         </b-card>
 
-        <b-card no-body img-src="/img/Genes_GeneToSamples.png" img-alt="Find samples from gene" img-top>
+        <b-card no-body>
+            <b-link to="/genes/genetosamples">
+                <b-card-img src="/img/Genes_GeneToSamples.png" alt="Find samples from gene"></b-card-img>
+            </b-link>
             <b-card-body class="border-top border-gray-200">
                 <h4><b-link to="/genes/genetosamples">Gene to sample groups</b-link></h4>
                 <b-card-text>

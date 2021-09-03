@@ -27,7 +27,7 @@
               <li><b-link to='/atlas/dc'>DC Atlas</b-link>: contains samples from human dendritic cells and monocytes</li>
             </ul>
             </p>
-            <div class='text-center'><b-img src="/img/AtlasSummaryWithIcons.png"></b-img></div>
+            <div class='text-center'><b-img src="/img/AtlasSummaryWithIcons.png" fluid></b-img></div>
             <p class='mt-2'>Read more about the Myeloid atlas at <b-link href="https://doi.org/10.1016/j.stemcr.2021.04.010" target="_blank">Stem Cell Reports</b-link> and
               blood atlas at <b-link href="https://doi.org/10.1371/journal.pcbi.1008219" target="_blank">PLOS Comp Biology</b-link>.
             </p>
@@ -40,7 +40,7 @@
             well across multiple batches. We normalise rank prior to gene filtering in order to use the same scale of values,
             but no other value transformation takes place, at the expense of retaining only a subset of all genes. More details 
             on the method used are available at <b-link href="https://doi.org/10.1371/journal.pcbi.1008219" target="_blank">Angel, et. al. (PLOS Comp Biology)</b-link>.</p>
-            <div class='text-center'><b-img src="/img/AtlasMethodSummary.png"></b-img></div>
+            <div class='text-center'><b-img src="/img/AtlasMethodSummary.png" fluid></b-img></div>
             <p>When you perform a gene expression plot, you will see some genes in brackets on autocomplete. Even though the 
             values of these genes are shown, beware that these genes have been filtered out before constructing the PCA due to their 
             high variance across batches.</p>
@@ -56,7 +56,7 @@
             Check out the <b-link href="/AtlasVignette/Stemformatics_atlas_projection_vignette.html" target="_blank">vignette</b-link> 
             provided for more detail on projections, including how to project single cell RNA-Seq data.</p>
 
-            <div class='text-center'><b-img src="/img/AtlasProjectionSchematic.png"></b-img></div>
+            <div class='text-center'><b-img src="/img/AtlasProjectionSchematic.png" fluid></b-img></div>
 
             <p>The projection method uses only the genes which are common between
             the atlas and the dataset being projected, so if the number of these genes are too small, you may receive an error message.
