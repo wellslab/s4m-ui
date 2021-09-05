@@ -204,7 +204,7 @@ export default {
         return {
             breadcrumb: [
                 { text: 'Home', to: '/' },
-                { text: 'Datasets', active: true },
+                { text: 'Datasets', to: '/datasets' },
                 { text: 'View a dataset', active: true }
             ],
             

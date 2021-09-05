@@ -14,15 +14,6 @@
     </b-form-group>
 
     <b-card-group deck>
-        <b-card no-body img-src="/img/StemCells.png" img-alt="Stem cells image" img-top>
-            <b-card-body>
-                <b-link @click="showDatasetCollection('all')"><h4>All datasets</h4></b-link>
-                <b-card-text>
-                    Show all publicly available human datasets. 
-                </b-card-text>
-            </b-card-body>
-        </b-card>
-
         <b-card no-body img-src="/img/AtlasScreenshot2.png" img-alt="Atlas image" img-top>
             <b-card-body class="border-top border-gray-200">
                 <b-link @click="showDatasetCollection('atlas')"><h4>Atlas Datasets</h4></b-link>
@@ -32,11 +23,20 @@
             </b-card-body>
         </b-card>
 
-        <b-card no-body img-src="/img/DendriticCell.png" img-alt="Image" img-top>
+        <b-card no-body img-src="/img/DendriticCell.png" img-alt="Dendritic cell image" img-top>
             <b-card-body>
-                <b-link @click="showDatasetCollection('dc_cell_types')"><h4>DC Datasets</h4></b-link>
+                <b-link @click="showDatasetCollection('all')"><h4>All datasets</h4></b-link>
                 <b-card-text>
-                    Explore the datasets which contain dendritic cells. 
+                    Show all publicly available human datasets. 
+                </b-card-text>
+            </b-card-body>
+        </b-card>
+
+        <b-card no-body img-src="/img/Leukemia.png" img-alt="Leukemia mage" img-top>
+            <b-card-body class="border-top border-gray-200">
+                <b-link @click="showDatasetCollection('leukaemia')"><h4>Leukemia Datasets</h4></b-link>
+                <b-card-text>
+                    Explore the datasets which contain the term 'leukemia'. 
                 </b-card-text>
             </b-card-body>
         </b-card>
@@ -67,9 +67,9 @@ export default {
                 "atlas": {title: "All atlas datasets",
                         description: "Datasets which have been used to contruct any of our integrated atlases.",
                         apiParams: {'projects':'atlas'}},
-                "dc_cell_types": {title: "DC datasets",
-                        description: "All datasets containing the term 'dendritic'.",
-                        apiParams: {'query_string':'dendritic'}},
+                "leukaemia": {title: "Leukemia datasets",
+                        description: "All datasets containing the term 'leukemia'.",
+                        apiParams: {'query_string':'leukemia'}},
             },
         }
     },

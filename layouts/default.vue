@@ -11,7 +11,7 @@
           <span class="text-white ml-3">{{hostname}}</span>
         </b-col>
         <b-col cols="4" class="text-right">
-          Website hosted at <b-link href="https://nectar.org.au/" target="_blank">
+          Hosted at <b-link href="https://nectar.org.au/" target="_blank">
             <b-img src="/img/nectardirectorate-logo.png" height="18"></b-img></b-link>
         </b-col>
       </b-row>

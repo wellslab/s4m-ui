@@ -26,7 +26,7 @@
         <b-dropdown text="Atlases" variant="dark" class="ml-4">
           <b-dropdown-item to="/atlas/myeloid">Myeloid atlas</b-dropdown-item>
           <b-dropdown-item to="/atlas/blood">Blood atlas</b-dropdown-item>
-          <b-dropdown-item to="/atlas/dc">DC atlas</b-dropdown-item>
+          <b-dropdown-item to="/atlas/dc">Dendritic cell atlas</b-dropdown-item>
           <b-dropdown-item to="/atlas/about">About atlases</b-dropdown-item>
         </b-dropdown>
         <b-dropdown text="Genes" variant="dark" class="ml-4">

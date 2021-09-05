@@ -106,7 +106,7 @@ export default {
       "version": "1.0",
       "platform_type": "Microarray",
       "projects": []
-    }`
+}`
                 },                
                 
                 {show: false, url:'/datasets/{dataset_id}/samples?orient=records&as_file=false', 
@@ -138,7 +138,7 @@ export default {
             "external_source_id": ""
         },
         ...
-    ]`
+]`
                 },
                
                 {show: false, url:'/datasets/{dataset_id}/expression?gene_id={Ensembl_gene_id}&key=cpm&log2=false&orient=records&as_file=false', 
@@ -156,7 +156,7 @@ export default {
             "2000_1699538155_C": 3.04517193769474,
             ...
         }
-    ]`       
+]`       
                 },
 
                 {show: false, url:'/datasets/{dataset_id}/pca?orient=records&dims=20', 
@@ -183,7 +183,7 @@ export default {
             },
             ...
         ]
-    }`       
+}`       
                 },
 
                 {show: false, url:'/datasets/{dataset_id}/correlated-genes?gene_id={Ensembl_gene_id}&cutoff=30', 
@@ -196,24 +196,58 @@ export default {
         "ENSG00000029534": 0.9218905803378692,
         "ENSG00000222915": 0.9131896759304162,
         ...
-    }`       
+}`       
+                },
+
+                {show: false, url:'/datasets/{dataset_id}/ttest?gene_id={Ensembl_gene_id}&sample_group={sample_group}&sample_group_item1={item1}&sample_group_item2={item2}', 
+                 heading: 'Fetches a dictionary of T-test result applied to the dataset, gene_id, sample_group, ' +
+                    'sample_group_item1, sample_group_item2 combination. Eg: ' +
+                    '/datasets/8144/ttest?gene_id=ENSG00000197576&sample_group=cell_type&sample_group_item1=conventional%20dendritic%20cell&sample_group_item2=macrophage',
+                 example:
+    `{
+        "statistic": -2.413572003929416,
+        "pvalue": 0.028148025632041544
+}`       
                 },
 
                 {show: false, url:"/search/datasets", 
                  heading: 'Fetches dataset metadata for datasets matching the search parameters. See below for parameters. ' +
                     'Note that some sample metadata are included in the results here, unlike /datasets/{dataset_id}/metadata ' +
-                    'which only contains dataset metadata. If no parameters are specified, metadata for all datasets will be fetched. ' +
+                    'which only contains dataset metadata. Use query_string=* to return metadata for all datasets. ' +
                     'Multiple parameters work as "AND" operator, so platform_type=Microarray&projects=myeloid_atlas,blood_atlas will fetch ' +
                     'Microarray datasets under myeloid and blood atlas projects.',
                  insertMargin: true,
                  example:
     `Optional parameters:
         dataset_id: comma separated list of dataset ids to restrict the search on
-        query_string: perform text search on this query string on both dataset and sample metadata
-        platform_type: one of [Microarray,RNASeq,scRNASeq,other]
-        projects: one of [myeloid_atlas,blood_atlas,dc_atlas]
-        name: short name of dataset
-        limit: total number of records to return
+        query_string: perform text search on this query string on dataset (and sample metadata if include_samples_query)
+        include_samples_query: if true, query_string will search sample metadata as well as dataset metadata
+
+        platform_type: comma separated list of platform types to restrict the search of datasets on
+        projects: comma separated list of projects to restrict the search of datasets on
+        organism: comma separated list of organisms to restrict the search of datasets on
+
+        -- The parameters below are probably more useful for the Stemformatics website UI than general use
+        and the output format is also slightly different if pagination_limit is specified.
+        -- parameters for returning data formatted for a plotly's sunburst plot
+        sunburst_inner: sample group (eg. 'cell_type') for inner wheel of sunburst
+        sunburst_outer: sample group for outer wheel of sunburst
+        sunburst_inner_cutoff: max number of items in the inner wheel
+        sunburst_outer_cutoff: max number of items in the outer wheel
+
+        -- parameters filtering data after the search; these work like a sub-query if present, where the counts are not affected
+        filter_Project: comma separated list of projects to apply filter on (note capital 'P')
+        filter_platform_type: platform type to apply filter on (not comma separated list)
+        filter_cell_type: comma separated list of cell types to apply filter on
+        filter_tissue_of_origin: comma separated list of tissues to apply filter on
+
+        -- parameters for sorting
+        sort_field: sort the list of datasets based on this field; default is 'name'
+        sort_ascending: default is true
+
+        -- parameters for pagination
+        pagination_limit: number of items per page
+        pagination_start: start page
 
     Example data returned
     [
@@ -243,12 +277,17 @@ export default {
     ]`       
                 },
 
-                {show: false, url:'/search/samples?dataset_id={datasetId}&query_string={queryString}&field={field}&orient=records&limit=50', 
+                {show: false, url:'/search/samples?limit=50&orient=records', 
                  heading: 'Fetches sample metadata matching the search parameters. ' +
-                    'field specifies a subset of the fields to fetch, for example field=cell_type,tissue_of_origin. ' +
+                    'limit is the total number of sample records to return ' +
                     'See example below for a full list of available fields.',
                  example:
-    `[
+    `Optional parameters:
+        dataset_id: comma separated list of dataset ids to restrict the search on
+        query_string: perform text search on this query string on sample metadata
+        organism: comma separated list of organisms to restrict the search of samples on
+        field: comma separated list of fields for output (eg. field=cell_type,tissue_of_origin will only return these fields)
+    [
         {
             "sample_id": "6363_GSM1094014",
             "dataset_id": 6363,
@@ -280,6 +319,7 @@ export default {
                 {show: false, url:'/values/datasets/{key}?include_count=false', 
                  heading: 'Fetches all available values for key in dataset metadata. ' +
                     'If include_count is true, returns a dictionary of counts of each value. ' +
+                    'organism is another parameter available to restrict the search to that organism. ' +
                     'Example here is for key=platform&include_count=true. For a full list of available keys, ' +
                     'see the example data from /datasets/{dataset_id}/metadata',
                  insertMargin: true,
@@ -295,6 +335,7 @@ export default {
                 {show: false, url:'/values/samples/{key}?include_count=false', 
                  heading: 'Fetches all available values for key in sample metadata. ' +
                     'If include_count is true, returns a dictionary of counts of each value. ' +
+                    'organism is another parameter available to restrict the search to that organism. ' +
                     'Example here is for key=cell_type&include_count=true. For a full list of available keys, ' +
                     'see the example data from /datasets/{dataset_id}/samples',
                  example:
@@ -436,6 +477,31 @@ export default {
         }
     ]
 
+    For item=expression-file, file download is served for expression matrix
+    For item=genes, file download is served for genes matrix.
+
+    For item=colours-and-ordering, return the dictionary of colours and ordering used for the atlas
+    {
+        "colours": {
+            "Sample Source": {
+                "in vivo": "#54E4AD",
+                "ex vivo": "#d87e22",
+                "in vitro": "#a6611a",
+                "in vivo (HuMouse)": "#4c9282"
+            },
+            ...
+        },
+        "ordering": {
+            "Sample Source": [
+                "in vivo",
+                "ex vivo",
+                "in vitro",
+                "in vivo (HuMouse)"
+            ],
+            ...
+        }
+    }
+
     For item=possible-genes, returns matching genes in the atlas for query_string:
     [
         {
@@ -446,6 +512,31 @@ export default {
         ...
     ]
 
+    `       
+                },
+
+                {show: false, url:"/atlas-projection/{atlas_type}/{data_source}", 
+                 heading: "Project query data onto atlas of atlas_type. dataSource is one of  ['stemformatics','user']. " +
+                    "Note that this is a POST request, not GET.",
+                 example:
+    `The form posted should have following fields
+        test_name: name given to the test dataset, and used as a prefix to projected samples (default 'test_data')
+        test_sample_column: which column of sample table to group samples under (first column by default)
+
+        -- If data_source=stemformatics
+            name={Stemformatics dataset name (eg. 'Helft_2017_28723558')}
+
+        -- else (data_source=user)
+            test_expression: expression matrix as a file object
+            test_samples: sample matrix as a file object
+
+    Returns a dictionary, with following keys and values:
+        error: if not empty string, there was an error with projection
+        coords: coordinates of projection
+        samples: sample table (same as input)
+        sampleIds: index of sample table with test_name prepended
+        column: test_sample_column
+        capybara: capybara score where query sample ids are row ids and column from atlas form columns
     `       
                 },
 
