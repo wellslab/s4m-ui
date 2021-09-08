@@ -16,9 +16,10 @@
 
             <h4 class="mt-3">Stemformatics is subject to the laws governing privacy in Australia: The Commonwealth Privacy Act 1988.</h4>
 
-            <p>Stemformatics uses session data to make the user experience better, by remembering the last dataset which
-                was looked at in detail, for example. Stemformatics uses Google Analytics to track user numbers, pages and access preferences to help us improve our services.</p>
-            <p>Stemformatics does not pass any information to another third party without the knowledge and prior consent of the user.</p>
+            <p>Stemformatics uses session data to make the user experience better, by remembering the last dataset which was looked at in detail, 
+                for example. Stemformatics uses Google Analytics to track user numbers, pages and access preferences to help us improve our services.</p>
+            <p>Stemformatics may log IP addresses of requests made to the API server purely for the purpose of identifying potentially malicious
+                requests. Stemformatics does not pass any information to another third party without the knowledge and prior consent of the user.</p>
 
             <h4>License agreement</h4>
             <p>Stemformatics is an open source resource freely available to anyone.  It is released under the 
