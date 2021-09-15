@@ -9,7 +9,7 @@
     </h3>
     <b-form inline class="justify-content-center mt-3">
         Find highly expressed {{selectedSampleGroup}} for gene: 
-        <GeneSearch form-group-description="" @gene-selected="updateSelectedGene" @keyup-enter="search" class="mx-1"></GeneSearch>
+        <GeneSearch form-group-description="" :show-button="false" @gene-selected="updateSelectedGene" @keyup-enter="search" class="mx-1"></GeneSearch>
         <b-button variant="dark" @click="search">Search</b-button>
         <b-dropdown text="tools" class="ml-2">
             <b-dropdown-item @click="showMoreOptions=true">More options...</b-dropdown-item>

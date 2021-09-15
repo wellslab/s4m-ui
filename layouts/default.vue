@@ -17,13 +17,16 @@
     </b-container>
   </footer>
 
-  <b-modal id='release-notes' title="Release Notes" ok-only scrollable>
+  <b-modal id='release-notes' title="Release Notes" scrollable>
     <ul class="list-unstyled">
-        <li v-for="item in releaseNotes" :key="item.version">{{item.version}}
+        <li v-for="item in releaseNotes" :key="item.version" class="mb-2"><b>{{item.version}} ({{item.date}})</b>
           <ul><li v-for="note in item.notes" :key="note">{{note}}</li></ul>
         </li>
-        <p class="mt-3">[{{hostname}}]</p>
     </ul>
+    <template #modal-footer class="d-flex justify-content-between">
+      <div>[{{hostname}}]</div>
+      <div class="ml-auto"><b-button @click="$bvModal.hide('release-notes')" variant="primary">OK</b-button></div>
+    </template>
   </b-modal>
 </div>
 </template>
@@ -34,6 +37,7 @@ export default {
     return {
       showReleaseNotes: false,
       versionNumber: '',
+      date: '',
       releaseNotes:[],
       hostname: process.env.BASE_API_URL.split("api-")[1].split(".")[0]
     }
@@ -60,6 +64,7 @@ export default {
     // parse the release notes
     this.$axios.get("/ReleaseNotes.json").then(res => {
         this.releaseNotes = res.data;
+        this.date = this.releaseNotes[0].date;
         this.versionNumber = this.releaseNotes[0].version;
     });
   }

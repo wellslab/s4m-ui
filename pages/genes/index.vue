@@ -35,7 +35,7 @@
                     Start from a gene of interest and find highly expressed samples across datasets.
                 </b-card-text>
                 <br/>
-                <GeneSearch size="sm" @gene-selected="updateSelectedGene" @keyup-enter="goToGeneToSampleGroups"></GeneSearch>
+                <GeneSearch size="sm" :show-button="false" @gene-selected="updateSelectedGene" @keyup-enter="goToGeneToSampleGroups"></GeneSearch>
                 <b-button @click="goToGeneToSampleGroups" class="float-right align-self-end">search</b-button>
             </b-card-body>
         </b-card>

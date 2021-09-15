@@ -1,6 +1,6 @@
 Component for plotting gene expression, which happens often in the application in different pages.
 Main input data are dataset and gene ids. When one of these changes, this component will fetch
-matching expression data and plot.
+matching expression data and plot using plotly.
 
 <template>
 <b-row class="small justify-content-center">
@@ -78,6 +78,7 @@ export default {
         show_points: {default:true, type:Boolean},
         plotDivId: {default:'genePlotDiv', type:String},
         highlightSampleGroupItems: Object,  // highlight these items
+        plotTitle: {default:'', type:String},  // show plot title if this is specified
     },
 
     data() {
@@ -150,6 +151,8 @@ export default {
             });
             const title = this.datasetMetadata.platform_type=='RNASeq'? 'log2(cpm+1)' : 'log2';
             const layout = {yaxis: {title: title}, showlegend:false};
+            if (this.plotTitle)
+                layout['title'] = this.plotTitle;
             Plotly.newPlot(this.plotDivId, traces, layout);
             this.ttest_selectedSampleGroupItem1 = this.sampleGroupItems[0];
             this.ttest_selectedSampleGroupItem2 = this.sampleGroupItems.length>1? this.sampleGroupItems[1]: this.sampleGroupItems[0];                

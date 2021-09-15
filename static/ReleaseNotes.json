@@ -1,4 +1,11 @@
 [
+    {"version": "v1.1",
+     "date": "2021-09-16",
+     "notes": ["Gene search input fields have improved to handle direct user input without having to select from a list of suggestions",
+               "Gene expression plot under datasets > view > genes now shows gene symbol on the plot.",
+               "Updated sample metadata for many datasets for further consistency."]},
+
     {"version": "v1.0",
-     "notes": ["First release for testing"]}
+     "date": "2021-09-06",
+     "notes": ["First release"]}
 ]

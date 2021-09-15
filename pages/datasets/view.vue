@@ -75,9 +75,7 @@
             <b-form inline class="justify-content-center mt-3">
                 <div v-if="genes_loading"><b-spinner label="Loading..." variant="secondary" style="width:1.5rem; height:1.5rem;"></b-spinner></div>
                 <div v-else>gene:</div>
-                <GeneSearch form-group-description="" @gene-selected="genes_updateSelectedGene" @keyup-enter="genes_updateSelectedGene" 
-                    :species="species" size="sm" class="ml-1"></GeneSearch>
-                <b-button variant="dark" @click="genes_updateSelectedGene" size="sm">show</b-button>
+                <GeneSearch form-group-description="" @gene-selected="genes_updateSelectedGene" :species="species" size="sm" class="ml-1"></GeneSearch>
                 <b-dropdown right text="tools" class="col-md-2 px-0 m-1 text-left" variant="secondary" size="sm">
                     <b-dropdown-item v-if="genes_selectedPlotType=='violin'" @click="genes_selectedPlotType='box'">change to box plot</b-dropdown-item>
                     <b-dropdown-item v-if="genes_selectedPlotType=='box'" @click="genes_selectedPlotType='violin'">change to violin plot</b-dropdown-item>
@@ -90,7 +88,7 @@
                 <b-link v-b-tooltip.hover.right title="More info and tips" v-b-toggle.sidebar class="ml-2"><b-icon-info-circle></b-icon-info-circle></b-link>
             </b-form>
             <GeneExpressionPlot v-show="'geneId' in genes_selectedGene" ref="geneExpressionPlot" :gene_id="genes_selectedGene.geneId" :dataset_id="datasetId" 
-                :plot_type="genes_selectedPlotType" :show_points="genes_showPoints"/>
+                :plot_type="genes_selectedPlotType" :show_points="genes_showPoints" :plot-title="genes_selectedGene.geneSymbol"/>
 
             <!-- similar genes (modal), shown first before correlation calculation is done -->
             <b-modal v-model="genes_showSimilarGenesDialog" title="Find similar genes" hide-footer>

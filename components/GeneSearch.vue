@@ -1,7 +1,10 @@
+GeneSearch component is mainly a text input element that handles user input for gene searches.
+
 <template>
 <b-form-group :description="formGroupDescription">
     <b-form-input v-model="selectedGeneSymbol" list="possible-genes-datalist" @input="setSelectedGene"
-        @keyup="getPossibleGenes" @keyup.enter="emitSelectedGene" placeholder="eg. MYB" :size="size"></b-form-input>
+        @keyup="getPossibleGenes" @keyup.enter="setSelectedGene" placeholder="eg. MYB" :size="size"></b-form-input>
+    <b-button v-if="showButton" variant="dark" @click="setSelectedGene" size="sm">{{buttonText}}</b-button>
     <b-form-datalist id="possible-genes-datalist">
         <option v-for="gene in possibleGenes" :key="gene.geneId">{{gene.geneSymbol}}</option>
     </b-form-datalist>
@@ -16,6 +19,8 @@ export default {
         formGroupDescription: {default:'start typing then select from the list of genes', type:String},
         size: {default:'md', type:String},
         species: {default:'human', type:String},
+        showButton: {default:true, type:Boolean},
+        buttonText: {default:'show', type:String}
     },
 
     data() {
@@ -61,18 +66,10 @@ export default {
             const genes = this.possibleGenes.filter(item => item.geneSymbol==this.selectedGeneSymbol);
             if (genes.length>0) {
                 this.selectedGene = genes[0];
+                console.log("emitting gene-selected", JSON.stringify(this.selectedGene));
                 this.$emit('gene-selected', this.selectedGene);
             }
         },
-
-        // Should run on user pressing enter after gene selection. This is a little different from
-        // pressing enter on the list of options - this runs on enter inside the input form.
-        emitSelectedGene() {
-            if (Object.keys(this.selectedGene).length==0)
-                this.$bvModal.msgBoxOk("No matching gene - please select from the list of suggestions.");
-            else
-                this.$emit('keyup-enter', this.selectedGene);
-        }
     },
 
 }
