@@ -66,7 +66,6 @@ export default {
             const genes = this.possibleGenes.filter(item => item.geneSymbol==this.selectedGeneSymbol);
             if (genes.length>0) {
                 this.selectedGene = genes[0];
-                console.log("emitting gene-selected", JSON.stringify(this.selectedGene));
                 this.$emit('gene-selected', this.selectedGene);
             }
         },

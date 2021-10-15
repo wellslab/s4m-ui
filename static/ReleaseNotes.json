@@ -1,4 +1,9 @@
 [
+    {"version": "v1.2",
+     "date": "2021-10-15",
+     "notes": ["Sample metadata has been updated, where thousands of more samples now have cell_type assigned when previously they didn't.",
+                "Updated the projection vignette for the atlas to metion capybara scoring."]},
+
     {"version": "v1.1",
      "date": "2021-09-16",
      "notes": ["Gene search input fields have improved to handle direct user input without having to select from a list of suggestions",
