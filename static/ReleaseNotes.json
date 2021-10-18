@@ -1,4 +1,8 @@
 [
+    {"version": "v1.2a",
+     "date": "2021-10-18",
+     "notes": ["Fixed a bug where gene to sample groups wasn't working."]},
+   
     {"version": "v1.2",
      "date": "2021-10-15",
      "notes": ["Sample metadata has been updated, where thousands of more samples now have cell_type assigned when previously they didn't.",
