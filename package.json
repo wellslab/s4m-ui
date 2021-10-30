@@ -1,26 +1,20 @@
 {
-  "name": "nuxt-base",
-  "version": "1.0.0",
-  "private": true,
+  "name": "stemformatics",
   "scripts": {
     "dev": "nuxt",
     "build": "nuxt build",
-    "start": "nuxt start",
-    "generate": "nuxt generate"
+    "generate": "nuxt generate",
+    "start": "nuxt start"
   },
   "dependencies": {
     "@nuxtjs/auth": "^4.9.1",
     "@nuxtjs/axios": "^5.13.6",
     "@nuxtjs/dotenv": "^1.4.1",
-    "@nuxtjs/google-analytics": "^2.4.0",
-    "bootstrap": "^4.6.0",
     "bootstrap-vue": "^2.21.2",
-    "core-js": "^3.16.1",
-    "node-sass": "^5.0.0",
-    "npm": "^7.22.0",
     "nuxt": "^2.15.8",
-    "pm2": "^5.1.1",
-    "sass-loader": "^10.2.0",
+    "pm2": "^5.1.2",
+    "sass": "1.32.*",
+    "sass-loader": "^10.1.1",
     "vue-gtag": "^1.16.1"
   }
 }

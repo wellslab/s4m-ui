@@ -9,53 +9,47 @@ This is the code behind the [Stemformatics](http://stemformatics.org) web applic
 $ conda create --prefix /mnt/miniconda3/envs/s4m-ui  # create new env to specific loation
 $ conda activate s4m-ui
 $ conda install nodejs
+$ conda install yarn  # used to use npm but moved to yarn after repeated issues when updating packages
 
 # Run updates if necessary
 $ conda update --all
-$ npm install npm   # updating npm
 
 # install dependencies
-$ npm install nuxt
-$ npm install bootstrap-vue
-$ npm add @nuxtjs/axios
-$ npm add @nuxtjs/auth
-$ npm add vue-gtag
-$ npm install pm2 -g  # see https://nuxtjs.org/docs/2.x/deployment/deployment-pm2/
-$ npm install @nuxtjs/dotenv
+$ yarn add nuxt
+$ yarn add bootstrap-vue
+$ yarn add sass@1.32.*  # see https://github.com/twbs/bootstrap/issues/34051
+$ yarn add sass-loader@^10.1.1
+$ yarn add @nuxtjs/axios
+$ yarn add @nuxtjs/auth
+$ yarn add @nuxtjs/dotenv
+$ yarn add vue-gtag
+$ sudo yarn global add pm2 --prefix /usr/local  # see https://nuxtjs.org/docs/2.x/deployment/deployment-pm2/
 
 # $ npm install plotly.js-dist  # Not sure how to make plotly work this way - currently just loading cdn into header
 
 # uninstalling example
-$ npm uninstall argon-dashboard
+$ yarn remove sass-loader
 
-# audit for finding vulnerabilities
-$ npm audit
-
-# After a major update of node, there can be incompatibilties between the various dependencies.
-# This happened after nodejs upgrade. Eventually this helped: https://stackoverflow.com/questions/66082397/typeerror-this-getoptions-is-not-a-function
-$ npm uninstall sass-loader
-$ npm install sass-loader@^10.1.1
-# (note that package.json automatically updates when you install a package)
 ```
 
 ## Running the application
 
 ```bash
 # serve with hot reload at localhost (see nuxt.config.js for port number)
-$ npm run dev
+$ yarn dev
 
 # build for production and launch server
-$ npm run build
-$ npm run start
+$ yarn build
+$ yarn start
 
 # or to run forever (better for stable prod env)
-$ npm run build
+$ yarn build
 $ pm2 start
 $ pm2 stop ecosystem.config.js
 
 # generate static project - doesn't seem to work for this project (see scripts section under package.json - running npm run generate is equivalent to nuxt generate for example)
-$ npm run generate
-$ npm start
+$ yarn generate
+$ yarn start
 ```
 
 ## Notes

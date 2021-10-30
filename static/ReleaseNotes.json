@@ -1,4 +1,8 @@
 [
+    {"version": "v1.3",
+     "date": "2021-11-03",
+     "notes": ["Capybara score in the atlas now scores against all atlas sample groups."]},
+
     {"version": "v1.2a",
      "date": "2021-10-18",
      "notes": ["Fixed a bug where gene to sample groups wasn't working."]},

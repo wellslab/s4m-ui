@@ -146,12 +146,16 @@
         <div class="card-body bg-white">
             Each projected sample is scored using 
             <b-link href="https://doi.org/10.1101/2020.02.17.947390" target="_blank">
-            Capybara</b-link> here, and the score is rendered as a heatmap. Higher values imply more closeness with that cell type.
-            Columns which were included in the sample table for projected data can be changed here.
+            Capybara</b-link> here, and the score is rendered as a heatmap. Higher values imply more closeness with that atlas sample group.
+            The rows of this table match samples groups in the query data, and columns match those in the atlas.
             <b-form inline class="justify-content-center mt-2">
                 Show rows as: 
                 <b-form-select v-model="projection_selectedSampleGroup" size="sm"
-                    :options="projection_sampleGroups" @change="plotCapybara" class="ml-1">
+                    :options="projection_sampleGroups" @change="plotCapybara" class="mx-1">
+                </b-form-select>
+                columns as: 
+                <b-form-select v-model="projection_selectedAtlasSampleGroup" size="sm"
+                    :options="colourBy" @change="plotCapybara" class="ml-1">
                 </b-form-select>
             </b-form>
         </div>
@@ -313,6 +317,7 @@ export default {
             projection_showScore: false,
             projection_sampleGroups: [],
             projection_selectedSampleGroup:'',
+            projection_selectedAtlasSampleGroup:'Cell Type',
 
             // variables used by the find dataset div which can be used to show a table of datasets
             datasetInfo: {
@@ -848,42 +853,41 @@ export default {
             
             // Now add projected points to all relevant data variables. Note that we should be able to
             // remove these points later - for now, reload page.
-            let self = this;
-            self.uploadData.name = projectionData.name;
-            for (let item in self.coords) { // update coordinates to include projected coordinates
+            this.uploadData.name = projectionData.name;
+            for (let item in this.coords) { // update coordinates to include projected coordinates
                 for (let i=0; i<projectionData.coords.length; i++)
-                    self.coords[item][projectionData.sampleIds[i]] = projectionData.coords[i][item];
+                    this.coords[item][projectionData.sampleIds[i]] = projectionData.coords[i][item];
             }
-            self.colourBy.forEach(item => {   // add a breakpoint in sampleTypeOrdering
-                if (item in self.sampleTypeOrdering)
-                    self.sampleTypeOrdering[item].push("");
+            this.colourBy.forEach(item => {   // add a breakpoint in sampleTypeOrdering
+                if (item in this.sampleTypeOrdering)
+                    this.sampleTypeOrdering[item].push("");
             });
 
             // update sampleInfo.allData, sampleTable, sampleTypeColours and sampleTypeOrdering
             for (let i=0; i<sampleTypes.length; i++) {  
                 let sampleId = projectionData.sampleIds[i];
-                self.sampleInfo.allData[sampleId] = {};
-                self.uploadData.projectedSampleIds.push(sampleId);
-                for (let item in self.sampleTable) {
-                    self.sampleTable[item][sampleId] = sampleTypes[i];
-                    self.sampleTypeColours[item][sampleTypes[i]] = "green";
-                    if (self.sampleTypeOrdering[item].indexOf(sampleTypes[i])==-1)
-                        self.sampleTypeOrdering[item].push(sampleTypes[i]);
-                    self.sampleInfo.allData[sampleId][item] = sampleTypes[i];
+                this.sampleInfo.allData[sampleId] = {};
+                this.uploadData.projectedSampleIds.push(sampleId);
+                for (let item in this.sampleTable) {
+                    this.sampleTable[item][sampleId] = sampleTypes[i];
+                    this.sampleTypeColours[item][sampleTypes[i]] = "green";
+                    if (this.sampleTypeOrdering[item].indexOf(sampleTypes[i])==-1)
+                        this.sampleTypeOrdering[item].push(sampleTypes[i]);
+                    this.sampleInfo.allData[sampleId][item] = sampleTypes[i];
                 }
             }
             projectionData.sampleIds.forEach(item => {
-                self.sampleIds.push(item);
+                this.sampleIds.push(item);
             })
 
-            self.datasetInfo.allData.push(datasetAttributes);            
-            self.updateLegends();
-            self.updatePlot();
+            this.datasetInfo.allData.push(datasetAttributes);            
+            this.updateLegends();
+            this.updatePlot();
 
-            self.projection_data = projectionData;
-            self.projection_sampleGroups = Object.keys(projectionData.samples[0]);
-            self.projection_sampleGroups.sort();
-            self.projection_selectedSampleGroup = column;
+            this.projection_data = projectionData;
+            this.projection_sampleGroups = Object.keys(projectionData.samples[0]);
+            this.projection_sampleGroups.sort();
+            this.projection_selectedSampleGroup = column;
         },
 
         plotCapybara() {
@@ -893,7 +897,7 @@ export default {
             }
             this.projection_showScore = true;
             let div = document.getElementById('capybaraPlotDiv');
-            const capybara = this.projection_data.capybara;
+            const capybara = this.projection_data.capybara[this.projection_selectedAtlasSampleGroup];
 
             // y depends on projection_selectedSampleGroup
             let y = this.projection_data.samples.map(item => item[this.projection_selectedSampleGroup]);
@@ -960,6 +964,7 @@ export default {
             this.sampleTable = res.data;    // {col: {row:val}}
             this.colourBy = Object.keys(this.sampleTable);   // ["Cell Type", "Sample Source", ...]
             this.selectedColourBy = this.colourBy[0];
+            this.projection_selectedAtlasSampleGroup = this.selectedColourBy;
 
             // Fetch colours and ordering
             this.$axios.get("/api/atlases/" + this.atlasType + "/colours-and-ordering").then(res2 => {

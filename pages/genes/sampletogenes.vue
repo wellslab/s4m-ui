@@ -261,7 +261,7 @@ export default {
                     // Also split dataset ids into array and get dataset display names.
                     let genes = [];
                     let geneSymbols = new Set();    // unique values only
-                    let datasetIds = new Set(res.data.rankScore.map(item => item.datasetIds).join(',').split(','));
+                    let datasetIds = Array.from(new Set(res.data.rankScore.map(item => item.datasetIds).join(',').split(',')));
                     res.data.rankScore.forEach(element => {
                         if (!geneSymbols.has(geneSymbolFromGeneId[element.geneId])) {
                             element.datasetIds = element.datasetIds.split(',');
