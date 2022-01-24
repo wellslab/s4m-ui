@@ -8,13 +8,18 @@ This is the code behind the [Stemformatics](http://stemformatics.org) web applic
 # If installing in a conda env
 $ conda create --prefix /mnt/miniconda3/envs/s4m-ui  # create new env to specific loation
 $ conda activate s4m-ui
-$ conda install nodejs
-$ conda install yarn  # used to use npm but moved to yarn after repeated issues when updating packages
+
+# Installing yarn also installs nodejs. conda-forge has much later version of yarn.
+# Switched to yarn from npm for node package installation after repeated issues when updating packages with npm.
+# If there are issues with the latest version of node, it may be worthwhile downgrading it.
+# Use conda search -f nodejs to see what versions are availabe first and choose one.
+$ conda install -c conda-forge yarn  
+$ conda install nodejs=14.8.0   # otherwise had 
 
 # Run updates if necessary
 $ conda update --all
 
-# install dependencies
+# install dependencies or just run "yarn install" if package.json has all these specified already
 $ yarn add nuxt
 $ yarn add bootstrap-vue
 $ yarn add sass@1.32.*  # see https://github.com/twbs/bootstrap/issues/34051
@@ -23,7 +28,9 @@ $ yarn add @nuxtjs/axios
 $ yarn add @nuxtjs/auth
 $ yarn add @nuxtjs/dotenv
 $ yarn add vue-gtag
-$ sudo yarn global add pm2 --prefix /usr/local  # see https://nuxtjs.org/docs/2.x/deployment/deployment-pm2/
+
+# For running a server constantly
+$ yarn global add pm2  # see https://nuxtjs.org/docs/2.x/deployment/deployment-pm2/
 
 # $ npm install plotly.js-dist  # Not sure how to make plotly work this way - currently just loading cdn into header
 

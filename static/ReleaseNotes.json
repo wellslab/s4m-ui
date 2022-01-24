@@ -1,6 +1,6 @@
 [
     {"version": "v1.3",
-     "date": "2021-11-03",
+     "date": "2022-01-24",
      "notes": ["Capybara score in the atlas now scores against all atlas sample groups."]},
 
     {"version": "v1.2a",
