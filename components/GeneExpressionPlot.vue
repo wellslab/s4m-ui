@@ -79,6 +79,7 @@ export default {
         plotDivId: {default:'genePlotDiv', type:String},
         highlightSampleGroupItems: Object,  // highlight these items
         plotTitle: {default:'', type:String},  // show plot title if this is specified
+        sampleGroupItemsReordered: Array,    // eg. ['fibroblast','T cell',...]
     },
 
     data() {
@@ -245,6 +246,12 @@ export default {
         },
         show_points: function() {
             this.restylePlot();
+        },
+        sampleGroupItemsReordered: function() {
+            let traces = document.getElementById(this.plotDivId).data; //
+            if (traces && traces.length>0) {
+                this.plotExpression();
+            }
         }
     },
 

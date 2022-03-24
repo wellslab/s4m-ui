@@ -12,6 +12,8 @@
 
     <b-card no-body>
     <b-tabs card pills align="center">
+
+        <!-- Overview tab: contains PCA plot -->
         <b-tab title="Overview" active>
             <div class="col-md-7 m-auto text-center">
                 <p>{{datasetMetadata.title}}</p>
@@ -43,6 +45,7 @@
             </draggable-div>
         </b-tab>
 
+        <!-- Details tab: for dataset metadata -->
         <b-tab title="Details">
             <b-table-simple hover small>
                 <b-tbody>
@@ -60,16 +63,47 @@
             </b-table-simple>
         </b-tab>
 
+        <!-- Samples tab: for sample metadata -->
         <b-tab title="Samples" class="text-center m-auto">
-                {{samples.length}} samples
-                <b-dropdown v-if="false" text="project onto">
-                    <b-dropdown-item @click="projectData('myeloid')">Myeloid atlas</b-dropdown-item>
-                    <b-dropdown-item @click="projectData('blood')">Blood atlas</b-dropdown-item>
-                    <b-dropdown-item @click="projectData('dc')">DC atlas</b-dropdown-item>
-                </b-dropdown>
-            <b-table hover sticky-header="500px" :items="samples" class="small mt-2"></b-table>
+            <b-form inline class="justify-content-center">{{samples.length}} samples
+                <b-link v-b-tooltip.hover title="Order sample items" @click="samples_showOrderSampleItemsDialog=true" class="ml-4">
+                    <b-icon-arrow-down-up></b-icon-arrow-down-up>
+                </b-link>
+                <b-link v-b-tooltip.hover title="Fit all text" @click="samples_fitTextToCells=!samples_fitTextToCells" class="ml-2">
+                    <b-icon-justify :variant="samples_fitTextToCells? 'dark' : ''"></b-icon-justify>
+                </b-link>
+            </b-form>
+            <b-dropdown v-if="false" text="project onto">
+                <b-dropdown-item @click="projectData('myeloid')">Myeloid atlas</b-dropdown-item>
+                <b-dropdown-item @click="projectData('blood')">Blood atlas</b-dropdown-item>
+                <b-dropdown-item @click="projectData('dc')">DC atlas</b-dropdown-item>
+            </b-dropdown>
+            <b-table hover sticky-header="500px" :items="samples" class="small mt-2">
+                <template #cell()="data">
+                    {{samples_fitTextToCells && data.value.toString().length>7? data.value.toString().substring(0,5)+'..' : data.value}}
+                </template>
+            </b-table>
+
+            <!-- order sample items (modal), used to cutomise ordering of sample group items -->
+            <b-modal v-model="samples_showOrderSampleItemsDialog" title="Order sample items" hide-footer>
+                <p>You customise the ordering of items in a sample group here for this dataset.
+                    This is useful for sample groups with many items where you want to show gene expression in specific order of those items, for example.
+                    Note that this information is stored on your browser, so it will not be remembered if you change browser or computer or clear browser cache.
+                </p>
+                <b-form-select sm v-model="samples_selectedSampleGroup" :options="sampleGroups"></b-form-select>
+                <draggable v-model="pca_legends[samples_selectedSampleGroup]" class="list-group mt-2" tag="ul" @change="samples_updateOrdering">
+                    <transition-group>
+                        <li class="list-group-item" v-for="element in pca_legends[samples_selectedSampleGroup]" :key="element.value">
+                            <i :class="element.fixed ? 'fa fa-anchor' : 'glyphicon glyphicon-pushpin'" aria-hidden="true"></i>
+                            {{ element.value }}
+                        </li>
+                    </transition-group>
+                </draggable>
+                <b-button @click="samples_showOrderSampleItemsDialog=false" class="mt-2">Close</b-button>
+            </b-modal>
         </b-tab>
 
+        <!-- Genes tab: contains gene expression plots -->
         <b-tab title="Genes" class="text-center">
             Look up expression profile for a gene in this dataset. You can also copy and paste Ensembl gene id here.
             <b-form inline class="justify-content-center mt-3">
@@ -88,7 +122,8 @@
                 <b-link v-b-tooltip.hover.right title="More info and tips" v-b-toggle.sidebar class="ml-2"><b-icon-info-circle></b-icon-info-circle></b-link>
             </b-form>
             <GeneExpressionPlot v-show="'geneId' in genes_selectedGene" ref="geneExpressionPlot" :gene_id="genes_selectedGene.geneId" :dataset_id="datasetId" 
-                :plot_type="genes_selectedPlotType" :show_points="genes_showPoints" :plot-title="genes_selectedGene.geneSymbol"/>
+                :plot_type="genes_selectedPlotType" :show_points="genes_showPoints" :plot-title="genes_selectedGene.geneSymbol"
+                :sample-group-items-reordered="samples_sampleGroupItemsReordered"/>
 
             <!-- similar genes (modal), shown first before correlation calculation is done -->
             <b-modal v-model="genes_showSimilarGenesDialog" title="Find similar genes" hide-footer>
@@ -157,6 +192,7 @@
 
         </b-tab>
 
+        <!-- Download tab: contains links to download files -->
         <b-tab title="Download">
             <p>Download files for this dataset in tab-separated text format here.</p>
             <p><b-link :href="apiUrl + '/datasets/' + datasetId + '/samples?as_file=true'">Sample table</b-link></p>
@@ -175,6 +211,7 @@
             </ul>
         </b-tab>
 
+        <!-- History tab: not available yet -->
         <b-tab v-if="false" title="History">
             <p>Description of how this dataset was processed and key QC decisions made: coming soon...</p>
         </b-tab>
@@ -189,6 +226,7 @@
 import Vue from 'vue'
 import { BootstrapVueIcons } from 'bootstrap-vue'
 Vue.use(BootstrapVueIcons)
+import draggable from 'vuedraggable'
 
 import data_functions from "~/mixins/data_functions.js"
 
@@ -197,6 +235,10 @@ export default {
       script: [ { src: 'https://cdn.plot.ly/plotly-latest.min.js' } ],
     },
     mixins: [data_functions],
+
+    components: {
+        draggable,
+    },
 
     data() {
         return {
@@ -226,6 +268,12 @@ export default {
             // sample table
             samples: [],    // [{'sample_id':'7283_GSM1977399', 'cell_type':'', ...}, ...]
             sampleGroups: [],   // ["sample_type", "age", ...]
+            sampleGroupItemsOrdered: {},    // {'celltype':['fibroblast',...], ...} stores ordering of items in sample group in localStorage
+            samples_showOrderSampleItemsDialog: false,
+            samples_selectedSampleGroup: "",    // set on mounted
+            samples_sampleGroupItemsReordered: [],   // used to tell components that reordering has been done 
+                // - same as sampleGroupItemsOrdered[samples_selectedSampleGroup] once ordering has been done, can't pass on this object successfully so using this strategy
+            samples_fitTextToCells: false,
             species: 'human',   // either 'human' or 'mouse', used for mygene.info search, hence different to our organism values
 
             // genes - most of these fields need to be reactive, in which case best to not be inside other objects
@@ -287,6 +335,22 @@ export default {
             Plotly.newPlot('pcaScreePlotDiv', traces, layout);
         },
 
+        // ------------ Samples tab ---------------
+        samples_updateOrdering() {
+            // Update this.sampleGroupItemsOrdered with the newly ordered list of sample group items (eg. ['stem cell','fibroblast',...])
+            this.sampleGroupItemsOrdered[this.samples_selectedSampleGroup] = this.pca_legends[this.samples_selectedSampleGroup].map(item => item.value);
+
+            // Put into localStorage
+            localStorage.setItem('s4m:datasets_view.sampleGroupItemsOrdered', JSON.stringify(this.sampleGroupItemsOrdered));
+
+            // Update this property bound to GeneExpressionPlot component, so it can update itself
+            this.samples_sampleGroupItemsReordered = this.sampleGroupItemsOrdered[this.samples_selectedSampleGroup];
+        },
+
+        projectData(atlasType) {
+            alert("Coming soon!");
+        },
+
         // ------------ Genes tab ---------------
         // Should run when gene-selected event is triggered from GeneSearch component.
         // Note that this automatically triggers expression plot, as GeneExpressionPlot has a watcher on selectedGene.geneId
@@ -325,10 +389,6 @@ export default {
             });
         },
 
-        // ------------ Samples tab ---------------
-        projectData(atlasType) {
-            alert("Coming soon!");
-        }
     },
 
     mounted() {
@@ -373,7 +433,13 @@ export default {
                     this.metadataTable.push({'key': key, 'value': this.datasetMetadata[key]});
 
             this.breadcrumb.push({text: this.datasetMetadata.displayName, active: true});
+        })
+        .catch(() => {
+            this.$bvModal.msgBoxOk("Can't access this dataset.");
+        }).then(() => {
+            this.pca.loading = false;
         });
+
 
         this.$axios.get("/api/datasets/" + this.datasetId + "/samples").then(res => {
             // PCA should be plotted after sample table construction
@@ -388,6 +454,7 @@ export default {
                 this.pca.attributes = res2.data["attributes"];
                 this.pca_legends = this._legendsFromSampleTable(this.samples);
                 this.plotPCA();
+                this.samples_selectedSampleGroup = this.sampleGroups[0];
             }).catch().then(() => {
                 this.pca.loading = false;
             });
@@ -400,5 +467,26 @@ export default {
 .nav-pills .nav-link.active, .nav-pills .show > .nav-link {
     color: #000;
     background-color: #dee2e6;
+}
+.flip-list-move {
+  transition: transform 0.5s;
+}
+.no-move {
+  transition: transform 0s;
+}
+.ghost {
+  opacity: 0.5;
+  background: #c8ebfb;
+}
+.list-group {
+  min-height: 20px;
+}
+.list-group-item {
+  cursor: move;
+  font-size: small;
+  padding: 0.6rem 1rem;
+}
+.list-group-item i {
+  cursor: pointer;
 }
 </style>

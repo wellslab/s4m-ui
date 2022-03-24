@@ -88,14 +88,18 @@ export default {
             }
 
             let sampleGroups = this._sampleGroupsForPlotlyTrace(sampleTable);
+            let sampleGroupItemsOrdered = localStorage.getItem('s4m:datasets_view.sampleGroupItemsOrdered') || '';
+            sampleGroupItemsOrdered = sampleGroupItemsOrdered!=''? JSON.parse(sampleGroupItemsOrdered) : {};
             sampleGroups.forEach(sampleGroup => {
                 // First collect sample ids based on sampleGroup
                 let sampleIds = this._sampleIdsFromSampleGroup(sampleTable, sampleGroup);
                 let groupItems = Object.keys(sampleIds);
 
-                // Ordering of groupItems may be specified in params - otherwise alphabetical sort
+                // Ordering of groupItems may be specified in params - otherwise try localStorage, then finally alphabetical sort
                 if (params && params['sampleGroupItemsOrdered'] && params['sampleGroupItemsOrdered'][sampleGroup])
                     groupItems = params['sampleGroupItemsOrdered'][sampleGroup].filter(item => item!='');
+                else if (sampleGroupItemsOrdered[sampleGroup])
+                    groupItems = sampleGroupItemsOrdered[sampleGroup].filter(item => item!='');    
                 else
                     groupItems.sort();
 
