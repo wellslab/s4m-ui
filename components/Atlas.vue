@@ -157,6 +157,7 @@
                 <b-form-select v-model="projection_selectedAtlasSampleGroup" size="sm"
                     :options="colourBy" @change="plotCapybara" class="ml-1">
                 </b-form-select>
+                <b-button size="sm" v-b-tooltip.hover title="Download this plot" @click="downloadCapybara" class="ml-2">Download</b-button>
             </b-form>
         </div>
         <div style="max-height:800px; overflow:auto;">
@@ -832,6 +833,15 @@ export default {
             });
         },
 
+        downloadCapybara() {
+            Plotly.downloadImage(document.getElementById('capybaraPlotDiv'), {
+                format: "jpeg",
+                height: parseInt(800),
+                width: parseInt(1200),
+                filename: 'Stemformatics_' + this.atlasType + '_atlas_projection_capybara'
+            });
+        },
+
         // ------------ Data projection methods ---------------
         projectData(projectionData) {
             // Map a particular sample field from test data to all of the sample fields in the atlas.
@@ -870,7 +880,7 @@ export default {
                 this.uploadData.projectedSampleIds.push(sampleId);
                 for (let item in this.sampleTable) {
                     this.sampleTable[item][sampleId] = sampleTypes[i];
-                    this.sampleTypeColours[item][sampleTypes[i]] = "green";
+                    this.sampleTypeColours[item][sampleTypes[i]] = "black";
                     if (this.sampleTypeOrdering[item].indexOf(sampleTypes[i])==-1)
                         this.sampleTypeOrdering[item].push(sampleTypes[i]);
                     this.sampleInfo.allData[sampleId][item] = sampleTypes[i];

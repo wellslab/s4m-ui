@@ -302,7 +302,7 @@ export default {
         plotPCA(legend) {
             if (legend && 'selectedSampleGroup' in legend)    // specified sample group
                 this.pca.selectedSampleGroup = legend.selectedSampleGroup;
-            
+
             const traces = this.pca_legends[this.pca.selectedSampleGroup].map(legend => (
                 {x:legend.sampleIds.map(item => this.pca.coords['0'][item]), 
                     y:legend.sampleIds.map(item => this.pca.coords['1'][item]),
@@ -341,7 +341,7 @@ export default {
             this.sampleGroupItemsOrdered[this.samples_selectedSampleGroup] = this.pca_legends[this.samples_selectedSampleGroup].map(item => item.value);
 
             // Put into localStorage
-            localStorage.setItem('s4m:datasets_view.sampleGroupItemsOrdered', JSON.stringify(this.sampleGroupItemsOrdered));
+            localStorage.setItem('s4m:datasets_view.sampleGroupItemsOrdered.' + this.datasetId, JSON.stringify(this.sampleGroupItemsOrdered));
 
             // Update this property bound to GeneExpressionPlot component, so it can update itself
             this.samples_sampleGroupItemsReordered = this.sampleGroupItemsOrdered[this.samples_selectedSampleGroup];

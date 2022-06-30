@@ -1,4 +1,11 @@
 [
+    {"version": "v1.4",
+     "date": "2022-07-01",
+     "notes": ["Sample group items can now be ordered by drag and drop (datasets/view).",
+               "There is an option to view the sample table at fixed size (datasets/view).",
+               "Projected points are now coloured black to avoid clashing with existing colours.",
+               "Capybara plot for the projected samples in the atlas can now be downloaded."]},
+
     {"version": "v1.3",
      "date": "2022-01-24",
      "notes": ["Capybara score in the atlas now scores against all atlas sample groups."]},

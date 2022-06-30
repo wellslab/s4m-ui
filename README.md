@@ -14,7 +14,10 @@ $ conda activate s4m-ui
 # If there are issues with the latest version of node, it may be worthwhile downgrading it.
 # Use conda search -f nodejs to see what versions are availabe first and choose one.
 $ conda install -c conda-forge yarn  
-$ conda install nodejs=14.8.0   # otherwise had 
+$ conda install nodejs=14.8.0   # otherwise had issues
+# For node version 17, may get error:0308010C:digital envelope routines::unsupported when trying to run "yarn dev"
+# The solution here is to add this in the environment vars (https://github.com/webpack/webpack/issues/14532) 
+$ export NODE_OPTIONS=--openssl-legacy-provider
 
 # Run updates if necessary
 $ conda update --all

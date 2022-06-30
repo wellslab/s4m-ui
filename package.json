@@ -11,10 +11,12 @@
     "@nuxtjs/axios": "^5.13.6",
     "@nuxtjs/dotenv": "^1.4.1",
     "bootstrap-vue": "^2.21.2",
+    "node": "16.13.2",
     "nuxt": "^2.15.8",
     "pm2": "^5.1.2",
     "sass": "1.32.*",
     "sass-loader": "^10.1.1",
+    "vm2": "^3.9.9",
     "vue-gtag": "^1.16.1",
     "vuedraggable": "^2.24.3"
   }
