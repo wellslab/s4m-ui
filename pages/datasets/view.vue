@@ -86,19 +86,23 @@
 
             <!-- order sample items (modal), used to cutomise ordering of sample group items -->
             <b-modal v-model="samples_showOrderSampleItemsDialog" title="Order sample items" hide-footer>
-                <p>You customise the ordering of items in a sample group here for this dataset.
-                    This is useful for sample groups with many items where you want to show gene expression in specific order of those items, for example.
-                    Note that this information is stored on your browser, so it will not be remembered if you change browser or computer or clear browser cache.
+                <p>You customise the ordering of items in a sample group here for this dataset using <strong>drag and drop</strong> below.</p>
+                <p class="text-center"><b-img thumbnail width="300px" src="/img/Help_SampleOrderingProcessed.gif"></b-img></p>
+                <p>
+                    This ordering will apply to gene expression and PCA plots.
+                    Note that this information is stored on your current browser only.
                 </p>
-                <b-form-select sm v-model="samples_selectedSampleGroup" :options="sampleGroups"></b-form-select>
-                <draggable v-model="pca_legends[samples_selectedSampleGroup]" class="list-group mt-2" tag="ul" @change="samples_updateOrdering">
-                    <transition-group>
-                        <li class="list-group-item" v-for="element in pca_legends[samples_selectedSampleGroup]" :key="element.value">
-                            <i :class="element.fixed ? 'fa fa-anchor' : 'glyphicon glyphicon-pushpin'" aria-hidden="true"></i>
-                            {{ element.value }}
-                        </li>
-                    </transition-group>
-                </draggable>
+                <b-form inline><strong>Sample group:</strong> <b-form-select size="sm" v-model="samples_selectedSampleGroup" :options="sampleGroups" class="ml-2"></b-form-select></b-form>
+                <div style="max-height:400px; overflow:auto;">
+                    <draggable v-model="pca_legends[samples_selectedSampleGroup]" class="list-group mt-2" tag="ul" @change="samples_updateOrdering" ghost-class="ghost">
+                        <transition-group>
+                            <li class="list-group-item" v-for="element in pca_legends[samples_selectedSampleGroup]" :key="element.value">
+                                <i :class="element.fixed ? 'fa fa-anchor' : 'glyphicon glyphicon-pushpin'" aria-hidden="true"></i>
+                                {{ element.value }}
+                            </li>
+                        </transition-group>
+                    </draggable>
+                </div>
                 <b-button @click="samples_showOrderSampleItemsDialog=false" class="mt-2">Close</b-button>
             </b-modal>
         </b-tab>
@@ -244,7 +248,7 @@ export default {
         return {
             breadcrumb: [
                 { text: 'Home', to: '/' },
-                { text: 'Datasets', to: '/datasets' },
+                { text: 'Datasets', to: '/datasets/explore' },
                 { text: 'View a dataset', active: true }
             ],
             
@@ -452,7 +456,7 @@ export default {
                 this.pca.selectedSampleGroup = this.sampleGroups[0];
                 this.pca.coords = res2.data["coordinates"];
                 this.pca.attributes = res2.data["attributes"];
-                this.pca_legends = this._legendsFromSampleTable(this.samples);
+                this.pca_legends = this._legendsFromSampleTable(this.samples, {datasetId: this.datasetId});
                 this.plotPCA();
                 this.samples_selectedSampleGroup = this.sampleGroups[0];
             }).catch().then(() => {

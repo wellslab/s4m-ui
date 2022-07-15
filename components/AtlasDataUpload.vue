@@ -46,7 +46,7 @@
 
     <div class="mt-3">
         <b-button @click="projectData" :disabled="showLoading">project</b-button>
-        <b-button @click="$emit('close')" class="mx-1">close</b-button>
+        <b-button @click="errorMessage=null; showError=false; $emit('close')" class="mx-1">close</b-button>
         <b-spinner label="Loading..." variant="secondary" :style="{visibility: showLoading ? 'visible' : 'hidden'}" class="ml-2 align-middle"></b-spinner>
         <span :style="{visibility: showLoading ? 'visible' : 'hidden', color:'#ced4da'}" class="ml-1 align-middle"
             v-b-tooltip.hover title="It may take up to a minute for this analysis to complete">{{loadingTime}}s</span>
@@ -112,7 +112,7 @@ export default {
             }
 
             this.showLoading = true;
-            this.interval = setInterval(() => { this.loadingTime += 1; }, 1000)
+            this.interval = setInterval(() => { this.loadingTime += 1; }, 1000);
             this.$axios.post('/api/atlas-projection/' + this.atlasType + '/' + this.selectedDataSource, 
                              this.formData, { headers: {'Content-Type': 'multipart/form-data'},
                 }).then(res => {
@@ -123,8 +123,12 @@ export default {
                     else {
                         this.$bvModal.msgBoxOk("There was an error while projecting this data: " + res.data.error);
                     }
-                }).catch(error => this.$bvModal.msgBoxOk("Unexpected error while projecting this data: " + error.reponse.data)
-                ).then(() => {
+                }).catch(error => {
+                    this.showLoading = false;
+                    // Not sure why but $bvModal.msgBoxOk does not work inside catch
+                    alert(error.response.data.message); 
+                    //this.$bvModal.msgBoxOk("Unexpected error while projecting this data: " + error.reponse.data)
+                }).then(() => {
                     this.showLoading = false;
                     clearInterval(this.interval);
                     this.loadingTime = 0;

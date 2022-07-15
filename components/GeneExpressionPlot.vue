@@ -119,7 +119,7 @@ export default {
                 this.$axios.get("/api/datasets/" + this.dataset_id + "/samples").then(res2 => {
                     let samples = res2.data;
                     let sampleGroups = this._sampleGroupsForPlotlyTrace(samples);
-                    this.legends = this._legendsFromSampleTable(samples);
+                    this.legends = this._legendsFromSampleTable(samples, {datasetId: this.dataset_id});
 
                     this.selectedSampleGroup = (this.selected_sample_group && sampleGroups.indexOf(this.selected_sample_group)!=-1)? 
                         this.selected_sample_group : sampleGroups[0];                    

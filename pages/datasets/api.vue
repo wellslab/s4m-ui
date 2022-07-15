@@ -82,7 +82,7 @@ export default {
         return {
             breadcrumb: [
                 { text: 'Home', to: '/' },
-                { text: 'Datasets', to: '/datasets' },
+                { text: 'Datasets', to: '/datasets/explore' },
                 { text: 'API access', active: true }
             ],
 

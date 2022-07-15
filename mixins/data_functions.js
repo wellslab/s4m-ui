@@ -63,6 +63,10 @@ export default {
         // params can be used to fine-tune, such as providing ordering for sampleGroupItems
         _legendsFromSampleTable(sampleTable, params) 
         {
+            // If params is undefined, create an empty dictionary. This means params.orient will also be undefined
+            // (while params['orient'] will throw an error), which is convenient for code below.
+            if (params==undefined) params = {};
+
             // object to return
             let legends = {};
             // Distinct set of colours to use if colour isn't specified in params
@@ -70,9 +74,9 @@ export default {
                                     '#708090', '#908070', '#907080', '#709080', '#008080', '#008000', '#800000', '#bca68f', 
                                     '#bc8fa6', '#bc8f8f', '#008160', '#816000', '#600081', '#ff1493', '#14ff80'];
 
-            if (params && params['orient']) {   // alternative format for sampleTable, so convert
+            if (params.orient) {   // alternative format for sampleTable, so convert
                 let table = [];
-                if (params['orient']=='dict') { // {col:{row:value}} format
+                if (params.orient=='dict') { // {col:{row:value}} format
                     // Find all sampleIds which will define each row of table uniquely
                     const sampleGroups = Object.keys(sampleTable);
                     const sampleIds = Object.keys(sampleTable[sampleGroups[0]]);
@@ -83,14 +87,14 @@ export default {
                         });
                         return dict;
                     })
-                }
+                } // other orient formats should be supported in future
                 sampleTable = table;
             }
 
             let sampleGroups = this._sampleGroupsForPlotlyTrace(sampleTable);
 
             // See if there is a localStorage version of sampleGroupItemsOrdered - use this below
-            let sampleGroupItemsOrdered = localStorage.getItem('s4m:datasets_view.sampleGroupItemsOrdered.' + sampleTable[0].datasetId) || '';
+            let sampleGroupItemsOrdered = localStorage.getItem('s4m:datasets_view.sampleGroupItemsOrdered.' + params.datasetId) || '';
             sampleGroupItemsOrdered = sampleGroupItemsOrdered!=''? JSON.parse(sampleGroupItemsOrdered) : {};
 
             sampleGroups.forEach(sampleGroup => {
@@ -99,8 +103,9 @@ export default {
                 let groupItems = Object.keys(sampleIds);
 
                 // Ordering of groupItems may be specified in params - otherwise try localStorage, then finally alphabetical sort
-                if (params && params['sampleGroupItemsOrdered'] && params['sampleGroupItemsOrdered'][sampleGroup])
-                    groupItems = params['sampleGroupItemsOrdered'][sampleGroup].filter(item => item!='');
+                // Note that we can't do params.sampleGroupItemsOrdered.sampleGroup because sampleGroup is a dynamic variable, not static property.
+                if (params.sampleGroupItemsOrdered && params.sampleGroupItemsOrdered[sampleGroup])
+                    groupItems = params.sampleGroupItemsOrdered[sampleGroup].filter(item => item!='');
                 else if (sampleGroupItemsOrdered[sampleGroup])
                     groupItems = sampleGroupItemsOrdered[sampleGroup].filter(item => item!='');    
                 else
@@ -108,8 +113,8 @@ export default {
 
                 // Keys of sampleIds form sample group items. Create a legend per sample group item
                 legends[sampleGroup] = groupItems.map((value,i) => {
-                    const colour = (params && params['sampleGroupItemColours'] && params['sampleGroupItemColours'][sampleGroup])? 
-                        params['sampleGroupItemColours'][sampleGroup][value] : exampleColours[i % exampleColours.length];
+                    const colour = (params.sampleGroupItemColours && params.sampleGroupItemColours[sampleGroup])? 
+                        params.sampleGroupItemColours[sampleGroup][value] : exampleColours[i % exampleColours.length];
                     return {'value': value, 'number': sampleIds[value].length, 'sampleIds': sampleIds[value], 'colour': colour, 'visible': true,};
                 });
             });

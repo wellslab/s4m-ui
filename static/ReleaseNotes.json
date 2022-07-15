@@ -1,10 +1,12 @@
 [
     {"version": "v1.4",
-     "date": "2022-07-01",
+     "date": "2022-07-15",
      "notes": ["Sample group items can now be ordered by drag and drop (datasets/view).",
                "There is an option to view the sample table at fixed size (datasets/view).",
-               "Projected points are now coloured black to avoid clashing with existing colours.",
-               "Capybara plot for the projected samples in the atlas can now be downloaded."]},
+               "Fixed missing link when datasets is clicked in the breadcrumb from some pages (datasets/view).",
+               "Projected points are now coloured black to avoid clashing with existing colours (atlas).",
+               "Failing projection comes back with more helpful error messages (atlas).",
+               "Capybara plot for the projected samples in the atlas can now be downloaded (atlas)."]},
 
     {"version": "v1.3",
      "date": "2022-01-24",
