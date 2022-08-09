@@ -10,7 +10,7 @@
           <b-link href="#" v-b-modal.release-notes class="text-white ml-3">{{versionNumber}}</b-link>
         </b-col>
         <b-col cols="4" class="text-right">
-          Hosted at <b-link href="https://nectar.org.au/" target="_blank">
+          Hosted at <b-link href="http://nectar.org.au/" target="_blank">
             <b-img src="/img/nectardirectorate-logo.png" height="18"></b-img></b-link>
         </b-col>
       </b-row>
@@ -39,6 +39,9 @@ export default {
       versionNumber: '',
       date: '',
       releaseNotes:[],
+      // Note that hostname shows up correctly as prod2 when the client url is prod2.stemformatics.org, but
+      // not if client url is www.stemformatics.org and this is pointing to prod2, even though the BASE_API_URL
+      // should come from .env file. To be worked out.
       hostname: process.env.BASE_API_URL.split("api-")[1].split(".")[0]
     }
   },

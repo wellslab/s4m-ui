@@ -1,4 +1,9 @@
 [
+    {
+    "version": "v1.5",
+    "date": "2022-08-09",
+    "notes": ["Specific genes can now be selected in the pop-up window for the gene expression box/violin plot (atlas)."]},
+
     {"version": "v1.4",
      "date": "2022-07-15",
      "notes": ["Sample group items can now be ordered by drag and drop (datasets/view).",
@@ -19,7 +24,7 @@
     {"version": "v1.2",
      "date": "2021-10-15",
      "notes": ["Sample metadata has been updated, where thousands of more samples now have cell_type assigned when previously they didn't.",
-                "Updated the projection vignette for the atlas to metion capybara scoring."]},
+                "Updated the projection vignette for the atlas to mention capybara scoring."]},
 
     {"version": "v1.1",
      "date": "2021-09-16",

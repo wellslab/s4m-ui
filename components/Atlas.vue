@@ -195,13 +195,20 @@
         <b-link href="#" @click="geneExpressionDialog.show=false" class="float-right font-weight-bold text-white">X</b-link>
     </div>
     <div slot="main" class="card-body text-center bg-white">
-        <h4>gene: {{selectedGene}}</h4>
-        <b-form inline class="justify-content-center">group by 
+        <!-- @submit.prevent stops the page refreshing when hitting enter in the gene selection drop down box -->
+        <b-form @submit.prevent inline class="justify-content-center">gene: 
+            <b-form-input v-if="selectedPlotBy=='gene expression'" v-model="selectedGene" list="possible-genes-datalist" 
+                @keyup="getPossibleGenes" @keyup.enter="showGeneExpression(selectedGene)" @change="showGeneExpression(selectedGene)"
+                placeholder="[gene symbol]" v-b-tooltip.hover :title="tooltip.selectedGene" class="col-md-2 m-1"></b-form-input>
+            <b-button @click="selectPlotFunction('gene')" variant="dark" class="m-1">go</b-button>
+        </b-form>
+        
+        <b-form inline class="justify-content-center">group by
             <b-form-select v-model="geneExpressionDialog.selectedSampleGroup" :options="colourBy" 
-                @change="geneExpressionScatterPlot"></b-form-select>
+                @change="geneExpressionScatterPlot" class="ml-2"></b-form-select>
             <b-form-select v-model="geneExpressionDialog.selectedPlotType" :options="geneExpressionDialog.plotTypes" 
                 @change="geneExpressionScatterPlot" class="ml-2"></b-form-select>
-            <b-form-checkbox v-model="geneExpressionDialog.showPoints" @change="geneExpressionScatterPlot" class="ml-1">show points</b-form-checkbox>
+            <b-form-checkbox v-model="geneExpressionDialog.showPoints" @change="geneExpressionScatterPlot" class="ml-2">show points</b-form-checkbox>
             <b-link v-b-tooltip.hover title="Download plot as a jpeg file" @click="downloadGeneExpressionScatterPlot">
                 <b-icon-download class="ml-2"></b-icon-download>
             </b-link>
@@ -790,20 +797,35 @@ export default {
             let sampleIds = self.sampleIdsFromSampleGroup(selectedSampleGroup);
             let orderedSampleGroupItems = self.sampleTypeOrdering[selectedSampleGroup].filter(item => item!="");
 
+            let names = [];
+
+            // Plot first empty/opaque data point for purposes of plot background
+            let trace = {
+                name: ' ',
+                y: [0],
+                type: 'box',
+                opacity: 0,
+                hoverinfo: 'skip',
+
+            }
+            traces.push(trace);
+            names.push(' ');
+
             orderedSampleGroupItems.forEach(sampleGroupItem => {
                 let trace = {
-                    type: self.geneExpressionDialog.selectedPlotType,
-                    y: self.geneExpression.filter(function(item,i) { return sampleIds[sampleGroupItem].indexOf(self.sampleIds[i])!=-1}),
-                    box: { visible: true },
-                    line: { width: 1, color: 'black' },
-                    meanline: { visible: true },
-                    name: sampleGroupItem,
-                    x0: sampleGroupItem,
-                    showlegend: false,
-                    hoverinfo: "y",
-                    points: self.geneExpressionDialog.showPoints? 'all': false, // works for violin
-                    boxpoints: self.geneExpressionDialog.showPoints? 'all': false,  // works for boxplot
-                };
+                        type: self.geneExpressionDialog.selectedPlotType,
+                        y: self.geneExpression.filter(function(item,i) { return sampleIds[sampleGroupItem].indexOf(self.sampleIds[i])!=-1}),
+                        box: { visible: true },
+                        line: { width: 1, color: 'black' },
+                        meanline: { visible: true },
+                        name: sampleGroupItem,
+                        x0: sampleGroupItem,
+                        showlegend: false,
+                        hoverinfo: "y",
+                        points: self.geneExpressionDialog.showPoints? 'all': false, // works for violin
+                        boxpoints: self.geneExpressionDialog.showPoints? 'all': false,  // works for boxplot
+                    };
+
                 if (selectedSampleGroup in self.sampleTypeColours && 
                         sampleGroupItem in self.sampleTypeColours[selectedSampleGroup]) {
                     trace['marker'] = {'color': self.sampleTypeColours[selectedSampleGroup][sampleGroupItem]};
@@ -811,8 +833,47 @@ export default {
                 }
 
                 traces.push(trace);
+                names.push(sampleGroupItem);
             });
-            let layout = {  title: "",  margin: {t:10, l:20, r:0, b:0}, xaxis: {automargin: true}, };
+
+            // Plot the last empty/opaque data point for purposes of plot background
+            trace = {
+                name: '  ',
+                y: [0],
+                type: 'box',
+                opacity: 0,
+                hoverinfo: 'skip',
+            }
+            traces.push(trace);
+            names.push('  ');
+
+            // console.log(names);
+
+            // Set plot layout and draw gray rectangle for plot background
+            let layout = {  title: "",  margin: {t:10, l:20, r:0, b:0},
+                            xaxis: {
+                                automargin: true,
+                                // tickmode: 'array',
+                                // tickvals: [...Array(names.length).keys()],
+                                // ticktext: names,
+                                // range: [0, names.length],
+                            },
+                            shapes: [{
+                                type: 'rect',
+                                xref: 'x',
+                                yref: 'y',
+                                x0: ' ',
+                                x1: '  ',
+                                y0: 0.2, // placeholder
+                                y1: 0.8, // placeholder
+                                fillcolor: '#d3d3d3',
+                                opacity: 0.2,
+                                layer: 'below',
+                                line: {
+                                    width: 0
+                                }
+                            }],
+                    };
             Plotly.newPlot("geneExpressionScatterPlotDiv", traces, layout);
         },
 
@@ -963,7 +1024,10 @@ export default {
                 this.versionInfo.releaseNotes = res.data[this.atlasType].release_notes;
             });
         }
+
     },
+
+
 
     mounted() {
         this.apiUrl = process.env.BASE_API_URL;
@@ -1056,5 +1120,10 @@ div.sampleInfo li {
 }
 .js-plotly-plot .plotly .user-select-none {
     margin: auto;
+}
+
+#stylized h4 {
+    float: center;
+    text-align: center;
 }
 </style>
