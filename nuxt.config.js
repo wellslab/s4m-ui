@@ -19,7 +19,8 @@ export default {
   // Plugins to run before rendering page (https://go.nuxtjs.dev/config-plugins)
   plugins: [
     //{ src: '~/plugins/plotly.js', ssr: false }
-    {src: '~/plugins/vue-gtag',}
+    {src: '~/plugins/vue-gtag',},
+    {src: '~/plugins/vue-shepherd', mode: 'client'}
   ],
 
   // Auto import components (https://go.nuxtjs.dev/config-components)

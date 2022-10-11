@@ -151,6 +151,7 @@ export default {
             if ('geneId' in query)
                 this.updateSelectedGene(query);
             if (Object.keys(this.selectedGene).length==0) {
+                console.log("No gene selected.");
                 return;
             }
             

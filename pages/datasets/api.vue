@@ -6,7 +6,7 @@
     <p>All Stemformatics data can be accessed via 
         <b-link href="https://en.wikipedia.org/wiki/API" target="_blank">API</b-link>. 
         Use your favourite tool, such as python or R to search for relevant datasets and download them
-        to do your own anayses. Or simply go to the api server and view the data in raw form.
+        to do your own analyses. Or simply go to the api server and view the data in raw form.
     </p>
     <pre class="px-3 border border-gray-500"><code>
 # cURL example

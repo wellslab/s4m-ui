@@ -63,6 +63,14 @@ export default {
         // params can be used to fine-tune, such as providing ordering for sampleGroupItems
         _legendsFromSampleTable(sampleTable, params) 
         {
+            console.log("Printing sample table");
+            console.log(sampleTable);
+            // if(sampleGroups[0] == undefined) {
+            //     return;
+            // }
+            // console.log(sampleGroups[0]);
+
+
             // If params is undefined, create an empty dictionary. This means params.orient will also be undefined
             // (while params['orient'] will throw an error), which is convenient for code below.
             if (params==undefined) params = {};
@@ -78,7 +86,21 @@ export default {
                 let table = [];
                 if (params.orient=='dict') { // {col:{row:value}} format
                     // Find all sampleIds which will define each row of table uniquely
+                    // console.log(sampleTable);
                     const sampleGroups = Object.keys(sampleTable);
+
+                    // try {
+                    //     const sampleGroups = Object.keys(sampleTable);
+                    // }
+                    // catch {
+                    //     return;
+                    // }
+                    
+                    // console.log("sampleGroups:");
+                    // console.log(sampleGroups);
+                    // console.log(sampleGroups[0]);
+                    // console.log(sampleTable[sampleGroups[0]]);
+                    
                     const sampleIds = Object.keys(sampleTable[sampleGroups[0]]);
                     table = sampleIds.map(sampleId => {
                         let dict = {'sample_id':sampleId};

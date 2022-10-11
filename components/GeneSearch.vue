@@ -2,8 +2,10 @@ GeneSearch component is mainly a text input element that handles user input for 
 
 <template>
 <b-form-group :description="formGroupDescription">
-    <b-form-input v-model="selectedGeneSymbol" list="possible-genes-datalist" @input="setSelectedGene"
-        @keyup="getPossibleGenes" @keyup.enter="setSelectedGene" placeholder="eg. MYB" :size="size"></b-form-input>
+    <!-- Added @change="setSelectedGene()" to avoid unresponsive Search -->
+    <!-- Added autocomplete="off" as clicking the suggestions caused an unresponsive search -->
+    <b-form-input autocomplete="off" v-model="selectedGeneSymbol" list="possible-genes-datalist" @input="setSelectedGene()"
+        @keyup="getPossibleGenes" @keyup.enter="setSelectedGene" @change="setSelectedGene()" @click="setSelectedGene()" placeholder="eg. MYB" :size="size"></b-form-input>
     <b-button v-if="showButton" variant="dark" @click="setSelectedGene" size="sm">{{buttonText}}</b-button>
     <b-form-datalist id="possible-genes-datalist">
         <option v-for="gene in possibleGenes" :key="gene.geneId">{{gene.geneSymbol}}</option>
@@ -67,6 +69,7 @@ export default {
             if (genes.length>0) {
                 this.selectedGene = genes[0];
                 this.$emit('gene-selected', this.selectedGene);
+                console.log('Gene selected');
             }
         },
     },
