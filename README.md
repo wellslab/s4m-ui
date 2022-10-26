@@ -30,8 +30,9 @@ $ yarn add sass-loader@^10.1.1
 $ yarn add @nuxtjs/axios
 $ yarn add @nuxtjs/auth
 $ yarn add @nuxtjs/dotenv
-$ yarn add vue-gtag
+$ yarn add --dev @nuxtjs/google-analytics
 $ yarn add vuedraggable
+$ yarn add vue-shepherd
 
 # For running a server constantly
 $ yarn global add pm2  # see https://nuxtjs.org/docs/2.x/deployment/deployment-pm2/

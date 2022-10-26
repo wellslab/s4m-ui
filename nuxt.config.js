@@ -19,7 +19,7 @@ export default {
   // Plugins to run before rendering page (https://go.nuxtjs.dev/config-plugins)
   plugins: [
     //{ src: '~/plugins/plotly.js', ssr: false }
-    {src: '~/plugins/vue-gtag',},
+    //{src: '~/plugins/vue-gtag',},
     {src: '~/plugins/vue-shepherd', mode: 'client'}
   ],
 
@@ -28,6 +28,7 @@ export default {
 
   // Modules for dev and build (recommended) (https://go.nuxtjs.dev/config-modules)
   buildModules: [
+    '@nuxtjs/google-analytics'
   ],
 
   // Modules (https://go.nuxtjs.dev/config-modules)
@@ -85,17 +86,21 @@ export default {
     },
   },
   
-  // publicRuntimeConfig: {
-  //   googleAnalytics: {
-  //     id: process.env.GOOGLE_ANALYTICS_ID
-  //   }
-  // },
+  publicRuntimeConfig: {
+    googleAnalytics: {
+      id: process.env.GOOGLE_ANALYTICS_ID
+    }
+  },
   
   // Build Configuration (https://go.nuxtjs.dev/config-build)
   build: {
     babel: {  // https://github.com/bootstrap-vue/bootstrap-vue/issues/5627
       compact: true
     }
+  },
+
+  googleAnalytics: {
+    id: process.env.GOOGLE_ANALYTICS_ID
   },
 
 }

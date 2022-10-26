@@ -9,7 +9,7 @@ See data_functions.js:_legendsFromSampleTable for expected data.
 <div class="card-body">
     <slot name="header">colour by:</slot>
     <b-form-select size="sm" v-model="selectedSampleGroup" :options="sampleGroups" 
-        @change="$emit('sample-group-changed', {'selectedSampleGroup':selectedSampleGroup})" class="ml-1"></b-form-select>
+        @change="$emit('sample-group-changed', {'selectedSampleGroup':selectedSampleGroup})" class="colour-byy"></b-form-select>
     <ul class="mt-3 list-unstyled p-0">
         <li v-for="legend in legends[selectedSampleGroup]" :key="legend.value" 
             :class="(itemsWithMargins && itemsWithMargins[selectedSampleGroup] && itemsWithMargins[selectedSampleGroup].indexOf(legend.value)!=-1)? 'mt-2' : ''">
@@ -80,5 +80,7 @@ export default {
 </script>
 
 <style>
-
+.card-body {
+    padding: 0.5rem;
+}
 </style>

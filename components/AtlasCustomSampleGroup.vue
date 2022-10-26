@@ -27,8 +27,8 @@
             </ul>
         </b-col>
     </b-row>
-    <b-button-group size="sm" class="mt-2 float-right">
-        <b-button variant="outline-dark" @click="save">Save</b-button>
+    <b-button-group size="sm" class="mt-2 float-left">
+        <b-button @click="save">Save</b-button>
     </b-button-group>
 </b-container>
 </template>
