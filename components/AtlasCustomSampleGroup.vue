@@ -1,26 +1,21 @@
 <template>
 <b-container>
-    <p>You can define a custom sample group here by combining two existing sample groups together.
-        Start selecting items from each sample group, and the third column will automatically show the combinations.
-        Items where the combination yields no samples in it will be ignored later. 
-        Note that currently only one custom sample group is available.
-    </p>
     <b-row class="bg-white py-2">
         <b-col class="overflow-auto">
-            <b-form-select v-model="selectedSampleGroup1" :options="sampleGroupsToShow" @change="selectedItems1=[]"></b-form-select>
-            <div class='overflow-auto mt-2 p-1' style='max-height:250px; font-size:smaller'>
+            <b-form-select v-model="selectedSampleGroup1" :options="sampleGroupsToShow" @change="selectedItems1=[]" size="sm"></b-form-select>
+            <div class='overflow-auto mt-2 p-1' style='max-height:250px;'>
                 <b-form-checkbox-group stacked v-model="selectedItems1" :options="sampleTypeOrderingFiltered[selectedSampleGroup1]"></b-form-checkbox-group>
             </div>
         </b-col>
         <b-col>
-            <b-form-select v-model="selectedSampleGroup2" :options="sampleGroupsToShow" @change="selectedItems2=[]"></b-form-select>
-            <div class='overflow-auto mt-2 p-1' style='max-height:300px; font-size:smaller'>
+            <b-form-select v-model="selectedSampleGroup2" :options="sampleGroupsToShow" @change="selectedItems2=[]" size="sm"></b-form-select>
+            <div class='overflow-auto mt-2 p-1' style='max-height:300px;'>
                 <b-form-checkbox-group stacked v-model="selectedItems2" :options="sampleTypeOrderingFiltered[selectedSampleGroup2]"></b-form-checkbox-group>
             </div>
         </b-col>
         <b-col>
-            <span class="custom-select" style="background:white">{{customGroupName}}</span>
-            <ul class="overflow-auto mt-2 p-1" style='max-height:300px; font-size:smaller;'>
+            <b-form-input v-model="customGroupName" size="sm"></b-form-input>
+            <ul class="overflow-auto mt-2 p-1" style='max-height:300px;'>
                 <li v-for="item in customItems()" :key="item.sampleGroup"><span :style="item.sampleIds.length==0? 'color:#868e96' : 'color:inherit'">
                     &bull; {{item.sampleGroup}} ({{item.sampleIds.length}})</span>
                 </li>
@@ -54,8 +49,6 @@ export default {
             selectedItems1: [],
             selectedItems2: [],
             //customItemCount: 0, // this will count length of custom items without those with zero sample ids
-
-            visible: false,
         }
     },
 
@@ -111,7 +104,7 @@ export default {
         this.sampleGroupsToShow = this.sampleGroups.filter(item => item !== this.customGroupName);  // remove customGroupName
         this.selectedSampleGroup1 = this.sampleGroupsToShow[0];
         this.selectedSampleGroup2 = this.sampleGroupsToShow[1];
-
+console.log("###", this.sampleGroupsToShow);
         // sampleTypeOrderingFiltered is a modified version of sampleTypeOrdering that removes
         // blanks and inserts counts
         for (const [key,val] of Object.entries(this.sampleTypeOrdering)) {

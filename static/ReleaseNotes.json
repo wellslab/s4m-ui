@@ -2,7 +2,7 @@
     {
     "version": "v1.5",
     "date": "2022-08-09",
-    "notes": ["Specific genes can now be selected in the pop-up window for the gene expression box/violin plot (atlas)."]},
+    "notes": ["Atlas page has been redesigned based on tabs to expose all the features more easily."]},
 
     {"version": "v1.4",
      "date": "2022-07-15",

@@ -53,8 +53,8 @@
                 If you were a previous user of Stemformatics, you'll mostly find a subset of the same data which were hosted on the previous site,
                 with improved annotations and accessible with a new set of visualisation tools. Mouse datasets are still accessible through 
                 individual dataset ids, but are omitted from various searches.</p>
-                <p>Looking for the old site? It's still running under 
-                <b-link href="https://old.stemformatics.org" target="_blank">old.stemformatics.org</b-link>.</p>
+                <p>Looking for the old site? It's been decommisioned now. 
+                <b-link href="mailto:info@stemformatics.org">Contact us</b-link> if you need to access data from the old site.</p>
                 <p>Looking for a private dataset you used to access? Please <b-link href="mailto:info@stemformatics.org">contact us</b-link>.
             </p>
         </b-col>

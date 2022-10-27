@@ -6,25 +6,10 @@
                 <b-link v-b-tooltip.hover.right title="Background and more information" v-b-toggle.sidebar class="ml-2">
                     <b-icon-info-circle></b-icon-info-circle>
                 </b-link>
-                <b-link v-show="tab.pca == true && selectedPlotBy == 'sample type'" @click="tourPCA1.start()" title="Click here for a quick tour of the page." type="button" class="question-bbutton">
+                <b-link @click="startTour" title="Click here for a quick tour of the page." type="button" class="question-bbutton">
                     <b-icon-question-circle class="q1 m1-1"></b-icon-question-circle>
                 </b-link>
-                <b-link v-show="tab.pca == true && selectedPlotBy == 'gene expression'" @click="tourPCA2.start()" title="Click here for a quick tour of the page." type="button" class="question-bbutton">
-                    <b-icon-question-circle class="q1 m1-1"></b-icon-question-circle>
-                </b-link>
-                <b-link v-show="tab.pca == true && selectedPlotBy == 'find dataset'" @click="tourPCA3.start()" title="Click here for a quick tour of the page." type="button" class="question-bbutton">
-                    <b-icon-question-circle class="q1 m1-1"></b-icon-question-circle>
-                </b-link>
-                <b-link v-show="tab.box == true" @click="tourBox.start()" title="Click here for a quick tour of the page." type="button" class="question-bbutton">
-                    <b-icon-question-circle class="q1 m1-1"></b-icon-question-circle>
-                </b-link>
-                <b-link v-show="tab.projection == true" @click="tourProjection.start()" title="Click here for a quick tour of the page." type="button" class="question-bbutton">
-                    <b-icon-question-circle class="q1 m1-1"></b-icon-question-circle>
-                </b-link>
-                <b-link v-show="tab.tools == true" @click="tourTools.start()" title="Click here for a quick tour of the page." type="button" class="question-bbutton">
-                    <b-icon-question-circle class="q1 m1-1"></b-icon-question-circle>
-                </b-link>
-                <b-spinner label="Loading..." variant="secondary" :style="{visibility: loading ? 'visible' : 'hidden'}" class="ml-1" style="width:1.5rem; height:1.5rem;"></b-spinner>
+                <b-spinner label="Loading..." variant="secondary" :style="{visibility: showLoading ? 'visible' : 'hidden'}" class="ml-1" style="width:1.5rem; height:1.5rem;"></b-spinner>
             </small>
         </h3>
     </div>
@@ -32,47 +17,28 @@
     <!-- Put the whole tab inside card. Each tab has single row with 2 columns -->
     <b-card no-body class="mb-2">
     <b-tabs card pills align="center">
-        <!-- PCA tab -->
-        <b-tab title="PCA Plot" active @click="tab.pca=true; tab.box=false, tab.projection=false, tab.tools=false">
-        <b-row class="small justify-content-center" @mousemove="updateMousePosition">
+        <!-- Sample groups tab -->
+        <b-tab title="Sample groups" active>
+        <b-row class="small justify-content-center">
             <b-col md="3">
+                <!-- Top level controls for this tab - selects what to show in the tab. -->
                 <b-form inline>
-                    <b-form-select v-model="selectedPlotBy" size="sm" class="plot-by m-1" @change="changePlotBy">
-                        <b-form-select-option value="sample type">Plot by sample type</b-form-select-option>
-                        <b-form-select-option value="gene expression">Plot by gene expression</b-form-select-option>
-                        <b-form-select-option value="find dataset">Find dataset</b-form-select-option>
+                    <b-form-select v-model="sampleGroupsTab.selectedView" size="sm" class="plot-by m-1">
+                        <b-form-select-option value="PCA by sample type">PCA by sample type</b-form-select-option>
+                        <b-form-select-option value="Find dataset">Find dataset</b-form-select-option>
+                        <b-form-select-option value="Customise sample groups">Customise sample groups</b-form-select-option>
                     </b-form-select>
-                    <b-form-checkbox v-model="is3d" @change="updatePlot();" class="d-switch ml-1">3D</b-form-checkbox>
+                    <b-form-checkbox v-show="sampleGroupsTab.selectedView!='Customise sample groups'" v-model="sampleGroupsTab.is3d" @change="updatePlot()" class="d-switch ml-1">3D</b-form-checkbox>
                 </b-form>
 
-                <!-- Plot legend, only shown if selectedPlot not gene expression. -->
-                <PlotLegend v-show="!showColourByAsDraggable && (showTwoPlots || selectedPlotBy=='sample type')"
+                <!-- Plot legend - we do our own legend div instead of using plotly's -->
+                <PlotLegend v-show="sampleGroupsTab.selectedView=='PCA by sample type'"
                     :legends="allLegends" :initial-sample-group="selectedColourBy" :items-with-margins="itemsWithMargins"
                     @legend-clicked="updatePlot" @sample-group-changed="updatePlot">
-                    <template #header>
-                        Colour by: <b-link @click="toggleLegend" v-b-tooltip.hover title="pop out this area as a draggable box" class="colour-by">
-                            <b-icon-box-arrow-in-up-right></b-icon-box-arrow-in-up-right></b-link>
-                    </template>
                 </PlotLegend>
 
-                <!-- Gene expression input area, only shown if selectedPlot gene expression. -->
-                <div v-show="selectedPlotBy=='gene expression'" class="p-2">
-                    <p>Show expression of a gene in the PCA using colour gradient.
-                    </p>
-                    <b-button-group inline>
-                        <b-form-input size="sm" v-model="selectedGene" list="possible-genes-datalist"
-                            @keyup="getPossibleGenes()" @keyup.enter="showGeneExpression(selectedGene)" @change="showGeneExpression(selectedGene)"
-                            placeholder="[gene symbol]" v-b-tooltip.hover.right :title="tooltip.selectedGene" class="pca-gene-select m-1"></b-form-input>
-                        <b-form-datalist id="possible-genes-datalist">
-                            <option v-for="gene in possibleGenes" :key="gene.ensembl">{{gene.inclusion? '' : '('}}{{gene.symbol}}{{gene.inclusion? '' : ')'}}</option>
-                        </b-form-datalist>
-                        <b-form-input v-show="false"></b-form-input>
-                        <b-button size="sm" @click="showGeneExpression(selectedGene); updatePlot()" variant="outline-dark" class="pca-go m-1 rounded">Go</b-button>
-                    </b-button-group>
-                </div>
-
                 <!-- Find dataset area -->
-                <div v-show="selectedPlotBy=='find dataset'" class="find-datasets p-2">
+                <div v-show="sampleGroupsTab.selectedView=='Find dataset'" class="find-datasets p-2">
                     <p>All the datasets which were used for the construction of this atlas are shown below. 
                     You can show these on the PCA or view details of the dataset.</p>
                     <div style="max-height:500px; overflow:auto">
@@ -89,56 +55,74 @@
                         </p>
                     </div>
                 </div>
+
+            <p v-if="sampleGroupsTab.selectedView=='Customise sample groups'" class="p-2">
+                You can define a custom sample group here by combining two existing sample groups together.
+                Start selecting items from each sample group, and the third column will automatically show the combinations.
+                Items where the combination yields no samples in it will be ignored later. 
+                Note that currently only one custom sample group is available.
+            </p>
             </b-col>
-            <!-- One plot - PCA -->
-            <b-col col :md="showTwoPlots? (showColourByAsDraggable? 6: 4): (selectedPlotBy=='sample type' || selectedPlotBy=='gene expression' || geneExpression.length==0? 9: 12)" class="overflow-auto text-center">
-                <div id="mainPlotDiv"></div>
-            </b-col>
-            <!-- Two plots -->
-            <b-col v-show="showTwoPlots" col :md="showColourByAsDraggable? 6: 4" class="overflow-auto text-center">
-                <div id="rightPlotDiv"></div>
+
+            <!-- divs for the plots or customise sample groups -->
+            <b-col class="overflow-auto" @mousemove="updateMousePosition">
+                <div id="mainPlotDiv" v-show="sampleGroupsTab.selectedView!='Customise sample groups'"></div>
+                <b-card v-if="sampleGroupsTab.selectedView=='Customise sample groups'">
+                    <h5 class="text-center">Customise sample groups</h5>
+                    <div class="overflow-hidden">
+                        <div slot="main" class="p-2">
+                            <atlas-custom-sample-group :sample-table="sampleTable" :sample-ids="sampleIds" :sample-type-colours="sampleTypeColours"
+                                :sample-groups="colourBy" :sample-type-ordering="sampleTypeOrdering" :custom-group-name="customSampleGroup.groupName"
+                                :selected-sample-group1="colourBy[0]"
+                                @save="applyCustomSampleGroup" @close="customSampleGroup.show=false"></atlas-custom-sample-group>
+                        </div>
+                    </div>
+                </b-card>
             </b-col>
         </b-row>
         </b-tab>
 
-        <!-- Box Plot Tab -->
-        <b-tab title="Box Plot" @click="tab.pca=false, tab.box=true, tab.projection=false, tab.tools=false">
+        <!-- Gene expression Tab -->
+        <b-tab title="Gene expression">
         <b-row class="small justify-content-center">
             <b-col md="3">
                 <!-- @submit.prevent stops the page refreshing when hitting the 'enter' key in the gene selection drop down box -->
                 Gene:
                 <b-form @submit.prevent>
                 <b-button-group inline class="mb-4">
-                    <b-form-input size="sm" v-model="boxPlot.selectedGene" list="boxplot-possible-genes-datalist" 
-                        @keyup="getPossibleGenes('boxPlot')" @keyup.enter="showGeneExpression(boxPlot.selectedGene,'boxPlot')" 
-                        @change="showGeneExpression(boxPlot.selectedGene,'boxPlot')"
+                    <b-form-input size="sm" v-model="geneExpressionTab.selectedGene" list="possible-genes-datalist" 
+                        @keyup="getPossibleGenes()" @keyup.enter="showGeneExpression(geneExpressionTab.selectedGene)" 
+                        @change="showGeneExpression(geneExpressionTab.selectedGene)"
                         placeholder="[gene symbol]" v-b-tooltip.hover.right :title="tooltip.selectedGene" class="choose-gene"></b-form-input>
-                    <b-form-datalist id="boxplot-possible-genes-datalist">
-                        <option v-for="gene in boxPlot.possibleGenes" :key="gene.ensembl">{{gene.inclusion? '' : '('}}{{gene.symbol}}{{gene.inclusion? '' : ')'}}</option>
+                    <b-form-datalist id="possible-genes-datalist">
+                        <option v-for="gene in geneExpressionTab.possibleGenes" :key="gene.ensembl">{{gene.inclusion? '' : '('}}{{gene.symbol}}{{gene.inclusion? '' : ')'}}</option>
                     </b-form-datalist>    
-                    <b-button @click="geneExpressionScatterPlot" size="sm" class="plot-gene-button rounded">Go</b-button>
+                    <b-button @click="geneExpressionPlot" size="sm" class="plot-gene-button rounded">Go</b-button>
                 </b-button-group>
                 </b-form>
-                Group by:
-                <b-form-select  size="sm" v-model="boxPlot.selectedSampleGroup" :options="colourBy" 
-                    @change="geneExpressionScatterPlot" class="group-by mb-2"></b-form-select>
                 Plot type:
-                <b-form-select  size="sm" v-model="boxPlot.selectedPlotType" :options="boxPlot.plotTypes" 
-                    @change="geneExpressionScatterPlot" class="plot-type mb-2"></b-form-select>
-
-                <b-form-checkbox  size="sm" v-model="boxPlot.showPoints" @change="geneExpressionScatterPlot" class="show-points mb-2">Show points</b-form-checkbox>
-                <b-button v-b-tooltip.hover.right title="Download plot as a jpeg file" @click="downloadGeneExpressionScatterPlot" class="box-download">
+                <b-form-select  size="sm" v-model="geneExpressionTab.selectedPlotType" :options="geneExpressionTab.plotTypes" 
+                    @change="geneExpressionPlot" class="plot-type mb-2"></b-form-select>
+                <div v-show="geneExpressionTab.selectedPlotType!='pca'">
+                    Group by:
+                    <b-form-select  size="sm" v-model="geneExpressionTab.selectedSampleGroup" :options="colourBy" 
+                        @change="geneExpressionPlot" class="group-by mb-2"></b-form-select>
+                    <b-form-checkbox  size="sm" v-model="geneExpressionTab.showPoints" @change="geneExpressionPlot" class="my-2">
+                        Show points</b-form-checkbox>
+                </div>
+                <b-button v-b-tooltip.hover.right title="Download plot as a jpeg file" @click="downloadgeneExpressionPlot" size="sm">
                     Download plot
                 </b-button>
             </b-col>
-            <b-col>
+            <b-col class="overflow-auto text-center">
+                <h5>{{geneExpressionTab.selectedGene==""? '[Gene expression]' : geneExpressionTab.selectedGene}}</h5>
                 <div id="boxPlotDiv"></div>
             </b-col>
         </b-row>
         </b-tab>
 
         <!-- Projection Tab -->
-        <b-tab title="Projection" @click="tab.pca=false, tab.box=false, tab.projection=true, tab.tools=false">
+        <b-tab title="Projection">
         <b-row class="small">
             <b-col md="3">
                 <p>Benchmark another dataset using the atlas as a reference 
@@ -153,10 +137,9 @@
                 <b-button size="sm" variant="outline-primary" @click="projection_selectedView='singlecell'"
                     :pressed="projection_selectedView=='singlecell'" class=" project-single mt-2">
                     Project single cell data</b-button>
-                <b-button size="sm" variant="outline-primary" @click="projection_selectedView='capybara'; projectionState=true; plotCapybara()"
+                <b-button size="sm" variant="outline-primary" @click="plotCapybara()"
                     :pressed="projection_selectedView=='capybara'" class="capybara mt-2">
                     Cabybara score</b-button>
-
             </b-col>
             <b-col>
                 <!-- Project Stemformatics data -->
@@ -228,19 +211,16 @@
         </b-tab>
 
         <!-- Tools Tab -->
-        <b-tab title="Tools" @click="tab.pca=false, tab.box=false, tab.projection=false, tab.tools=true">
+        <b-tab title="Tools">
         <b-row class="small">
             <b-col md="3">
-                <p>Download data or define custom sample groups.</p>
+                <p>Extra tools for the atlas.</p>
                 <b-button size="sm" variant="outline-primary" @click="toolsTab.selectedView='downloadData'" 
                     :pressed="toolsTab.selectedView=='downloadData'" class="download-data">
                     Download data</b-button><br/>
                 <b-button size="sm" variant="outline-primary" @click="toolsTab.selectedView='downloadPlots'" 
                     :pressed="toolsTab.selectedView=='downloadPlots'" class="download-plots mt-2">
                     Download plots</b-button><br/>
-                <b-button size="sm" variant="outline-primary" @click="toolsTab.selectedView='sampleGroups'" 
-                    :pressed="toolsTab.selectedView=='sampleGroups'" class="combine-samples mt-2">
-                    Custom sample groups</b-button>
             </b-col>
 
             <b-col>
@@ -278,45 +258,11 @@
                         <b-button size="sm" @click="downloadPlot" class="mt-2">Download</b-button>
                     </b-card>
                 </b-container>
-
-                <!-- Combine sample groups -->
-                <b-card v-show="toolsTab.selectedView=='sampleGroups'">
-                    <h5>Custom sample groups</h5>
-                    <div class="overflow-hidden">
-                        <div slot="main" class="p-2">
-                            <atlas-custom-sample-group :sample-table="sampleTable" :sample-ids="sampleIds" :sample-type-colours="sampleTypeColours"
-                                :sample-groups="colourBy" :sample-type-ordering="sampleTypeOrdering" :custom-group-name="customSampleGroup.groupName"
-                                :selected-sample-group1="colourBy[0]"
-                                @save="applyCustomSampleGroup" @close="customSampleGroup.show=false"></atlas-custom-sample-group>
-                        </div>
-                    </div>
-                </b-card>
             </b-col>
         </b-row>
         </b-tab>
     </b-tabs>
     </b-card>
-
-<!-- Legend area can be "popped out" to be a draggable -->
-<draggable-div v-show="showColourByAsDraggable" class="border border-light bg-light" style="width:350px; opacity:0.95; left:20%">
-    <div slot="header" class="card-header bg-dark" title="Drag me around by this area">
-        <span class="text-white">Colour by</span>
-        <b-link href="#" @click="toggleLegend" class="float-right font-weight-bold text-white" v-b-tooltip.hover title="Pop this box back into the page">
-            <b-icon-box-arrow-in-down-left></b-icon-box-arrow-in-down-left>
-        </b-link>
-    </div>
-    <div slot="main">
-        <PlotLegend :legends="allLegends" :initial-sample-group="selectedColourBy" :items-with-margins="itemsWithMargins"
-            @legend-clicked="updatePlot" @sample-group-changed="updatePlot">
-                <template #header><span></span></template>
-        </PlotLegend>
-    </div>
-    <div slot="footer">
-        <b-link href="#" @click="toggleLegend" class="font-weight-bold text-white" v-b-tooltip.hover title="Pop this box back into the page">
-            <b-icon-box-arrow-in-down-left></b-icon-box-arrow-in-down-left>
-        </b-link>
-    </div>
-</draggable-div>
 
 <b-sidebar id="sidebar" title="Help and more info" shadow>
     <div class="px-3 py-2">
@@ -402,87 +348,68 @@ export default {
 
     data() {
         return {
-        
             coords: {},         // {"0":{"6638_GSM868879":5.72,"6638_GSM868880":5.511, ...}, ...}
             sampleIds: [],      // ["6638_GSM868879","6638_GSM868880", ...]
             sampleTable: {},    // {'celltype':{'6638_GSM868879':'HPC', ...}, ...}
-
-            selectedPlotBy: "sample type",  // one of ["sample type", "gene expression", "find dataset"]
-            is3d: true, // whether plot is in 3d or 2d
-            sampleText: "Show sample colour plot",
-
-            backgroundColour: 'outline-primary',
-            textColour: 'white',
-
-            // Variables for email and file input
-            singleCellData: {
-                email: '',
-                data: null,
-            },
-            selectedDataSource: "",
-
-            show: true,
-
-            // User ID obtained from URL query
-            userID: null,
-
-            colourBy: [],   // ["Cell Type", "Sample Source", ...]
-            selectedColourBy: "Cell Type",  // overwrite at mounted()
-            showColourByAsDraggable: false,
-
             sampleTypeColoursOriginal: {},    // colours may change, so we keep original colours stored here
             sampleTypeColours: {},    // {"Sample Source":{"in vivo":"#8b8b00",...}, ...}
             sampleTypeOrdering: {},  // {"Sample Source":["in vivo","ex vivo",...], ...}
+            colourBy: [],   // all possible sample group names: ["Cell Type", "Sample Source", ...]
 
             apiUrl: 'http://127.0.0.1:5000', // set to process.env.BASE_URL when mounted
 
-            // gene expression related
-            selectedGene: "",
-            possibleGenes: [],  // gene ids and symbols used to populate the autocomplete field
-            geneExpression: [], // flat list of values, in same order as sampleIds, to be fetched when requested
-            boxPlot: {
-                selectedGene: "",
-                geneExpression: [],
-                selectedSampleGroup: 'Cell Type',
-                plotTypes: ["violin", "box"],
-                selectedPlotType: "box",
-                showPoints: false,
+            // sampleGroups tab specific
+            sampleGroupsTab: {
+                selectedView: "PCA by sample type",
+                is3d: true,  // whether plot is in 3d or 2d
             },
+            selectedColourBy: "Cell Type",  // overwrite at mounted()
+            allLegends: {},
+            itemsWithMargins: {},
 
             // plotly requires id of div where it will plot, so set them as vars here
             mainPlotDiv: "mainPlotDiv",
-            rightPlotDiv: "rightPlotDiv",
 
             // default camera angle for a 3d plot in plotly
             camera: {up: {x:0, y:0, z:1}, center: {x:0, y:0, z:0}, eye: {x:1.25, y:1.25, z:1.25}},
-            showTwoPlots: false,
 
-            allLegends: {},
-            itemsWithMargins: {},
-            loading: false,
-            showInfo: false,
+            geneExpressionTab: {
+                selectedGene: "",
+                possibleGenes: [],  // gene ids and symbols used to populate the autocomplete field
+                geneExpression: [], // flat list of values, in same order as sampleIds, to be fetched when requested
+                plotTypes: ["box", "violin", "pca"],
+                selectedPlotType: "box",
+                showPoints: false,
+                selectedSampleGroup: 'Cell Type',
+            },
 
             showLoading: false,
             loadingTime: 0,
             interval: null,
 
+            // Projection related
             projection_selectedView: "stemformatics",
             projection_data: {},
             projection_showScore: false,
             projection_sampleGroups: [],
             projection_selectedSampleGroup:'',
             projection_selectedAtlasSampleGroup:'Cell Type',
+            // Variables for email and file input
+            singleCellData: {
+                email: '',
+                data: null,
+            },
+            selectedDataSource: "",
+            // User ID obtained from URL query
+            userID: null,
+            // upload data
+            uploadData: {
+                projectedSampleIds: [],  // record sample ids which have been projected
+                name: null, // name of the dataset used for projection - will be the prefix for projected samples
+            },
 
             toolsTab: {
                 selectedView: "downloadData"
-            },
-
-            // Variables used to determine which tab is activate to v-show the right page tour button
-            tab: {
-                pca: true,
-                box: false,
-                projection: false,
-                tools: false,  
             },
 
             // Page tour variables
@@ -497,7 +424,6 @@ export default {
             // variables used by the find dataset div which can be used to show a table of datasets
             datasetInfo: {
                 allData: [], // [{"dataset_id":7268,"author":"Abud","pubmed_id":"28426964","platform":"RNAseq",...},...]
-                show: false,
                 selectedDatasetId: '',
             },
 
@@ -529,15 +455,8 @@ export default {
                 plotHeight: 900,
             },
 
-            // upload data
-            uploadData: {
-                projectedSampleIds: [],  // record sample ids which have been projected
-                name: null, // name of the dataset used for projection - will be the prefix for projected samples
-            },
-        
             // custom sample group
             customSampleGroup: {
-                show: false,
                 groupName: 'custom_sample_group',   // used as sample group name
                 data: [], // data specified by the user
             },
@@ -555,18 +474,12 @@ export default {
             tooltip: {atlasType: "show information about this page",
                     atlasToggle: "toggle atlas",
                     selectedGene: "Select a gene from suggestions and press go to show its expression." +
-                                    "The genes with brackets were filtered out before creating this PCA.",
+                                  "The genes with brackets were filtered out before creating this PCA.",
                     geneExpressionPlot: "This plot shows rank normalised values of the gene in the atlas as "+
                                         "either a violin or a box plot. The values are in the range [0,1]." +
                                         "You can drag this plot overlay by grabbing it near the title.",
-                    editLegend: "Edit colours of points",
-                    showProjectionFunctions: "Show nearest neighbours of projected points.",
-                    projectionFunctions: "You can drag this plot overlay by grabbing it near the title.",
-                    customSampleGroup: "You can drag this dialog overlay by grabbing it near the title.",
             },
 
-            // Showing/hiding capybara when clicking collapsable button - 'Show projection score'
-            projectionState: false,
         }
     },
 
@@ -612,24 +525,19 @@ export default {
             });
         },
         
-        toggleLegend() {
-            this.allLegends = JSON.parse(JSON.stringify(this.allLegends));  // PlotLegend component will refresh when allLegends is refreshed
-            this.showColourByAsDraggable = !this.showColourByAsDraggable;
-        },
-
         // Run before sample group plot to populate the legends array, and when a legend is clicked to show/hide a trace
         updateLegends() {
             this.allLegends = this._legendsFromSampleTable(this.sampleTable, 
                 {orient:'dict', sampleGroupItemColours:this.sampleTypeColours, sampleGroupItemsOrdered:this.sampleTypeOrdering});
         },
-        
+     
         // ------------ Plot related methods ---------------
-        // Layout dict used by plotly - can control size, camera, etc.
+        // Layout dict used by plotly - can control size, camera, etc (used only for PCA plots)
         layout() {
             return { 
                 showlegend: false,
                 height: 500,   // height of the plot in pixels
-                width: this.showTwoPlots? 500 : 800,
+                width: 800,
                 margin: {t:20, l:0, r:0, b:0},
                 xaxis: {title: "PC1"},
                 yaxis: {title: "PC2"},
@@ -643,7 +551,7 @@ export default {
             };
         },
         
-        // Return a list of traces to use for plots.
+        // Return a list of traces to use for pca plots.
         traces(type="sample type") {
             let self = this;	// this refers to the Vue instance, and it's safer to map it to another variable
 
@@ -658,7 +566,7 @@ export default {
                     hoverinfo: "text",
                 };
 
-                if (self.is3d) {  // specify parameters specific to 3d plot
+                if (self.sampleGroupsTab.is3d) {  // specify parameters specific to 3d plot
                     template.type = "scatter3d";
                     template.marker.size = 5;
                 } else {
@@ -704,100 +612,118 @@ export default {
                 trace.y = self.sampleIds.map(item => self.coords['1'][item]);
                 trace.z = self.sampleIds.map(item => self.coords['2'][item]);
                 trace.text = self.sampleIds.map(item => hovertext[item]);
-                trace.marker.color = self.geneExpression;
-                trace.marker.colorbar = { title: self.selectedGene };
-                if (self.showTwoPlots) {    
-                    // It's possible that some traces are hidden from rightPlotDiv, in which case we want to match that here.
-                    // For each sampleId, set marker size to zero if it belongs to the hidden legend.
-                    // Note that there's a bug in plotly where size specified as an array in marker is rendered differently to
-                    // when specified as a number, even for the same size.
-                    var defaultSize = self.is3d? 11 : 6;
-                    var visibleLegends = legends.filter(item => item.visible).map(item => item.value);
-                    trace.marker.size = self.sampleIds.map((item,i) =>
-                        visibleLegends.indexOf(self.sampleTable[self.selectedColourBy][self.sampleIds[i]])==-1? 0 : defaultSize
-                    );
-                    trace.marker.line = {width: 0}; // plotly also seems to add stroke after array is specified as size
-                }
+                trace.marker.color = self.geneExpressionTab.geneExpression;
+                trace.marker.colorbar = { title: "rank normalised" };
                 trace.sampleIds = self.sampleIds;
                 traces.push(trace);
             }
             return traces;
         },
         
-        mainPlot() {
+        // If all required data are populated, call this function to plot PCA by sample groups.
+        plotPCABySampleGroups() {
             let self = this;
             let div = document.getElementById(self.mainPlotDiv);
-            Plotly.newPlot(div, this.traces(), this.layout(this.selectedPlotBy));
+            Plotly.newPlot(div, this.traces(), this.layout());
         
-            // set up synchronisation with rightPlotDiv by listening for events on mainPlotDiv
-            div.on('plotly_relayout',
-                function(eventdata) { 
-                    self.camera = eventdata["scene.camera"];    // update camera values with this
-                    if (self.showTwoPlots)
-                        Plotly.react(self.rightPlotDiv, self.traces(), self.layout());
-            });
-
             // Set up double click event, where sampleInfo.shownData is populated with info about the sample double clicked.
             // Note that plotly doesn't really have double click event detection, so we're going to measure the interval between
             // two single clicks if it's on the sample id.
             div.on('plotly_click', function(data) { self.handlePlotlyClick(data); });
         },
 
-        // Function to update the plot
+        // Function to update the PCA by sample groups plot
         updatePlot(legend) {
-            let self = this;
-            self.loading = true;
-            let div = document.getElementById(self.rightPlotDiv);
-
+            this.showLoading = true;
             if (legend && 'selectedSampleGroup' in legend)  // comes from PlotLegend component, changing colourBy
                 this.selectedColourBy = legend.selectedSampleGroup;
             else if (legend && 'value' in legend) { // comes from PlotLegend compoenent, when a legend is clicked
                 const index = this.allLegends[this.selectedColourBy].map(legend => legend.value).indexOf(legend.value);
                 this.allLegends[this.selectedColourBy][index].visible = !legend.visible;
             }
+            Plotly.react(document.getElementById(this.mainPlotDiv), this.traces(), this.layout());
+            this.showLoading = false;
+        },
 
-            if (self.selectedPlotBy=="sample type") // always show one plot for sample type
-                self.showTwoPlots = false;
-
-            if (self.showTwoPlots) {
-                if (div==null || div.layout==null) {    // no plot yet - we plot both and set up sync
-                    self.mainPlot();
-                    Plotly.newPlot(div, self.traces(), self.layout());
-                    div.on('plotly_relayout',
-                        function(eventdata){ 
-                            self.camera = eventdata["scene.camera"];    // update camera values with this
-                            if (self.showTwoPlots)
-                                Plotly.react(self.mainPlotDiv, self.traces(self.selectedPlotBy), self.layout());
-                    });
-                    div.on('plotly_click', function(data) { self.handlePlotlyClick(data, "sample type") });
-                } else  // there's already a plot in rightPlotDiv, so just update it
-                    Plotly.react(div, self.traces(), self.layout());
-                self.showColourByAsDraggable = true;
-            } else {
-                if (div!=null && div.layout!=null)   // showing only one plot but rightPlotDiv contains a plot, so purge it
-                    Plotly.purge(div);
+        // Plot gene expression plot - may be scatter plot or pca.
+        geneExpressionPlot() {
+            let self = this;
+            if (self.geneExpressionTab.geneExpression.length==0) return;
+            if (self.geneExpressionTab.selectedPlotType=='pca') {
+                Plotly.newPlot(document.getElementById("boxPlotDiv"), this.traces('gene expression'), this.layout());
+                return;
             }
-            // always update mainPlotDiv
-            Plotly.react(self.mainPlotDiv, self.traces(self.selectedPlotBy), self.layout(self.selectedPlotBy)).then(function() {
-                self.loading = false;
+            let selectedSampleGroup = self.geneExpressionTab.selectedSampleGroup;
+            let sampleIds = self.sampleIdsFromSampleGroup(selectedSampleGroup);
+            let orderedSampleGroupItems = self.sampleTypeOrdering[selectedSampleGroup].filter(item => item!="");
+
+            // Plot first empty/opaque data point for purposes of plot background
+            let emptyTrace = {name: '  ', y: [0], type: 'box', opacity: 0, hoverinfo: 'skip'};
+            let traces = [emptyTrace];
+
+            // Empty name for padding purposes
+            let names = [' '];
+
+            orderedSampleGroupItems.forEach(sampleGroupItem => {
+                let trace = {
+                        type: self.geneExpressionTab.selectedPlotType,
+                        y: self.geneExpressionTab.geneExpression.filter(function(item,i) { return sampleIds[sampleGroupItem].indexOf(self.sampleIds[i])!=-1}),
+                        box: { visible: true },
+                        line: { width: 1, color: 'black' },
+                        meanline: { visible: true },
+                        name: sampleGroupItem,
+                        x0: sampleGroupItem,
+                        showlegend: false,
+                        hoverinfo: "y",
+                        points: self.geneExpressionTab.showPoints? 'all': false, // works for violin
+                        boxpoints: self.geneExpressionTab.showPoints? 'all': false,  // works for boxplot
+                    };
+
+                if (selectedSampleGroup in self.sampleTypeColours && 
+                        sampleGroupItem in self.sampleTypeColours[selectedSampleGroup]) {
+                    trace['marker'] = {'color': self.sampleTypeColours[selectedSampleGroup][sampleGroupItem]};
+                    trace['fillcolor'] = self.sampleTypeColours[selectedSampleGroup][sampleGroupItem];
+                }
+
+                traces.push(trace);
+                names.push(sampleGroupItem);
+            });
+
+            // Plot the last empty/opaque data point for purposes of plot background
+            traces.push(emptyTrace);
+            names.push('  ');
+
+            // Set plot layout and draw grey rectangle for plot background
+            let layout = {  title: "",  margin: {t:10, l:20, r:0, b:0},
+                            xaxis: {
+                                automargin: true,
+                                // tickmode: 'array',
+                                // tickvals: [...Array(names.length).keys()],
+                                // ticktext: names,
+                                // range: [0, names.length],
+                            },
+                            // Grey background
+                            // shapes: [{type:'rect', xref:'x', yref:'y', x0: ' ', x1: '  ',
+                            //     y0: 0.2, // placeholder
+                            //     y1: 0.8, // placeholder
+                            //     fillcolor: '#d3d3d3', opacity: 0.2, layer: 'below',
+                            //     line: { width: 0 }}],
+                    };
+            Plotly.newPlot("boxPlotDiv", traces, layout);
+        },
+
+        downloadgeneExpressionPlot() {
+            Plotly.downloadImage(document.getElementById("boxPlotDiv"), {
+                format: 'jpeg', height: 900, width: 2000,
+                filename: 'Stemformatics_' + this.atlasType + '_atlas_' + this.geneExpressionTab.selectedGene
             });
         },
-        
-        // ------------ Control related methods ---------------
-        // Runs when plotBy changes between "sample type", "gene expression", "find dataset"
-        changePlotBy() {
-            if (this.selectedPlotBy=="sample type") // going back to sample type after showing expression
-                this.updatePlot();
-            else if (this.selectedPlotBy=="gene expression")   // going to gene expression after showing sample type - update only if previously an expression was shown
-                if (this.selectedGene!="") this.updatePlot();
-        },
-                
+
         // ------------ sampleInfo methods ---------------
         // Should run when user clicks on a point in the plot. Since there's no double-click event detection in plotly
         // we measure the time interval between clicks to define double click.
         handlePlotlyClick(data, plotBy) {
             let self = this;
-            if (plotBy==null) plotBy = self.selectedPlotBy;
             // Fetch sampleId of clicked point
             let sampleId = plotBy=="sample type"? self.traces()[data.points[0].curveNumber].sampleIds[data.points[0].pointNumber] : self.sampleIds[data.points[0].pointNumber];
             
@@ -829,7 +755,6 @@ export default {
                                                     'value':matchingDataset[0].display_name, 
                                                     'datasetId':datasetId});
                 }
-
                 self.sampleInfo.divX = self.sampleInfo.mouseX;
                 self.sampleInfo.divY = self.sampleInfo.mouseY;
                 self.sampleInfo.show = true;
@@ -841,8 +766,8 @@ export default {
             }
         },
 
-        // In order to know where to show the sampleInfoDiv on double-click, we need to keep track
-        // of mouse position and save this.
+        // In order to know where to show the sampleInfoDiv on double-click, 
+        // we need to keep track of mouse position and save this.
         updateMousePosition(event) {
             this.sampleInfo.mouseX = event.clientX;
             this.sampleInfo.mouseY = event.clientY;
@@ -881,156 +806,86 @@ export default {
             })
         },
 
+        // ------------ Custom sample group methods ---------------
+        // Apply custom sample group defined. Shoud run when user hits save.
+        // inputData should looks like [{sampleGroup:'B Cell_in vitro', sampleIds:['s1',...]}, ...]
+        applyCustomSampleGroup(inputData) {
+            let self = this;
+
+            // Check if there is useful input data
+            const data = inputData.filter(item => item.sampleIds.length>0);
+            if (data.length==0) {
+                this.$bvModal.msgBoxOk("Custom sample group seems empty.");
+                return;
+            }
+
+            // Update various data
+            var groupName = self.customSampleGroup.groupName;
+            if (self.colourBy.indexOf(groupName)==-1)
+                self.colourBy.push(groupName);
+            self.sampleTable[groupName] = {};
+            self.sampleTypeOrdering[groupName] = [];
+            for (var i=0; i<data.length; i++) {
+                self.sampleTypeOrdering[groupName].push(data[i].sampleGroup);
+                for (var j=0; j<data[i].sampleIds.length; j++)
+                    self.sampleTable[groupName][data[i].sampleIds[j]] = data[i].sampleGroup;
+            }
+
+            // Show sample type plot and custom sample group defined 
+            // - otherwise it's not obvious to the user that the changes have been saved
+            delete self.sampleTypeColours[groupName]
+            self.updateSampleTypeColours();
+            self.selectedColourBy = self.customSampleGroup.groupName;
+            self.updateLegends();
+            self.updatePlot();
+
+            // Ask to switch view to make it obvious what's happened
+            this.$bvModal.msgBoxConfirm("Successfully defined a custom sample group. Switch to PCA plot to view the result?", {
+                okTitle:'Yes', cancelTitle:'Stay here'
+            }).then(value => {
+                if (value) this.sampleGroupsTab.selectedView = 'PCA by sample type';
+            }).catch(err => { // An error occurred
+            });
+        },
+        
         // ------------ Gene expression related methods ---------------
         // Show autocomplete on gene expression by fetching all possible entries
-        // If boxPlot is not null, apply to boxPlot variables
-        getPossibleGenes(boxPlot) {
+        getPossibleGenes() {
             let self = this;
-            let gene = boxPlot==null? self.selectedGene : self.boxPlot.selectedGene;
+            let gene = self.geneExpressionTab.selectedGene;
             if (gene.length<=1) return;    // ignore 1 or less characters entered
             self.$axios.get('/api/atlases/' + self.atlasType + '/possible-genes?query_string=' + gene)
                 .then(function (response) {
                     if (response.data.length>0)
-                        if (boxPlot==null) 
-                            self.possibleGenes = response.data;
-                        else
-                            self.boxPlot.possibleGenes = response.data;
-                    console.log(self.boxPlot.possibleGenes);
+                        self.geneExpressionTab.possibleGenes = response.data;
             });
         },
         
-        // Show gene expression - fetch values from server and save them, then run 
-        // updatePlot only for PCA if boxPlot is null, otherwise run geneExpressionScatterPlot.
-        showGeneExpression(geneSymbol, boxPlot) {
+        // Show gene expression - fetch values from server and save them, then run geneExpressionPlot
+        showGeneExpression(geneSymbol) {
             let self = this;
             if (geneSymbol!=null) {
-                if (boxPlot==null)
-                    self.selectedGene = geneSymbol.replace('(','').replace(')','');
-                else
-                    self.boxPlot.selectedGene = geneSymbol.replace('(','').replace(')','');
+                self.geneExpressionTab.selectedGene = geneSymbol.replace('(','').replace(')','');
             }
-            let matchingGenes = boxPlot==null? self.possibleGenes.filter(item => item.symbol==self.selectedGene):
-                self.boxPlot.possibleGenes.filter(item => item.symbol==self.boxPlot.selectedGene);
+            let matchingGenes = self.geneExpressionTab.possibleGenes.filter(item => item.symbol==self.geneExpressionTab.selectedGene);
             if (matchingGenes.length>0) {
                 let geneId = matchingGenes[0].ensembl;
                 // use filtered=true for expression-values api if gene has been filtered in
                 let filtered = matchingGenes[0].inclusion;
-                self.loading = true;
+                self.showLoading = true;
                 self.$axios.get('/api/atlases/' + self.atlasType + '/expression-values?orient=records&gene_id=' + geneId + '&filtered=' + filtered)
                     .then(function (response) {
                         if (response.data.length>0) {
                             // response.data would looke like [{column:value, ...}]
-                            if (boxPlot==null) {
-                                self.geneExpression = self.sampleIds.map(item => response.data[0][item]);
-                                // Only run updatePlot if in the PCA Plot tab
-                                if (self.selectedPlotBy != "gene expression")
-                                    self.updatePlot();
-                            } else {
-                                self.boxPlot.geneExpression = self.sampleIds.map(item => response.data[0][item]);
-                                self.geneExpressionScatterPlot();
-                            }
-
+                            self.geneExpressionTab.geneExpression = self.sampleIds.map(item => response.data[0][item]);
+                            self.geneExpressionPlot();
                         } else {
-                            alert("Could not find expression values for this gene");
+                            this.$bvModal.msgBoxOk("Could not find expression values for this gene.");
                         }
-                        self.loading = false;
+                        self.showLoading = false;
                 });
             } else
-                alert("No expression values exist in this atlas for the specified gene");
-        },
-
-        // Plot gene expression scatter plot
-        geneExpressionScatterPlot() {
-            let self = this;
-            let selectedSampleGroup = self.boxPlot.selectedSampleGroup;
-            let traces = [];
-            let sampleIds = self.sampleIdsFromSampleGroup(selectedSampleGroup);
-            let orderedSampleGroupItems = self.sampleTypeOrdering[selectedSampleGroup].filter(item => item!="");
-            let names = [];
-
-            // Plot first empty/opaque data point for purposes of plot background
-            let trace = {
-                name: ' ',
-                y: [0],
-                type: 'box',
-                opacity: 0,
-                hoverinfo: 'skip',
-            }
-            traces.push(trace);
-            // Empty name for padding purposes
-            names.push(' ');
-
-            orderedSampleGroupItems.forEach(sampleGroupItem => {
-                let trace = {
-                        type: self.boxPlot.selectedPlotType,
-                        y: self.boxPlot.geneExpression.filter(function(item,i) { return sampleIds[sampleGroupItem].indexOf(self.sampleIds[i])!=-1}),
-                        box: { visible: true },
-                        line: { width: 1, color: 'black' },
-                        meanline: { visible: true },
-                        name: sampleGroupItem,
-                        x0: sampleGroupItem,
-                        showlegend: false,
-                        hoverinfo: "y",
-                        points: self.boxPlot.showPoints? 'all': false, // works for violin
-                        boxpoints: self.boxPlot.showPoints? 'all': false,  // works for boxplot
-                    };
-
-                if (selectedSampleGroup in self.sampleTypeColours && 
-                        sampleGroupItem in self.sampleTypeColours[selectedSampleGroup]) {
-                    trace['marker'] = {'color': self.sampleTypeColours[selectedSampleGroup][sampleGroupItem]};
-                    trace['fillcolor'] = self.sampleTypeColours[selectedSampleGroup][sampleGroupItem];
-                }
-
-                traces.push(trace);
-                names.push(sampleGroupItem);
-            });
-
-            // Plot the last empty/opaque data point for purposes of plot background
-            trace = {
-                name: '  ',
-                y: [0],
-                type: 'box',
-                opacity: 0,
-                hoverinfo: 'skip',
-            }
-            traces.push(trace);
-            // Empty name for padding purposes
-            names.push('  ');
-
-            // Set plot layout and draw grey rectangle for plot background
-            let layout = {  title: "",  margin: {t:10, l:20, r:0, b:0},
-                            xaxis: {
-                                automargin: true,
-                                // tickmode: 'array',
-                                // tickvals: [...Array(names.length).keys()],
-                                // ticktext: names,
-                                // range: [0, names.length],
-                            },
-                            // Grey background
-                            // shapes: [{
-                            //     type: 'rect',
-                            //     xref: 'x',
-                            //     yref: 'y',
-                            //     x0: ' ',
-                            //     x1: '  ',
-                            //     y0: 0.2, // placeholder
-                            //     y1: 0.8, // placeholder
-                            //     fillcolor: '#d3d3d3',
-                            //     opacity: 0.2,
-                            //     layer: 'below',
-                            //     line: {
-                            //         width: 0
-                            //     }
-                            // }],
-                    };
-            Plotly.newPlot("boxPlotDiv", traces, layout);
-        },
-
-        downloadGeneExpressionScatterPlot() {
-            Plotly.downloadImage(document.getElementById("boxPlotDiv"), {
-                format: 'jpeg', height: 900, width: 2000,
-                filename: 'Stemformatics_' + this.atlasType + '_atlas_' + this.boxPlot.selectedGene
-            });
+                this.$bvModal.msgBoxOk("No expression values exist in this atlas for the specified gene.");
         },
 
         // ------------ Download data methods ---------------
@@ -1177,62 +1032,24 @@ export default {
                 this.$bvModal.msgBoxOk("Use this function after projection to show quantitative scores.");
                 return;
             }
-            // this.projectionState = true;
             // Expanding 'Show projection score' button - plot capybara
-            if(this.projectionState) {
-                this.projection_showScore = true;
-                let div = document.getElementById('capybaraPlotDiv');
-                const capybara = this.projection_data.capybara[this.projection_selectedAtlasSampleGroup];
+            this.projection_showScore = true;
+            let div = document.getElementById('capybaraPlotDiv');
+            const capybara = this.projection_data.capybara[this.projection_selectedAtlasSampleGroup];
 
-                // y depends on projection_selectedSampleGroup
-                let y = this.projection_data.samples.map(item => item[this.projection_selectedSampleGroup]);
+            // y depends on projection_selectedSampleGroup
+            let y = this.projection_data.samples.map(item => item[this.projection_selectedSampleGroup]);
 
-                // Round data
-                let data = [];
-                capybara.data.forEach(row => {
-                    data.push(row.map(item => Math.round(100*item)/100));
-                })
-                let traces = [{type:'heatmap', z:data, y:y, x:capybara.columns}];
-                let layout = {xaxis:{side:"top", automargin:true}, yaxis:{automargin:true}};
-                Plotly.newPlot(div, traces, layout);
-            }
-            // Collapsing button - back to PCA plot
-            else {
-                this.selectedPlotBy = 'sample type';
-                this.updatePlot();
-            }
+            // Round data
+            let data = [];
+            capybara.data.forEach(row => {
+                data.push(row.map(item => Math.round(100*item)/100));
+            })
+            let traces = [{type:'heatmap', z:data, y:y, x:capybara.columns}];
+            let layout = {xaxis:{side:"top", automargin:true}, yaxis:{automargin:true}};
+            Plotly.newPlot(div, traces, layout);
         },
 
-        // ------------ Custom sample group methods ---------------
-        // Apply custom sample group defined. data looks like [{sampleGroup:'B Cell_in vitro', sampleIds:['s1',...]}, ...]
-        applyCustomSampleGroup(inputData) {
-            let self = this;
-            const data = inputData.filter(item => item.sampleIds.length>0);
-            if (data.length==0) {
-                return;
-            }
-            // Update various data
-            var groupName = self.customSampleGroup.groupName;
-            if (self.colourBy.indexOf(groupName)==-1)
-                self.colourBy.push(groupName);
-            self.sampleTable[groupName] = {};
-            self.sampleTypeOrdering[groupName] = [];
-            for (var i=0; i<data.length; i++) {
-                self.sampleTypeOrdering[groupName].push(data[i].sampleGroup);
-                for (var j=0; j<data[i].sampleIds.length; j++)
-                    self.sampleTable[groupName][data[i].sampleIds[j]] = data[i].sampleGroup;
-            }
-
-            // Show sample type plot and custom sample group defined 
-            // - otherwise it's not obvious to the user that the changes have been saved
-            delete self.sampleTypeColours[groupName]
-            self.updateSampleTypeColours();
-            self.selectedColourBy = self.customSampleGroup.groupName;
-            self.selectedPlotBy = "sample type";
-            self.updateLegends();
-            self.updatePlot();
-        },
-        
         // ------------ Show version info ---------------
         showVersionInfo() {
             this.versionInfo.show = true;
@@ -1241,18 +1058,6 @@ export default {
                 this.versionInfo.currentVersion = res.data[this.atlasType].current_version;
                 this.versionInfo.releaseNotes = res.data[this.atlasType].release_notes;
             });
-        },
-
-        // Change button colour on collapse
-        changeCollapseColour() {
-            if(this.backgroundColour == '#2780E3') {
-                this.backgroundColour = 'white';
-                this.textColour = '#2780E3;'
-            }
-            else {
-                this.backgroundColour = '#2780E3';
-                this.textColour = 'white'
-            }
         },
 
         // Upload single-cell data projection
@@ -1322,13 +1127,22 @@ export default {
             return emailRegexp.test(this.singleCellData.email);
         },
 
+        // Tour related methods
+        startTour() {
+            if (this.selectedPlotBy=='sample type')
+                this.tourPCA1.start();
+            else if (this.selectedPlotBy=='gene expression')
+                this.tourPCA2.start();
+        }
     },
-
-
 
     mounted() {
         this.apiUrl = process.env.BASE_API_URL;
-        this.loading = true;
+        this.showLoading = true;
+
+        // Axios calls should be nested so if data A relies on B to be set first, call to get
+        // A should be inside the call to get B. For data which do not need to be fetched immediately
+        // at the start of the page load (eg sample info), they can be called outside this system.
 
         // Fetch sample table
         this.$axios.get("/api/atlases/" + this.atlasType + "/samples?orient=dict").then(res => {
@@ -1387,9 +1201,9 @@ export default {
                         });
                     });
 
-                    this.loading = false;
+                    this.showLoading = false;
                     this.updateLegends();
-                    this.mainPlot();
+                    this.plotPCABySampleGroups();
                 });
             });
         });
@@ -1653,29 +1467,7 @@ export default {
                 ],
                 text: 'Click this button to render the plot by gene expression below.',
             },
-            // {
-            // title: 'Show or hide sample colour plot',
-            // attachTo: {
-            //     element: this.$el.querySelector('.sample-button'),
-            //     on: 'bottom',
-            // },
-            // buttons: [
-            //     {
-            //     action: function () {
-            //         return this.back();
-            //     },
-            //     secondary: true,
-            //     text: 'Back',
-            //     },
-            //     {
-            //     action: function () {
-            //         return this.next();
-            //     },
-            //     text: 'Next',
-            //     },
-            // ],
-            // text: 'Show or hide the sample colour plot after plotting by gene expression.',
-            // },
+
             ]);
 
             // PCA tab tour steps
