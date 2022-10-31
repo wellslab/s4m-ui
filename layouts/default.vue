@@ -11,7 +11,7 @@
         </b-col>
         <b-col cols="4" class="text-right">
           Hosted at <b-link href="http://nectar.org.au/" target="_blank">
-            <b-img src="/img/nectardirectorate-logo.png" height="18"></b-img></b-link>
+            <b-img src="/img/nectardirectorate-logo.png" alt="Nectar logo" height="18"></b-img></b-link>
         </b-col>
       </b-row>
     </b-container>

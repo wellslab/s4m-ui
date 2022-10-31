@@ -20,7 +20,7 @@ export default {
   plugins: [
     //{ src: '~/plugins/plotly.js', ssr: false }
     //{src: '~/plugins/vue-gtag',},
-    {src: '~/plugins/vue-shepherd', mode: 'client'}
+    //{src: '~/plugins/vue-shepherd', mode: 'client'}
   ],
 
   // Auto import components (https://go.nuxtjs.dev/config-components)
@@ -41,7 +41,8 @@ export default {
   
   bootstrapVue: {
     bootstrapCSS: false, // Or `css: false`
-    bootstrapVueCSS: false // Or `bvCSS: false`
+    bootstrapVueCSS: false, // Or `bvCSS: false`
+    icons: true,
   },
 
   server: {

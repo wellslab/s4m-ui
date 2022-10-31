@@ -31,17 +31,16 @@
           annotating thousands of the samples in the system for consistency and ontological insight.
         </p>
         <b>Other contributors</b>
-        <p>Many of the other members of the lab make significant contributions towards Stemformatics, including <b>Paul Angel</b>
-        who develops integrated atlases, <b>Zahra Elahi</b> who has built the <b-link to='/atlas/dc'>DC Atlas</b-link>, and
+        <p>Many of the other members of the lab make significant contributions towards Stemformatics, including 
+        <b>Zahra Elahi</b> who has built the <b-link to='/atlas/dc'>DC Atlas</b-link> and
         <b>Nadia Rajab</b> who is the driving force behind the <b-link to='/atlas/myeloid'>Myeloid Atlas</b-link>.
-        Yidi Deng develops methods to project and integrate single cell data within the atlas project, and Isaac Virshup analyses data
-        and writes software for large data manipulation.
+        Yidi Deng develops methods to project and integrate single cell data within the atlas project.
         </p>
         <h5>Former team members</h5>
         <p>A huge range of people from a diverse range of backgrounds have worked on our team in the past, from undergraudate
           students to software engineers:<br/>
-          Othmar Korn, Steve Englart, Jack Bransfield, Tyrone Chen, Rowland Mosbergen, Isha Nagpal,
-          Chris Pacheco Rivera, Elizabeth Mason, Catherine Song, Xinly Pan, Thanushi Peiris, Yifan Wang, Lu Chen, Palash, 
+          Paul Angel, Jake Barry, Othmar Korn, Steve Englart, Jack Bransfield, Tyrone Chen, Rowland Mosbergen, Isha Nagpal,
+          Chris Pacheco Rivera, Elizabeth Mason, Isaac Virshup, Catherine Song, Xinly Pan, Thanushi Peiris, Yifan Wang, Lu Chen, Palash, 
           Luxin, JingCheng Wang, Wu Yan, Ariane Mora, Sadia Waleem, Huan Wang, Melinda Wang, Peter Zhang. 
         </p>
         <h5>Former annotators</h5>

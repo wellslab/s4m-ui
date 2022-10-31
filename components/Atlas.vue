@@ -1,73 +1,88 @@
 <template>
 <div>
+    <!-- Page title -->
     <div class="text-center mt-1">
-        <h3 class="mb-2">Integrated Atlas: <b-link @click="showVersionInfo" v-b-tooltip.hover title="Click to show atlas version">{{displayName}}</b-link>
-            <small class="align-middle">
+        <h3 class="mb-2">Integrated Atlas: <b-link @click="showVersionInfo" 
+            v-b-tooltip.hover title="Click to show atlas version">{{displayName}}</b-link>
+            <small>
                 <b-link v-b-tooltip.hover.right title="Background and more information" v-b-toggle.sidebar class="ml-2">
                     <b-icon-info-circle></b-icon-info-circle>
                 </b-link>
-                <b-link @click="startTour" title="Click here for a quick tour of the page." type="button" class="question-bbutton">
-                    <b-icon-question-circle class="q1 m1-1"></b-icon-question-circle>
-                </b-link>
-                <b-spinner label="Loading..." variant="secondary" :style="{visibility: showLoading ? 'visible' : 'hidden'}" class="ml-1" style="width:1.5rem; height:1.5rem;"></b-spinner>
+                <b-spinner label="Loading..." variant="secondary" :style="{visibility: showLoading ? 'visible' : 'hidden'}" 
+                    class="ml-1" style="width:1.5rem; height:1.5rem;"></b-spinner>
             </small>
         </h3>
     </div>
 
-    <!-- Put the whole tab inside card. Each tab has single row with 2 columns -->
+    <!-- Put the whole tab inside card. Each tab has a single row with 2 columns -->
     <b-card no-body class="mb-2">
-    <b-tabs card pills align="center">
+    <b-tabs card pills v-model="selectedTabIndex" align="center">
         <!-- Sample groups tab -->
         <b-tab title="Sample groups" active>
         <b-row class="small justify-content-center">
             <b-col md="3">
                 <!-- Top level controls for this tab - selects what to show in the tab. -->
-                <b-form inline>
-                    <b-form-select v-model="sampleGroupsTab.selectedView" size="sm" class="plot-by m-1">
-                        <b-form-select-option value="PCA by sample type">PCA by sample type</b-form-select-option>
-                        <b-form-select-option value="Find dataset">Find dataset</b-form-select-option>
-                        <b-form-select-option value="Customise sample groups">Customise sample groups</b-form-select-option>
-                    </b-form-select>
-                    <b-form-checkbox v-show="sampleGroupsTab.selectedView!='Customise sample groups'" v-model="sampleGroupsTab.is3d" @change="updatePlot()" class="d-switch ml-1">3D</b-form-checkbox>
-                </b-form>
-
+                <b-form-select v-model="sampleGroupsTab.selectedView" size="sm" class="m-1">
+                    <b-form-select-option value="PCA by sample group">PCA by sample group</b-form-select-option>
+                    <b-form-select-option value="Find dataset">Find dataset</b-form-select-option>
+                    <b-form-select-option value="Customise sample groups">Customise sample groups</b-form-select-option>
+                </b-form-select>
                 <!-- Plot legend - we do our own legend div instead of using plotly's -->
-                <PlotLegend v-show="sampleGroupsTab.selectedView=='PCA by sample type'"
+                <PlotLegend v-show="sampleGroupsTab.selectedView=='PCA by sample group'"
                     :legends="allLegends" :initial-sample-group="selectedColourBy" :items-with-margins="itemsWithMargins"
                     @legend-clicked="updatePlot" @sample-group-changed="updatePlot">
                 </PlotLegend>
 
                 <!-- Find dataset area -->
-                <div v-show="sampleGroupsTab.selectedView=='Find dataset'" class="find-datasets p-2">
+                <div v-if="sampleGroupsTab.selectedView=='Find dataset'" class="find-datasets p-2">
                     <p>All the datasets which were used for the construction of this atlas are shown below. 
                     You can show these on the PCA or view details of the dataset.</p>
                     <div style="max-height:500px; overflow:auto">
-                        <p v-for="item in datasetInfo.allData" :key="item.dataset_id"
-                            class="my-0 py-0">
-                            <b-link :to="'/datasets/view?id=' + item.dataset_id" target="_blank">
+                        <p v-for="item in datasetInfo.allData" :key="item.dataset_id" class="my-0 py-0">
+                            <b-link :to="'/datasets/view?id=' + item.dataset_id" target="_blank" 
+                                v-b-tooltip.hover title="Click to show details on this dataset (new window)">
                                 {{item.display_name}}
                             </b-link>
                             ({{item.sampleIds.length}})
-                            <b-link  
-                            @click="highlightDatasets(item.dataset_id)">
-                            <b-icon-caret-right-fill></b-icon-caret-right-fill>
-                        </b-link>
+                            <b-link v-show="datasetInfo.selectedDatasetId!=item.dataset_id" @click="highlightDatasets(item.dataset_id)"
+                                v-b-tooltip.hover title="Click to show corresponding samples in the plot">
+                                <b-icon-caret-right-fill></b-icon-caret-right-fill>
+                            </b-link>
+                            <b-link v-show="datasetInfo.selectedDatasetId==item.dataset_id" @click="clearHighlight()"
+                                v-b-tooltip.hover title="Click to hide corresponding samples in the plot">
+                                <b-icon-caret-right></b-icon-caret-right>
+                            </b-link>
                         </p>
                     </div>
                 </div>
 
-            <p v-if="sampleGroupsTab.selectedView=='Customise sample groups'" class="p-2">
-                You can define a custom sample group here by combining two existing sample groups together.
-                Start selecting items from each sample group, and the third column will automatically show the combinations.
-                Items where the combination yields no samples in it will be ignored later. 
-                Note that currently only one custom sample group is available.
-            </p>
+            <div v-if="sampleGroupsTab.selectedView=='Customise sample groups'" class="p-2">
+                <p>You can define a custom sample group here by combining two existing sample groups together.</p>
+                <p>Start selecting items from each sample group, and the third column will automatically show the combinations.
+                Items where the combination yields no samples in it will be ignored later.</p>
+                <p>Note that currently only one custom sample group is available.</p>
+            </div>
             </b-col>
 
             <!-- divs for the plots or customise sample groups -->
-            <b-col class="overflow-auto" @mousemove="updateMousePosition">
-                <div id="mainPlotDiv" v-show="sampleGroupsTab.selectedView!='Customise sample groups'"></div>
-                <b-card v-if="sampleGroupsTab.selectedView=='Customise sample groups'">
+            <b-col class="overflow-auto" @mousemove="updateMousePosition"> 
+                <b-card v-show="sampleGroupsTab.selectedView!='Customise sample groups'" border-variant="light">
+                    <h5 class="text-center">PCA by sample group
+                        <small class="align-middle ml-2">
+                        <b-link v-b-hover="handleHover_image1" v-b-tooltip.hover title="Toggle between 2d/3d" @click="sampleGroupsTab.is3d=!sampleGroupsTab.is3d; updatePlot();">
+                            <b-img v-if="imageHoverState.image1" src="/Icon_3d_red.svg" width="25" alt="3d icon hover"></b-img>
+                            <b-img v-if="!imageHoverState.image1 && !sampleGroupsTab.is3d" src="/Icon_3d_grey.svg" width="25" alt="3d icon not selected"></b-img>
+                            <b-img v-if="!imageHoverState.image1 && sampleGroupsTab.is3d" src="/Icon_3d_blue.svg" width="25" alt="3d icon selected"></b-img>
+                        </b-link>
+                        <b-link v-b-hover="handleHover_image2" v-b-tooltip.hover title="Download plot" @click="downloadPlot(mainPlotDiv, 'PCA')">
+                            <b-img v-if="imageHoverState.image2" src="/Icon_download_red.svg" width="25" alt="download icon hover"></b-img>
+                            <b-img v-else src="/Icon_download_blue.svg" width="25" alt="download icon selected"></b-img>
+                        </b-link>
+                        </small>
+                    </h5>
+                    <div id="mainPlotDiv" v-show="sampleGroupsTab.selectedView!='Customise sample groups'"></div>
+                </b-card>
+                <b-card v-if="sampleGroupsTab.selectedView=='Customise sample groups'" border-variant="light">
                     <h5 class="text-center">Customise sample groups</h5>
                     <div class="overflow-hidden">
                         <div slot="main" class="p-2">
@@ -93,29 +108,37 @@
                     <b-form-input size="sm" v-model="geneExpressionTab.selectedGene" list="possible-genes-datalist" 
                         @keyup="getPossibleGenes()" @keyup.enter="showGeneExpression(geneExpressionTab.selectedGene)" 
                         @change="showGeneExpression(geneExpressionTab.selectedGene)"
-                        placeholder="[gene symbol]" v-b-tooltip.hover.right :title="tooltip.selectedGene" class="choose-gene"></b-form-input>
+                        placeholder="[gene symbol]" v-b-tooltip.hover.right :title="tooltip.selectedGene"></b-form-input>
                     <b-form-datalist id="possible-genes-datalist">
-                        <option v-for="gene in geneExpressionTab.possibleGenes" :key="gene.ensembl">{{gene.inclusion? '' : '('}}{{gene.symbol}}{{gene.inclusion? '' : ')'}}</option>
+                        <option v-for="gene in geneExpressionTab.possibleGenes" :key="gene.ensembl">
+                            {{gene.inclusion? '' : '('}}{{gene.symbol}}{{gene.inclusion? '' : ')'}}</option>
                     </b-form-datalist>    
-                    <b-button @click="geneExpressionPlot" size="sm" class="plot-gene-button rounded">Go</b-button>
+                    <b-button @click="geneExpressionPlot" size="sm" class="rounded">Go</b-button>
                 </b-button-group>
                 </b-form>
                 Plot type:
                 <b-form-select  size="sm" v-model="geneExpressionTab.selectedPlotType" :options="geneExpressionTab.plotTypes" 
-                    @change="geneExpressionPlot" class="plot-type mb-2"></b-form-select>
+                    @change="geneExpressionPlot" class="mb-2"></b-form-select>
                 <div v-show="geneExpressionTab.selectedPlotType!='pca'">
                     Group by:
                     <b-form-select  size="sm" v-model="geneExpressionTab.selectedSampleGroup" :options="colourBy" 
-                        @change="geneExpressionPlot" class="group-by mb-2"></b-form-select>
+                        @change="geneExpressionPlot" class="mb-2"></b-form-select>
                     <b-form-checkbox  size="sm" v-model="geneExpressionTab.showPoints" @change="geneExpressionPlot" class="my-2">
                         Show points</b-form-checkbox>
                 </div>
-                <b-button v-b-tooltip.hover.right title="Download plot as a jpeg file" @click="downloadgeneExpressionPlot" size="sm">
-                    Download plot
-                </b-button>
             </b-col>
             <b-col class="overflow-auto text-center">
-                <h5>{{geneExpressionTab.selectedGene==""? '[Gene expression]' : geneExpressionTab.selectedGene}}</h5>
+                <h5>{{geneExpressionTab.selectedGene==""? 'Gene expression' : geneExpressionTab.selectedGene}}
+                    <small class="align-middle ml-2">
+                    <b-link v-b-hover="handleHover_image1" v-b-tooltip.hover title="Download plot" @click="downloadPlot('boxPlotDiv', geneExpressionTab.selectedGene)">
+                        <b-img v-if="imageHoverState.image1" src="/Icon_download_red.svg" width="25"></b-img>
+                        <b-img v-else src="/Icon_download_blue.svg" width="25"></b-img>
+                    </b-link>
+                    </small>
+                </h5>
+                <p v-if="geneExpressionTab.selectedGene==''">
+                    Select a gene to show its expression profile in the atlas
+                </p>
                 <div id="boxPlotDiv"></div>
             </b-col>
         </b-row>
@@ -128,20 +151,18 @@
                 <p>Benchmark another dataset using the atlas as a reference 
                     (<b-link to="/AtlasVignette/Stemformatics_atlas_projection_vignette.html" target="_blank">vignette</b-link>).
                 </p>
-                <b-button size="sm" variant="outline-primary" @click="projection_selectedView='stemformatics'" 
-                    :pressed="projection_selectedView=='stemformatics'" class="project-stem">
-                    Project Stemformatics data</b-button>
-                <b-button size="sm" variant="outline-primary" @click="projection_selectedView='bulk'"
-                    :pressed="projection_selectedView=='bulk'" class=" project-bulk mt-2">
-                    Project bulk data</b-button>
-                <b-button size="sm" variant="outline-primary" @click="projection_selectedView='singlecell'"
-                    :pressed="projection_selectedView=='singlecell'" class=" project-single mt-2">
-                    Project single cell data</b-button>
-                <b-button size="sm" variant="outline-primary" @click="plotCapybara()"
-                    :pressed="projection_selectedView=='capybara'" class="capybara mt-2">
-                    Cabybara score</b-button>
+                <b-list-group>
+                    <b-list-group-item button :class="{selectedListGroupItem: projection_selectedView=='stemformatics'}"
+                        @click="projection_selectedView='stemformatics'">Project Stemformatics data</b-list-group-item>
+                    <b-list-group-item button :class="{selectedListGroupItem: projection_selectedView=='bulk'}"
+                        @click="projection_selectedView='bulk'">Project bulk data</b-list-group-item>
+                    <b-list-group-item button :class="{selectedListGroupItem: projection_selectedView=='singlecell'}"
+                        @click="projection_selectedView='singlecell'">Project single cell data</b-list-group-item>
+                    <b-list-group-item button :class="{selectedListGroupItem: projection_selectedView=='capybara'}"
+                        @click="projection_selectedView='capybara'">Show Capybara score</b-list-group-item>
+                </b-list-group>
             </b-col>
-            <b-col>
+            <b-col md="9">
                 <!-- Project Stemformatics data -->
                 <div v-show="projection_selectedView=='stemformatics'">
                     <AtlasDataUpload :atlas-type="atlasType" selectedDataSource="Stemformatics" @project-data="projectData"></AtlasDataUpload>
@@ -154,8 +175,8 @@
                 
                 <!-- Project single-cell data -->
                 <b-container v-show="projection_selectedView=='singlecell'">
-                    <b-card bg-variant="light" class="mt-3">
-                        <h5>Project single cell data (Coming soon)</h5>
+                    <b-card border-variant="light">
+                        <h5 class="text-center">Project single cell data (Coming soon)</h5>
                         <p>You can project your own single cell data here. </p>
                         <!-- Email -->
                         <b-form-group id="input-group-1" label="Email address:" label-for="project-email-input" description="We'll send the results to your email.">
@@ -163,14 +184,14 @@
                             <b-input-group-prepend is-text>
                                 <b-icon icon="envelope"></b-icon>
                             </b-input-group-prepend>
-                            <b-form-input :state="isEmailValid" aria-describedby="input-live-feedback" debounce="1000" style="width: 220px" id="project-email-input" v-model.lazy="singleCellData.email" placeholder="Enter email" required size="sm" class="project-email-input"></b-form-input>
+                            <b-form-input :state="isEmailValid" disabled debounce="1000" style="width: 220px" id="project-email-input" v-model.lazy="singleCellData.email" placeholder="Enter email" required size="sm" class="project-email-input"></b-form-input>
                             <b-form-invalid-feedback id="input-live-feedback">Enter a valid email.</b-form-invalid-feedback>
                             </b-input-group>
                         </b-form-group>
                         <!-- Upload files -->
                         <!-- Desired format can be found here. -->
                         <b-form-group label="Single-cell data file:" label-for="project-data-input" description="Only .tsv files are accepted for online analysis.">
-                            <b-form-file accept=".tsv" size="sm" v-model="singleCellData.data" drop-placeholder="Drop file here" placeholder="Choose a file or drop it here" id="project-data-input"></b-form-file>
+                            <b-form-file disabled accept=".tsv" size="sm" v-model="singleCellData.data" drop-placeholder="Drop file here" placeholder="Choose a file or drop it here" id="project-data-input"></b-form-file>
                         </b-form-group>
                         <!-- Upload button -->
                         <div class="form-group text-center">
@@ -182,17 +203,24 @@
                     </b-card>
                 </b-container>
 
-                <!-- Show project score -->
-                <b-container v-show="projection_selectedView=='capybara'">
-                    <b-card bg-variant="light" class="mt-3">
-                        <h5>Capybara score</h5>
-                        <p>
+                <!-- Capybara score plot -->
+                <b-container v-show="projection_selectedView=='capybara'" class="overflow-auto">
+                    <b-card border-variant="light">
+                        <h5 class="text-center">Capybara score 
+                            {{projection_data.name!=null? ': ' + projection_data.name + " &raquo; " + atlasType + ' atlas' : ""}}
+                        </h5>
+                        <p v-if="projection_data.name==null">
+                            Once a projection has been made, you can see how the projected samples score against
+                            the atlas samples here as a heatmp using <b-link href="https://doi.org/10.1101/2020.02.17.947390" target="_blank">
+                            Capybara</b-link> scores.
+                        </p>
+                        <p v-else>
                             Each projected sample is scored using 
                             <b-link href="https://doi.org/10.1101/2020.02.17.947390" target="_blank">
                             Capybara</b-link> here, and the score is rendered as a heatmap. Higher values imply more closeness with that atlas sample group.
                             The rows of this table match samples groups in the query data, and columns match those in the atlas.
                         </p>
-                        <b-form inline class="justify-content-center mt-2">
+                        <b-form v-show="projection_data.name!=null" inline class="justify-content-center mt-2">
                             Show rows as: 
                             <b-form-select v-model="projection_selectedSampleGroup" size="sm"
                                 :options="projection_sampleGroups" @change="plotCapybara" class="mx-2" style="width: 15%">
@@ -201,7 +229,16 @@
                             <b-form-select v-model="projection_selectedAtlasSampleGroup" size="sm"
                                 :options="colourBy" @change="plotCapybara" class="ml-1">
                             </b-form-select>
-                            <b-button size="sm" v-b-tooltip.hover title="Download this plot" @click="downloadCapybara" class="ml-2">Download</b-button>
+                            <b-link v-b-hover="handleHover_image1" v-b-tooltip.hover title="Show projections on PCA plot" 
+                                @click="selectedTabIndex=0; sampleGroupsTab.selectedView='PCA by sample group'" class="ml-2">
+                                <b-img v-if="imageHoverState.image1" src="/Icon_project_red.svg" width="25" alt="project icon hover"></b-img>
+                                <b-img v-else src="/Icon_project_blue.svg" width="25" alt="project icon selected"></b-img>
+                            </b-link>
+                            <b-link v-b-hover="handleHover_image2" v-b-tooltip.hover title="Download plot" 
+                                @click="downloadPlot('capybaraPlotDiv', projection_data.name + '_capybara')">
+                                <b-img v-if="imageHoverState.image2" src="/Icon_download_red.svg" width="25" alt="download icon hover"></b-img>
+                                <b-img v-else src="/Icon_download_blue.svg" width="25" alt="download icon selected"></b-img>
+                            </b-link>
                         </b-form>
                     </b-card>
                     <div id="capybaraPlotDiv" v-show="projection_selectedView=='capybara'"></div>
@@ -215,25 +252,25 @@
         <b-row class="small">
             <b-col md="3">
                 <p>Extra tools for the atlas.</p>
-                <b-button size="sm" variant="outline-primary" @click="toolsTab.selectedView='downloadData'" 
-                    :pressed="toolsTab.selectedView=='downloadData'" class="download-data">
-                    Download data</b-button><br/>
-                <b-button size="sm" variant="outline-primary" @click="toolsTab.selectedView='downloadPlots'" 
-                    :pressed="toolsTab.selectedView=='downloadPlots'" class="download-plots mt-2">
-                    Download plots</b-button><br/>
+                <b-list-group>
+                    <b-list-group-item button :class="{selectedListGroupItem: toolsTab.selectedView=='downloadData'}"
+                        @click="toolsTab.selectedView='downloadData'">Download data</b-list-group-item>
+                    <b-list-group-item button :class="{selectedListGroupItem: toolsTab.selectedView=='plotPreferences'}"
+                        @click="toolsTab.selectedView='plotPreferences'">Preferences</b-list-group-item>
+                </b-list-group>
             </b-col>
 
             <b-col>
                 <!-- Download data/plots -->
-                <b-container class="mt-3" v-show="toolsTab.selectedView=='downloadData'">
-                    <b-card>
-                        <h5>Download data</h5>
+                <b-container v-if="toolsTab.selectedView=='downloadData'">
+                    <b-card border-variant="light">
+                        <h5 class="text-center">Download data</h5>
                         <b-card-text>
                             You can download the data used for the atlas here. The samples matrix contains data about each sample, 
                             the genes matrix shows which genes were included in the atlas and which were left out, and 
                             the expression matrix contains rank normalised expression values (note: large file).
                             <ul class="mt-2">
-                                <li v-for="item in downloadData.fileTypes" :key="item.key">
+                                <li v-for="item in toolsTab.fileTypes" :key="item.key">
                                     <b-link :href="apiUrl + '/atlases/' + atlasType + '/' + item.key + '?as_file=true'">{{item.name}}</b-link> ({{item.size}})
                                 </li>
                             </ul>
@@ -241,21 +278,20 @@
                     </b-card>
                 </b-container>
 
-                <b-container class="mt-3" v-show="toolsTab.selectedView=='downloadPlots'">
-                    <b-card>
-                        <h5>Download plots</h5>
+                <b-container v-if="toolsTab.selectedView=='plotPreferences'">
+                    <b-card border-variant="light">
+                        <h5 class="text-center">Preferences for plot download</h5>
                         <b-card-text>
-                            You can download plots at high resolution here, rather than relying the low resolution png download
-                            button provided by plotly.
+                            Set your preferred image format and size here for all plot downloads.
                         </b-card-text>
-                        <b-form-group label="Image type" v-slot="{ ariaDescribedby }">
-                            <b-form-radio-group v-model="downloadData.selectedImageType" :options="downloadData.imageTypes" :aria-describedby="ariaDescribedby"></b-form-radio-group>
+                        <b-form-group label="Image type">
+                            <b-form-radio-group v-model="toolsTab.selectedImageType" :options="toolsTab.imageTypes"></b-form-radio-group>
                         </b-form-group>
                         <b-form inline>
-                            <b-form-group label="width (pixels)"><b-form-input v-model="downloadData.plotWidth"></b-form-input></b-form-group>
-                            <b-form-group label="height (pixels)"><b-form-input v-model="downloadData.plotHeight"></b-form-input></b-form-group>
+                            <b-form-group label="width (pixels)"><b-form-input v-model="toolsTab.plotWidth" size="sm"></b-form-input></b-form-group>
+                            <b-form-group label="height (pixels)"><b-form-input v-model="toolsTab.plotHeight" size="sm"></b-form-input></b-form-group>
                         </b-form>
-                        <b-button size="sm" @click="downloadPlot" class="mt-2">Download</b-button>
+                        <b-button size="sm" class="mt-2">Save</b-button>
                     </b-card>
                 </b-container>
             </b-col>
@@ -266,22 +302,20 @@
 
 <b-sidebar id="sidebar" title="Help and more info" shadow>
     <div class="px-3 py-2">
-        <p>Stemformatics integrated atlas provides a way to visualise multiple datasets together on a single PCA plot.
+        <p>Stemformatics integrated atlas provides a way to visualise multiple datasets together.
             Read more about it at our <b-link to='/atlas/about'>about atlas</b-link> page, which briefly outlines the method we used
             to construct the atlas and links to our published papers. 
         </p>
-        <p>You can explore the atlas in several ways: Plot by <b>"sample type"</b> to change 
-            the colour of the samples to based on attributes such as cell type or sample source. 
-            Plot by <b>"gene expression"</b> to search by gene symbol to overlay a heatmap onto the atlas. 
-            Display sample annotations and gene expression data side-by-side. Click on the item in the legend to add or remove that category.
+        <p>You can explore the atlas in several ways: <b>"Sample groups"</b> tab contains ways
+            to view sample relationships, while <b>"Gene expression"</b> tab contains functions to
+            plot gene expression in the atlas in different ways. In <b>"Projection"</b> tab, you'll
+            find functions to project your own data onto the atlas for benchmarking cell types.
         </p>
-        <p> 
-            Zoom in or out using your mouse, double-click individual samples to see more information on their origin, cell type, 
-            Stemformatics dataset, and sample description. <b>"project other data"</b> function allows you
-            to see where samples from another dataset sit, either from another Stemformatics dataset or your own.
-            You can see exactly which datasets were used to build this atlas by selecting <b>"find dataset"</b> function. 
-            All of the data displayed in this atlas are available to download via <b>"download data/plots"</b> function.
+        <p>On the plots, zoom in or out using your mouse, double-click on individual samples in the PCA plot
+            to see more information on their origin such as cell tye and sample description. 
+            All of the data and plots can be downloaded.
         </p>
+        <p>How to cite: see our <b-link to="/about/cite">cite</b-link> page.</p>
   </div>
 </b-sidebar>
 
@@ -348,6 +382,7 @@ export default {
 
     data() {
         return {
+            // Data related variables
             coords: {},         // {"0":{"6638_GSM868879":5.72,"6638_GSM868880":5.511, ...}, ...}
             sampleIds: [],      // ["6638_GSM868879","6638_GSM868880", ...]
             sampleTable: {},    // {'celltype':{'6638_GSM868879':'HPC', ...}, ...}
@@ -357,21 +392,32 @@ export default {
             colourBy: [],   // all possible sample group names: ["Cell Type", "Sample Source", ...]
 
             apiUrl: 'http://127.0.0.1:5000', // set to process.env.BASE_URL when mounted
+            userID: null, // User ID could be encoded in the URL
 
-            // sampleGroups tab specific
-            sampleGroupsTab: {
-                selectedView: "PCA by sample type",
-                is3d: true,  // whether plot is in 3d or 2d
-            },
-            selectedColourBy: "Cell Type",  // overwrite at mounted()
-            allLegends: {},
-            itemsWithMargins: {},
+            // Control related variables
+            selectedTabIndex: 0,
+            showLoading: false,
+            loadingTime: 0,
+            interval: null,
+            // Can be set to true when image is hovered - multiple values available since you can have multiple images on the same page
+            imageHoverState: {image1: false, image2: false},
+
+            // default camera angle for a 3d plot in plotly
+            camera: {up: {x:0, y:0, z:1}, center: {x:0, y:0, z:0}, eye: {x:1.25, y:1.25, z:1.25}},
 
             // plotly requires id of div where it will plot, so set them as vars here
             mainPlotDiv: "mainPlotDiv",
 
-            // default camera angle for a 3d plot in plotly
-            camera: {up: {x:0, y:0, z:1}, center: {x:0, y:0, z:0}, eye: {x:1.25, y:1.25, z:1.25}},
+            // sampleGroups tab specific
+            sampleGroupsTab: {
+                selectedView: "PCA by sample group",
+                is3d: true,  // whether plot is in 3d or 2d
+            },
+
+            // Variables used by PlotLegend component
+            selectedColourBy: "Cell Type",  // overwrite at mounted()
+            allLegends: {},
+            itemsWithMargins: {},
 
             geneExpressionTab: {
                 selectedGene: "",
@@ -383,51 +429,33 @@ export default {
                 selectedSampleGroup: 'Cell Type',
             },
 
-            showLoading: false,
-            loadingTime: 0,
-            interval: null,
-
             // Projection related
             projection_selectedView: "stemformatics",
             projection_data: {},
-            projection_showScore: false,
             projection_sampleGroups: [],
             projection_selectedSampleGroup:'',
             projection_selectedAtlasSampleGroup:'Cell Type',
-            // Variables for email and file input
+            projection_selectedDataSource: '',
+
+            // Variables for email and file input for single cell projection
             singleCellData: {
                 email: '',
                 data: null,
             },
-            selectedDataSource: "",
-            // User ID obtained from URL query
-            userID: null,
-            // upload data
+
+            // Variables used by AtlasDataUpload component
             uploadData: {
                 projectedSampleIds: [],  // record sample ids which have been projected
                 name: null, // name of the dataset used for projection - will be the prefix for projected samples
             },
 
-            toolsTab: {
-                selectedView: "downloadData"
-            },
-
-            // Page tour variables
-            tourPCA1: null,
-            tourPCA2: null,
-            tourPCA3: null,
-            tourBox: null,
-            tourProjection: null,
-            tourGeneSets: null,
-            tourTools: null,
-
-            // variables used by the find dataset div which can be used to show a table of datasets
+            // Variables used by the find dataset div which can be used to show a table of datasets
             datasetInfo: {
                 allData: [], // [{"dataset_id":7268,"author":"Abud","pubmed_id":"28426964","platform":"RNAseq",...},...]
                 selectedDatasetId: '',
             },
 
-            // variables used by the sample info div which is shown when a sample is double-clicked
+            // Variables used by the sample info div which is shown when a sample is double-clicked
             sampleInfo: {
                 allData: {}, // {'6731_GSM2064216': {'Cell Type': 'Clec4e-/- microglia I/R', 'FACS profile': '', ...}, ...}
                 show: false,
@@ -440,17 +468,17 @@ export default {
                 divY: 0
             },
 
-            // download data
-            downloadData: {
-                selectedDataType: 'data', // either 'data' or 'plots'
+            // tools tab
+            toolsTab: {
+                selectedView: "downloadData",
                 fileTypes: [{key:'samples', name:'samples matrix', size:'~50kb'},
                             {key:'genes', name:'genes matrix', size:'~360kb'},
                             {key:'expression-file', name:'expression matrix', size:'226Mb'},
                             {key:'colours-and-ordering', name:'colours and ordering', size:'1kb'},
                             {key:'coordinates', name:'pca coordinates', size:'~50kb'},
                 ],
-                imageTypes: ['svg','jpeg','webp'],
-                selectedImageType: 'svg',
+                imageTypes: ['jpeg','svg','webp'],
+                selectedImageType: 'jpeg',
                 plotWidth: 1200,
                 plotHeight: 900,
             },
@@ -472,7 +500,6 @@ export default {
 
             // tooltip texts
             tooltip: {atlasType: "show information about this page",
-                    atlasToggle: "toggle atlas",
                     selectedGene: "Select a gene from suggestions and press go to show its expression." +
                                   "The genes with brackets were filtered out before creating this PCA.",
                     geneExpressionPlot: "This plot shows rank normalised values of the gene in the atlas as "+
@@ -531,6 +558,9 @@ export default {
                 {orient:'dict', sampleGroupItemColours:this.sampleTypeColours, sampleGroupItemsOrdered:this.sampleTypeOrdering});
         },
      
+        handleHover_image1(hovered) { this.imageHoverState.image1 = hovered },
+        handleHover_image2(hovered) { this.imageHoverState.image2 = hovered },
+
         // ------------ Plot related methods ---------------
         // Layout dict used by plotly - can control size, camera, etc (used only for PCA plots)
         layout() {
@@ -712,13 +742,6 @@ export default {
             Plotly.newPlot("boxPlotDiv", traces, layout);
         },
 
-        downloadgeneExpressionPlot() {
-            Plotly.downloadImage(document.getElementById("boxPlotDiv"), {
-                format: 'jpeg', height: 900, width: 2000,
-                filename: 'Stemformatics_' + this.atlasType + '_atlas_' + this.geneExpressionTab.selectedGene
-            });
-        },
-
         // ------------ sampleInfo methods ---------------
         // Should run when user clicks on a point in the plot. Since there's no double-click event detection in plotly
         // we measure the time interval between clicks to define double click.
@@ -796,14 +819,16 @@ export default {
                 update['marker']['color'] = trace.marker.color.map((item,i) => 
                     sampleIds.indexOf(trace.sampleIds[i])==-1? item: 'black');
                 Plotly.restyle(this.mainPlotDiv, update, [index]);
-            })
+            });
+            this.datasetInfo.selectedDatasetId = datasetId;
         },
 
         // Clear the highlighted datasets
         clearHighlight() {
             this.traces().forEach((trace,index) => {
                 Plotly.restyle(this.mainPlotDiv, {'marker': trace.marker}, [index]);
-            })
+            });
+            this.datasetInfo.selectedDatasetId = '';
         },
 
         // ------------ Custom sample group methods ---------------
@@ -843,7 +868,7 @@ export default {
             this.$bvModal.msgBoxConfirm("Successfully defined a custom sample group. Switch to PCA plot to view the result?", {
                 okTitle:'Yes', cancelTitle:'Stay here'
             }).then(value => {
-                if (value) this.sampleGroupsTab.selectedView = 'PCA by sample type';
+                if (value) this.sampleGroupsTab.selectedView = 'PCA by sample group';
             }).catch(err => { // An error occurred
             });
         },
@@ -888,22 +913,13 @@ export default {
                 this.$bvModal.msgBoxOk("No expression values exist in this atlas for the specified gene.");
         },
 
-        // ------------ Download data methods ---------------
-        downloadPlot() {
-            Plotly.downloadImage(document.getElementById(this.mainPlotDiv), {
-                format: this.downloadData.selectedImageType,
-                height: parseInt(this.downloadData.height),
-                width: parseInt(this.downloadData.width),
-                filename: 'Stemformatics_' + this.atlasType + '_atlas'
-            });
-        },
-
-        downloadCapybara() {
-            Plotly.downloadImage(document.getElementById('capybaraPlotDiv'), {
-                format: "jpeg",
-                height: parseInt(800),
-                width: parseInt(1200),
-                filename: 'Stemformatics_' + this.atlasType + '_atlas_projection_capybara'
+        // ------------ Download data/plot methods ---------------
+        downloadPlot(divId, name) {
+            Plotly.downloadImage(document.getElementById(divId), {
+                format: this.toolsTab.selectedImageType,
+                height: parseInt(this.toolsTab.height),
+                width: parseInt(this.toolsTab.width),
+                filename: 'Stemformatics_' + this.atlasType + '_atlas_' + name,
             });
         },
 
@@ -963,68 +979,8 @@ export default {
             this.projection_sampleGroups = Object.keys(projectionData.samples[0]);
             this.projection_sampleGroups.sort();
             this.projection_selectedSampleGroup = column;
-        },
-
-        testProjectData(projectionData) {
-            console.log("Starting test project data.");
-            // console.log(this.sampleTable);
-            // console.log(this.sampleTypeColours)
-            // console.log(projectionData);
-
-            let column = projectionData.column;
-            let sampleTypes = projectionData.samples.map(item => projectionData.name + "_" + item[column]);
-            var datasetAttributes = {"dataset_id":'0000', "display_name":"[Projected Data]", "sampleIds":projectionData.sampleIds};
-            this.uploadData.name = projectionData.name;
-
-            for (let item in this.coords) { // update coordinates to include projected coordinates
-                for (let i=0; i<projectionData.coords.length; i++)
-                    this.coords[item][projectionData.sampleIds[i]] = projectionData.coords[i][item];
-            }
-            this.colourBy.forEach(item => {   // add a breakpoint in sampleTypeOrdering
-                if (item in this.sampleTypeOrdering)
-                    this.sampleTypeOrdering[item].push("");
-            });
-
-            // update sampleInfo.allData, sampleTable, sampleTypeColours and sampleTypeOrdering
-
-            // console.log(sampleTypes.length)
-            // this.sampleTable = {};
-            // console.log("Find sample table array.");
-            // console.log(typeof this.sampleTable);
-            // console.log(this.sampleTable['Cell Type']['notta_GSM1977399']);
-            for (let i=0; i<sampleTypes.length; i++) {
-                // console.log(sampleTypes[i]);
-                // console.log(projectionData.sampleIds[i]);
-                let sampleId = projectionData.sampleIds[i];
-                this.sampleInfo.allData[sampleId] = {};
-                this.uploadData.projectedSampleIds.push(sampleId);
-                for (let item in this.sampleTable) {
-                    // console.log("Sample Types...");
-                    // console.log(sampleTypes[i]);
-                    // console.log(sampleId);
-                    // console.log(item);
-                    // console.log(this.sampleTable);
-                    this.sampleTable[item][sampleId] = sampleTypes[i];
-                    // console.log(this.sampleTypeColours);
-                    this.sampleTypeColours[item][sampleTypes[i]] = "black";
-                    if (this.sampleTypeOrdering[item].indexOf(sampleTypes[i])==-1)
-                        this.sampleTypeOrdering[item].push(sampleTypes[i]);
-                    this.sampleInfo.allData[sampleId][item] = sampleTypes[i];
-                }
-            }
-            projectionData.sampleIds.forEach(item => {
-                this.sampleIds.push(item);
-            })
-
-            this.datasetInfo.allData.push(datasetAttributes);
-            this.updateLegends();
-            this.updatePlot();
-
-            this.projection_data = projectionData;
-            this.projection_sampleGroups = Object.keys(projectionData.samples[0]);
-            this.projection_sampleGroups.sort();
-            this.projection_selectedSampleGroup = column;
-
+            this.plotCapybara();
+            this.projection_selectedView = 'capybara';
         },
 
         plotCapybara() {
@@ -1032,8 +988,6 @@ export default {
                 this.$bvModal.msgBoxOk("Use this function after projection to show quantitative scores.");
                 return;
             }
-            // Expanding 'Show projection score' button - plot capybara
-            this.projection_showScore = true;
             let div = document.getElementById('capybaraPlotDiv');
             const capybara = this.projection_data.capybara[this.projection_selectedAtlasSampleGroup];
 
@@ -1083,15 +1037,15 @@ export default {
             }
 
             let formData = new FormData();
-            this.selectedDataSource = "User-Single";
+            this.projection_selectedDataSource = "User-Single";
 
-            formData.append("data_source", this.selectedDataSource);
+            formData.append("data_source", this.projection_selectedDataSource);
             formData.append("email", this.singleCellData.email);
             formData.append("data", this.singleCellData.data);  
 
             this.showLoading = true;
             this.interval = setInterval(() => { this.loadingTime += 1; }, 1000);
-            this.$axios.post('/api/atlas-projection/' + this.atlasType + '/' + this.selectedDataSource, 
+            this.$axios.post('/api/atlas-projection/' + this.atlasType + '/' + this.projection_selectedDataSource, 
                 formData, { headers: {'Content-Type': 'multipart/form-data'},}).then(response => {
                     this.showLoading = false;
                     clearInterval(this.interval);
@@ -1127,13 +1081,6 @@ export default {
             return emailRegexp.test(this.singleCellData.email);
         },
 
-        // Tour related methods
-        startTour() {
-            if (this.selectedPlotBy=='sample type')
-                this.tourPCA1.start();
-            else if (this.selectedPlotBy=='gene expression')
-                this.tourPCA2.start();
-        }
     },
 
     mounted() {
@@ -1215,659 +1162,10 @@ export default {
 
             // Calling the get function from resources/atlases.AtlasProjectionResults
             this.$axios.get('/api/atlas-projection-results', {params: {id: unique}}).then(res6 => {
-                let newProjectionData = res6?.data;
-                this.testProjectData(newProjectionData);
-                // this.projectData(res6.data);
+                this.projectData(res6.data);
             });
 
         };
-
-        // Page tour setup
-        this.$nextTick(() => {
-            // Set up tour variables
-            // PCA 1
-            this.tourPCA1 = this.$shepherd({
-                useModalOverlay: true,
-                canClickTarget: false,
-                defaultStepOptions: {
-                    cancelIcon: {
-                        enabled: true,
-                    }
-                },
-            });
-
-            // PCA 2
-            this.tourPCA2 = this.$shepherd({
-                useModalOverlay: true,
-                canClickTarget: false,
-                defaultStepOptions: {
-                    cancelIcon: {
-                        enabled: true,
-                    }
-                },
-            });
-
-            // PCA 3
-            this.tourPCA3 = this.$shepherd({
-                useModalOverlay: true,
-                canClickTarget: false,
-                defaultStepOptions: {
-                    cancelIcon: {
-                        enabled: true,
-                    }
-                },
-            });
-
-            // Box
-            this.tourBox = this.$shepherd({
-                useModalOverlay: true,
-                canClickTarget: false,
-                defaultStepOptions: {
-                    cancelIcon: {
-                        enabled: true,
-                    }
-                },
-            });
-
-            // Projection
-            this.tourProjection = this.$shepherd({
-                useModalOverlay: true,
-                canClickTarget: false,
-                defaultStepOptions: {
-                    cancelIcon: {
-                        enabled: true,
-                    }
-                },
-            });
-
-            // Tools PCA
-            this.tourTools = this.$shepherd({
-                useModalOverlay: true,
-                canClickTarget: false,
-                defaultStepOptions: {
-                    cancelIcon: {
-                        enabled: true,
-                    }
-                },
-            });
-
-            // Add steps to all tour variables
-            // PCA tab tour steps
-            this.tourPCA1.addSteps([
-            {
-            title: 'Choose your plot type',
-            canClickTarget: false,
-            attachTo: {
-                element: this.$el.querySelector('.plot-by'),
-                on: 'bottom',
-            },
-            buttons: [
-                {
-                action: function () {
-                    return this.cancel();
-                },
-                secondary: true,
-                text: 'Exit',
-                },
-                {
-                action: function () {
-                    return this.next();
-                },
-                text: 'Next',
-                },
-            ],
-            text: 'Here you can choose to plot by sample type, gene expression, or find a specific dataset.',
-            },
-            {
-            title: '2D/3D',
-            attachTo: {
-                element: this.$el.querySelector('.d-switch'),
-                on: 'bottom',
-            },
-            buttons: [
-                {
-                action: function () {
-                    return this.back();
-                },
-                secondary: true,
-                text: 'Back',
-                },
-                {
-                action: function () {
-                    return this.next();
-                },
-                text: 'Next',
-                },
-            ],
-            text: 'Toggle between a 2D or 3D perspective.',
-            },
-            {
-            title: 'Plot colouring',
-            attachTo: {
-                element: this.$el.querySelector('.colour-by'),
-                on: 'bottom',
-            },
-            buttons: [
-                {
-                action: function () {
-                    return this.back();
-                },
-                secondary: true,
-                text: 'Back',
-                },
-                {
-                action: function () {
-                    return this.next();
-                },
-                text: 'Finish',
-                },
-            ],
-            text: 'Choose what the colours of the PCA plot points represent.',
-            },
-
-            ]);
-
-            // PCA tab tour steps
-            this.tourPCA2.addSteps([
-            {
-            title: 'Choose your plot type',
-            canClickTarget: false,
-            attachTo: {
-                element: this.$el.querySelector('.plot-by'),
-                on: 'bottom',
-            },
-            buttons: [
-                {
-                action: function () {
-                    return this.cancel();
-                },
-                secondary: true,
-                text: 'Exit',
-                },
-                {
-                action: function () {
-                    return this.next();
-                },
-                text: 'Next',
-                },
-            ],
-            text: 'Here you can choose to plot by sample or by gene expression.',
-            },
-            {
-            title: '2D/3D',
-            attachTo: {
-                element: this.$el.querySelector('.d-switch'),
-                on: 'bottom',
-            },
-            buttons: [
-                {
-                action: function () {
-                    return this.back();
-                },
-                secondary: true,
-                text: 'Back',
-                },
-                {
-                action: function () {
-                    return this.next();
-                },
-                text: 'Next',
-                },
-            ],
-            text: 'Toggle between a 2D or 3D perspective.',
-            },
-            {
-                title: 'Select Gene',
-                attachTo: {
-                    element: this.$el.querySelector('.pca-gene-select'),
-                    on: 'bottom',
-                },
-                buttons: [
-                    {
-                    action: function () {
-                        return this.back();
-                    },
-                    secondary: true,
-                    text: 'Back',
-                    },
-                    {
-                    action: function () {
-                        return this.next();
-                    },
-                    text: 'Next',
-                    },
-                ],
-                text: 'Choose a gene from the sugestions to view it\'s expression. Click the suggestion or hit \'Enter\' to select. The genes with the brackets were filtered out before creating this PCA.',
-
-                // Only show this step if there is an element of this class name
-                // showOn: function() {
-                //     return document.querySelector('.pca-gene-select') ? true: false;
-                // }
-            },
-            {
-                title: 'Plot',
-                attachTo: {
-                    element: this.$el.querySelector('.pca-go'),
-                    on: 'bottom',
-                },
-                buttons: [
-                    {
-                    action: function () {
-                        return this.back();
-                    },
-                    secondary: true,
-                    text: 'Back',
-                    },
-                    {
-                    action: function () {
-                        return this.next();
-                    },
-                    text: 'Finish',
-                    },
-                ],
-                text: 'Click this button to render the plot by gene expression below.',
-            },
-
-            ]);
-
-            // PCA tab tour steps
-            this.tourPCA3.addSteps([
-            {
-            title: 'Choose your plot type',
-            canClickTarget: false,
-            attachTo: {
-                element: this.$el.querySelector('.plot-by'),
-                on: 'bottom',
-            },
-            buttons: [
-                {
-                action: function () {
-                    return this.cancel();
-                },
-                secondary: true,
-                text: 'Exit',
-                },
-                {
-                action: function () {
-                    return this.next();
-                },
-                text: 'Next',
-                },
-            ],
-            text: 'Here you can choose to plot by sample type, gene expression, or find a specific dataset.',
-            },
-            {
-            title: '2D/3D',
-            attachTo: {
-                element: this.$el.querySelector('.d-switch'),
-                on: 'bottom',
-            },
-            buttons: [
-                {
-                action: function () {
-                    return this.back();
-                },
-                secondary: true,
-                text: 'Back',
-                },
-                {
-                action: function () {
-                    return this.next();
-                },
-                text: 'Next',
-                },
-            ],
-            text: 'Toggle between a 2D or 3D perspective.',
-            },
-            {
-            title: 'Find individual datasets',
-            attachTo: {
-                element: this.$el.querySelector('.find-datasets'),
-                on: 'top',
-            },
-            buttons: [
-                {
-                action: function () {
-                    return this.back();
-                },
-                secondary: true,
-                text: 'Back',
-                },
-                {
-                action: function () {
-                    return this.next();
-                },
-                text: 'Finish',
-                },
-            ],
-            text: 'Highlight individual datasets that were used in the construction of this atlas.',
-            },
-            ]);
-
-            // Box Plot tab tour steps
-            this.tourBox.addSteps([
-            {
-                title: 'Select a gene',
-                canClickTarget: false,
-                attachTo: {
-                    element: this.$el.querySelector('.choose-gene'),
-                    on: 'bottom',
-                },
-                buttons: [
-                    {
-                    action: function () {
-                        return this.cancel();
-                    },
-                    secondary: true,
-                    text: 'Exit',
-                    },
-                    {
-                    action: function () {
-                        return this.next();
-                    },
-                    text: 'Next',
-                    },
-                ],
-                text: 'Choose a gene from the sugestions to view it\'s box/violin plot. Click the suggestion or hit enter to select.',
-                },
-                {
-                title: 'Plot',
-                attachTo: {
-                    element: this.$el.querySelector('.plot-gene-button'),
-                    on: 'bottom',
-                },
-                buttons: [
-                    {
-                    action: function () {
-                        return this.back();
-                    },
-                    secondary: true,
-                    text: 'Back',
-                    },
-                    {
-                    action: function () {
-                        return this.next();
-                    },
-                    text: 'Next',
-                    },
-                ],
-                text: 'Click this button after you have selected a gene to render the plot below.',
-                },
-                {
-                title: 'Grouping',
-                attachTo: {
-                    element: this.$el.querySelector('.group-by'),
-                    on: 'bottom',
-                },
-                buttons: [
-                    {
-                    action: function () {
-                        return this.back();
-                    },
-                    secondary: true,
-                    text: 'Back',
-                    },
-                    {
-                    action: function () {
-                        return this.next();
-                    },
-                    text: 'Next',
-                    },
-                ],
-                text: 'Choose what category to group the gene by.',
-                },
-                {
-                title: 'Plot type',
-                attachTo: {
-                    element: this.$el.querySelector('.plot-type'),
-                    on: 'bottom',
-                },
-                buttons: [
-                    {
-                    action: function () {
-                        return this.back();
-                    },
-                    secondary: true,
-                    text: 'Back',
-                    },
-                    {
-                    action: function () {
-                        return this.next();
-                    },
-                    text: 'Next',
-                    },
-                ],
-                text: 'Choose either a box or violin plot.',
-                },
-                {
-                title: 'Show all data points',
-                attachTo: {
-                    element: this.$el.querySelector('.show-points'),
-                    on: 'bottom',
-                },
-                buttons: [
-                    {
-                    action: function () {
-                        return this.back();
-                    },
-                    secondary: true,
-                    text: 'Back',
-                    },
-                    {
-                    action: function () {
-                        return this.next();
-                    },
-                    text: 'Next',
-                    },
-                ],
-                text: 'Click this checkbox to display all data points next to the box/violin plot.',
-                },
-                {
-                title: 'Download',
-                attachTo: {
-                    element: this.$el.querySelector('.box-download'),
-                    on: 'bottom',
-                },
-                buttons: [
-                    {
-                    action: function () {
-                        return this.back();
-                    },
-                    secondary: true,
-                    text: 'Back',
-                    },
-                    {
-                    action: function () {
-                        return this.hide();
-                    },
-                    text: 'Finish',
-                    },
-                ],
-                text: 'Download the plot as a jpeg file.',
-                },
-
-            ]);
-
-            // Projection Plot tab tour steps
-            this.tourProjection.addSteps([
-            {
-                title: 'Project Stemformatics data',
-                canClickTarget: false,
-                attachTo: {
-                    element: this.$el.querySelector('.project-stem'),
-                    on: 'bottom',
-                },
-                buttons: [
-                    {
-                    action: function () {
-                        return this.cancel();
-                    },
-                    secondary: true,
-                    text: 'Exit',
-                    },
-                    {
-                    action: function () {
-                        return this.next();
-                    },
-                    text: 'Next',
-                    },
-                ],
-                text: 'Project samples from another Stemformatics dataset onto the current atlas.',
-                },
-                {
-                title: 'Project bulk data',
-                canClickTarget: false,
-                attachTo: {
-                    element: this.$el.querySelector('.project-bulk'),
-                    on: 'bottom',
-                },
-                buttons: [
-                    {
-                    action: function () {
-                        return this.back();
-                    },
-                    secondary: true,
-                    text: 'Back',
-                    },
-                    {
-                    action: function () {
-                        return this.next();
-                    },
-                    text: 'Next',
-                    },
-                ],
-                text: 'Project samples from your own bulk data onto the current atlas.',
-                },
-                {
-                title: 'Project single-cell data',
-                attachTo: {
-                    element: this.$el.querySelector('.project-single'),
-                    on: 'bottom',
-                },
-                buttons: [
-                    {
-                    action: function () {
-                        return this.back();
-                    },
-                    secondary: true,
-                    text: 'Back',
-                    },
-                    {
-                    action: function () {
-                        return this.next();
-                    },
-                    text: 'Next',
-                    },
-                ],
-                text: 'Project your own single-cell data onto the current atlas.',
-                },
-                {
-                title: 'Capybara score',
-                attachTo: {
-                    element: this.$el.querySelector('.capybara'),
-                    on: 'bottom',
-                },
-                buttons: [
-                    {
-                    action: function () {
-                        return this.back();
-                    },
-                    secondary: true,
-                    text: 'Back',
-                    },
-                    {
-                    action: function () {
-                        return this.next();
-                    },
-                    text: 'Finish',
-                    },
-                ],
-                text: 'Show projection score as a heatmap using Capybara.',
-                },
-                // Only show this step if there is an element of this class name
-                // showOn: function() {
-                //     return document.querySelector('.project-email-input') ? true: false;
-                // },
-            ]);
-
-            // Tools (tab tour steps)
-            this.tourTools.addSteps([
-                {
-                title: 'Download data',
-                canClickTarget: false,
-                attachTo: {
-                    element: this.$el.querySelector('.download-data'),
-                    on: 'bottom',
-                },
-                buttons: [
-                    {
-                    action: function () {
-                        return this.cancel();
-                    },
-                    secondary: true,
-                    text: 'Exit',
-                    },
-                    {
-                    action: function () {
-                        return this.next();
-                    },
-                    text: 'Next',
-                    },
-                ],
-                text: 'Download the data used for the current atlas.',
-                },
-                {
-                title: 'Download plot',
-                canClickTarget: false,
-                attachTo: {
-                    element: this.$el.querySelector('.download-plots'),
-                    on: 'bottom',
-                },
-                buttons: [
-                    {
-                    action: function () {
-                        return this.back();
-                    },
-                    secondary: true,
-                    text: 'Back',
-                    },
-                    {
-                    action: function () {
-                        return this.next();
-                    },
-                    text: 'Next',
-                    },
-                ],
-                text: 'Download high resolution images of the plots here.',
-                },
-                {
-                title: 'Combine sample groups',
-                attachTo: {
-                    element: this.$el.querySelector('.combine-samples'),
-                    on: 'bottom',
-                },
-                buttons: [
-                    {
-                    action: function () {
-                        return this.back();
-                    },
-                    secondary: true,
-                    text: 'Back',
-                    },
-                    {
-                    action: function () {
-                        return this.hide();
-                    },
-                    text: 'Finish',
-                    },
-                ],
-                text: 'Define a custom sample group by combining two existing groups.',
-                },
-            ]);
-        
-        });
-
-
     }
     
 }
@@ -1904,6 +1202,11 @@ p {
     font-size: 13px;
 }
 
+.selectedListGroupItem {
+  background-color:#2780e3 !important;
+  color: white !important;
+}
+
 .project-single:active {
     background-color: #2780E3 !important;
     color: white !important;
@@ -1925,50 +1228,8 @@ p {
   margin: 5px;
 }
 
-.question-button span {
-cursor: pointer;
-display: inline-block;
-position: relative;
-transition: 0.5s;
-}
-
-.question-button span:after {
-  content: '\00bb';
-  position: absolute;
-  opacity: 0;
-  top: 0;
-  right: -20px;
-  transition: 0.5s;
-}
-
-.question-button:hover span {
-  padding-right: 15px;
-
-}
-
-.question-button:hover span:after {
-  opacity: 1;
-  right: 0;
-}
-
 .nav-pills.tab-tools.nav-link {
     color: black;
 }
-
-.tab-title-class {
-    color: red;
-}
-
-.tab-title-class:active-class {
-    color: red;
-}
-
-/* Helps to stop collapsible content flashing on tab change */
-.collapsing {
-    -webkit-transition: none;
-    transition: none;
-    display: none;
-}
-
 
 </style>

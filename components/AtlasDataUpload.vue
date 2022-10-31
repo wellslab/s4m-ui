@@ -1,8 +1,8 @@
 <template>
 <b-container>
     <!-- Stemformatics Data -->
-    <b-card v-if="this.selectedDataSource=='Stemformatics'" bg-variant="light" class="mt-3">
-        <h5>Project Stemformatics data</h5>
+    <b-card v-if="this.selectedDataSource=='Stemformatics'" border-variant="light">
+        <h5 class="text-center">Project Stemformatics data</h5>
         <p>You can project any Stemformatics dataset onto this atlas.
             Select from the full list of datasets below. Start typing to quickly narrow down the choices.
             Go to <b-link to="/datasets/collections" target="_blank">search page</b-link> and find the 
@@ -15,8 +15,8 @@
     </b-card>
 
     <!-- Bulk data -->
-    <b-card v-if="this.selectedDataSource=='User'" bg-variant="light" class="mt-3">
-        <h5>Project bulk data</h5>
+    <b-card v-if="this.selectedDataSource=='User'" border-variant="light">
+        <h5 class="text-center">Project bulk data</h5>
         <p>You can project your own bulk RNA-seq or microarray data. Select expression matrix and 
             sample description files to upload. Both files need to be in
             tab separated format, with Ensembl gene ids or symbols as row ids and sample ids as column names. 
@@ -26,25 +26,30 @@
             if you want to examine the exact format.
         </p>
 
-        <b-form-group label="Name:" label-for="test-dataset-name-input">
-            <b-input-group size="sm" style="width: 360px">
-            <b-form-input id="test-dataset-name-input" v-model="testDatasetName"
-                placeholder="[short name for dataset]" size="sm"></b-form-input>
-            </b-input-group>
-        </b-form-group>
-        <b-form-group label="Expression file:" label-for="test-dataset-expression-input">
-            <b-form-file id="test-dataset-expression-input" v-model="testDatasetExpression" size="sm"></b-form-file>
-        </b-form-group>
-        <b-form-group label="Samples file:" label-for="test-dataset-samples-input">
-            <b-form-file id="test-dataset-samples-input" v-model="testDatasetSamples" size="sm"></b-form-file>
-        </b-form-group>
-        <b-form-group label="Sample column:" label-for="test-dataset-column-input" style="width: 360px">
-            <b-form-input id="test-dataset-column-input" v-model="testDatasetColumn" placeholder="[sample column to show on plot]" size="sm"></b-form-input>
-        </b-form-group>
+        <b-row>
+            <b-col>Name:</b-col> 
+            <b-col cols="4"><b-form-input v-model="testDatasetName" placeholder="[name for dataset]" size="sm" class="ml-1"></b-form-input></b-col>
+            <b-col cols="6">Short name used to identify query samples on the plot</b-col> 
+        </b-row>
+        <b-row class="mt-2">
+            <b-col>Expression file:</b-col>
+            <b-col cols="4"><b-form-file v-model="testDatasetExpression" size="sm" class="ml-1"></b-form-file></b-col>
+            <b-col cols="6">Expression matrix file</b-col> 
+        </b-row>
+        <b-row class="mt-2">
+            <b-col>Sample file:</b-col>
+            <b-col cols="4"><b-form-file v-model="testDatasetSamples" size="sm" class="ml-1"></b-form-file></b-col>
+            <b-col cols="6">Sample table file</b-col> 
+        </b-row>
+        <b-row class="mt-2">
+            <b-col>Sample column:</b-col>
+            <b-col cols="4"><b-form-input v-model="testDatasetColumn" placeholder="[sample column]" size="sm"></b-form-input></b-col>
+            <b-col cols="6">Column from the sample table used to group samples (optional)</b-col> 
+        </b-row>
     </b-card>
 
-    <div class="mt-3">
-        <b-button size="sm" @click="projectData" :disabled="showLoading">Project</b-button>
+    <div class="mt-4 ml-2">
+        <b-button size="sm" @click="projectData" variant="primary" :disabled="showLoading">Project</b-button>
         <b-spinner label="Loading..." variant="secondary" :style="{visibility: showLoading ? 'visible' : 'hidden'}" class="ml-2 align-middle"></b-spinner>
         <span :style="{visibility: showLoading ? 'visible' : 'hidden', color:'#ced4da'}" class="ml-1 align-middle"
             v-b-tooltip.hover title="It may take up to a minute for this analysis to complete">{{loadingTime}}s</span>

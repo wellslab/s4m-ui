@@ -32,7 +32,7 @@ $ yarn add @nuxtjs/auth
 $ yarn add @nuxtjs/dotenv
 $ yarn add --dev @nuxtjs/google-analytics
 $ yarn add vuedraggable
-$ yarn add vue-shepherd
+# $ yarn add vue-shepherd
 
 # For running a server constantly
 $ yarn global add pm2  # see https://nuxtjs.org/docs/2.x/deployment/deployment-pm2/
@@ -41,6 +41,9 @@ $ yarn global add pm2  # see https://nuxtjs.org/docs/2.x/deployment/deployment-p
 
 # uninstalling example
 $ yarn remove sass-loader
+
+# Check package version
+$ yarn info bootstrap-vue version
 
 ```
 
