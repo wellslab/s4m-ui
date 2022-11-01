@@ -70,13 +70,13 @@
                     <h5 class="text-center">PCA by sample group
                         <small class="align-middle ml-2">
                         <b-link v-b-hover="handleHover_image1" v-b-tooltip.hover title="Toggle between 2d/3d" @click="sampleGroupsTab.is3d=!sampleGroupsTab.is3d; updatePlot();">
-                            <b-img v-if="imageHoverState.image1" src="/Icon_3d_red.svg" width="25" alt="3d icon hover"></b-img>
-                            <b-img v-if="!imageHoverState.image1 && !sampleGroupsTab.is3d" src="/Icon_3d_grey.svg" width="25" alt="3d icon not selected"></b-img>
-                            <b-img v-if="!imageHoverState.image1 && sampleGroupsTab.is3d" src="/Icon_3d_blue.svg" width="25" alt="3d icon selected"></b-img>
+                            <b-img v-if="imageHoverState.image1" src="/img/Icon_3d_red.svg" width="25" alt="3d icon hover"></b-img>
+                            <b-img v-if="!imageHoverState.image1 && !sampleGroupsTab.is3d" src="/img/Icon_3d_grey.svg" width="25" alt="3d icon not selected"></b-img>
+                            <b-img v-if="!imageHoverState.image1 && sampleGroupsTab.is3d" src="/img/Icon_3d_blue.svg" width="25" alt="3d icon selected"></b-img>
                         </b-link>
                         <b-link v-b-hover="handleHover_image2" v-b-tooltip.hover title="Download plot" @click="downloadPlot(mainPlotDiv, 'PCA')">
-                            <b-img v-if="imageHoverState.image2" src="/Icon_download_red.svg" width="25" alt="download icon hover"></b-img>
-                            <b-img v-else src="/Icon_download_blue.svg" width="25" alt="download icon selected"></b-img>
+                            <b-img v-if="imageHoverState.image2" src="/img/Icon_download_red.svg" width="25" alt="download icon hover"></b-img>
+                            <b-img v-else src="/img/Icon_download_blue.svg" width="25" alt="download icon selected"></b-img>
                         </b-link>
                         </small>
                     </h5>
@@ -131,8 +131,8 @@
                 <h5>{{geneExpressionTab.selectedGene==""? 'Gene expression' : geneExpressionTab.selectedGene}}
                     <small class="align-middle ml-2">
                     <b-link v-b-hover="handleHover_image1" v-b-tooltip.hover title="Download plot" @click="downloadPlot('boxPlotDiv', geneExpressionTab.selectedGene)">
-                        <b-img v-if="imageHoverState.image1" src="/Icon_download_red.svg" width="25"></b-img>
-                        <b-img v-else src="/Icon_download_blue.svg" width="25"></b-img>
+                        <b-img v-if="imageHoverState.image1" src="/img/Icon_download_red.svg" width="25"></b-img>
+                        <b-img v-else src="/img/Icon_download_blue.svg" width="25"></b-img>
                     </b-link>
                     </small>
                 </h5>
@@ -231,13 +231,13 @@
                             </b-form-select>
                             <b-link v-b-hover="handleHover_image1" v-b-tooltip.hover title="Show projections on PCA plot" 
                                 @click="selectedTabIndex=0; sampleGroupsTab.selectedView='PCA by sample group'" class="ml-2">
-                                <b-img v-if="imageHoverState.image1" src="/Icon_project_red.svg" width="25" alt="project icon hover"></b-img>
-                                <b-img v-else src="/Icon_project_blue.svg" width="25" alt="project icon selected"></b-img>
+                                <b-img v-if="imageHoverState.image1" src="/img/Icon_project_red.svg" width="25" alt="project icon hover"></b-img>
+                                <b-img v-else src="/img/Icon_project_blue.svg" width="25" alt="project icon selected"></b-img>
                             </b-link>
                             <b-link v-b-hover="handleHover_image2" v-b-tooltip.hover title="Download plot" 
                                 @click="downloadPlot('capybaraPlotDiv', projection_data.name + '_capybara')">
-                                <b-img v-if="imageHoverState.image2" src="/Icon_download_red.svg" width="25" alt="download icon hover"></b-img>
-                                <b-img v-else src="/Icon_download_blue.svg" width="25" alt="download icon selected"></b-img>
+                                <b-img v-if="imageHoverState.image2" src="/img/Icon_download_red.svg" width="25" alt="download icon hover"></b-img>
+                                <b-img v-else src="/img/Icon_download_blue.svg" width="25" alt="download icon selected"></b-img>
                             </b-link>
                         </b-form>
                     </b-card>

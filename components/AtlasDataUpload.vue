@@ -21,8 +21,8 @@
             sample description files to upload. Both files need to be in
             tab separated format, with Ensembl gene ids or symbols as row ids and sample ids as column names. 
             You can download example
-            <a href="https://data.stemformatics.org/files/notta_expression.tsv">expression matrix</a> and
-            <a href="https://data.stemformatics.org/files/notta_samples.tsv">sample description</a> files, 
+            <a href="/notta_expression.tsv">expression matrix</a> and
+            <a href="/notta_samples.tsv">sample description</a> files, 
             if you want to examine the exact format.
         </p>
 
