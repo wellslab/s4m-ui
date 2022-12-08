@@ -155,8 +155,8 @@
                     <b-list-group-item button :class="{selectedListGroupItem: projection_selectedView=='stemformatics'}"
                         @click="projection_selectedView='stemformatics'">Project Stemformatics data</b-list-group-item>
                     <b-list-group-item button :class="{selectedListGroupItem: projection_selectedView=='bulk'}"
-                        @click="projection_selectedView='bulk'">Project bulk data</b-list-group-item>
-                    <b-list-group-item button :class="{selectedListGroupItem: projection_selectedView=='singlecell'}"
+                        @click="projection_selectedView='bulk'">Project Other data</b-list-group-item>
+                    <b-list-group-item v-if="false" button :class="{selectedListGroupItem: projection_selectedView=='singlecell'}"
                         @click="projection_selectedView='singlecell'">Project single cell data</b-list-group-item>
                     <b-list-group-item button :class="{selectedListGroupItem: projection_selectedView=='capybara'}"
                         @click="projection_selectedView='capybara'">Show Capybara score</b-list-group-item>

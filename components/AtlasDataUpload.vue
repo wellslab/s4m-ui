@@ -16,8 +16,8 @@
 
     <!-- Bulk data -->
     <b-card v-if="this.selectedDataSource=='User'" border-variant="light">
-        <h5 class="text-center">Project bulk data</h5>
-        <p>You can project your own bulk RNA-seq or microarray data. Select expression matrix and 
+        <h5 class="text-center">Project Other data</h5>
+        <p class="mb-0">You can project your own bulk RNA-seq or microarray data. Select expression matrix and 
             sample description files to upload. Both files need to be in
             tab separated format, with Ensembl gene ids or symbols as row ids and sample ids as column names. 
             You can download example
@@ -25,7 +25,10 @@
             <a href="/notta_samples.tsv">sample description</a> files, 
             if you want to examine the exact format.
         </p>
-
+        <p class="mt-1 mb-3">Single cell data can be projected after pseudo-bulk aggregation. See the
+            <b-link to="/AtlasVignette/Stemformatics_atlas_projection_vignette.html" target="_blank">vignette</b-link>
+            for an example.
+        </p>
         <b-row>
             <b-col>Name:</b-col> 
             <b-col cols="4"><b-form-input v-model="testDatasetName" placeholder="[name for dataset]" size="sm" class="ml-1"></b-form-input></b-col>

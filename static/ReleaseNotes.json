@@ -1,6 +1,11 @@
 [
-    {
-    "version": "v1.5",
+    {"version": "v1.6",
+    "date": "2022-12-08",
+    "notes": ["Removed the reference to the single cell projection coming soon for now.",
+                "Updated contact email, since the previous email address is not currently working.",
+                "Updated more sample and dataset metadata."]},
+    
+    {"version": "v1.5",
     "date": "2022-11-01",
     "notes": ["Atlas page has been redesigned based on tabs to expose all the features more easily.",
               "Atlas vignette has been updated to reflect latest changes and publications.",

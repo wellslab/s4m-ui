@@ -15,7 +15,7 @@
             </p>
 
             <ul>
-                <li>Email: <b-link href="mailto:info@stemformatics.org">info@stemformatics.org</b-link></li>
+                <li>Email: <b-link href="mailto:jarnyc@unimelb.edu.au">jarnyc@unimelb.edu.au</b-link></li>
                 <li>Address: 30 Royal Parade, Kenneth Myer Building (144), University of Melbourne, Parkville, Victoria</li>
             </ul>
       </b-col>
