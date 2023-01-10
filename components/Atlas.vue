@@ -659,7 +659,7 @@ export default {
             // Set up double click event, where sampleInfo.shownData is populated with info about the sample double clicked.
             // Note that plotly doesn't really have double click event detection, so we're going to measure the interval between
             // two single clicks if it's on the sample id.
-            div.on('plotly_click', function(data) { self.handlePlotlyClick(data); });
+            div.on('plotly_click', function(data) { self.handlePlotlyClick(data, 'sample type'); });
         },
 
         // Function to update the PCA by sample groups plot
@@ -680,7 +680,9 @@ export default {
             let self = this;
             if (self.geneExpressionTab.geneExpression.length==0) return;
             if (self.geneExpressionTab.selectedPlotType=='pca') {
-                Plotly.newPlot(document.getElementById("boxPlotDiv"), this.traces('gene expression'), this.layout());
+                let div = document.getElementById("boxPlotDiv");
+                Plotly.newPlot(div, this.traces('gene expression'), this.layout());
+                div.on('plotly_click', function(data) { self.handlePlotlyClick(data, 'gene expression'); });
                 return;
             }
             let selectedSampleGroup = self.geneExpressionTab.selectedSampleGroup;
@@ -917,8 +919,8 @@ export default {
         downloadPlot(divId, name) {
             Plotly.downloadImage(document.getElementById(divId), {
                 format: this.toolsTab.selectedImageType,
-                height: parseInt(this.toolsTab.height),
-                width: parseInt(this.toolsTab.width),
+                height: parseInt(this.toolsTab.plotHeight),
+                width: parseInt(this.toolsTab.plotWidth),
                 filename: 'Stemformatics_' + this.atlasType + '_atlas_' + name,
             });
         },
@@ -1069,15 +1071,6 @@ export default {
         // Check validity of email format using Regex
         emailState() {
             const emailRegexp = new RegExp(/^[a-zA-Z0-9][\-_\.\+\!\#\$\%\&\'\*\/\=\?\^\`\{\|]{0,1}([a-zA-Z0-9][\-_\.\+\!\#\$\%\&\'\*\/\=\?\^\`\{\|]{0,1})*[a-zA-Z0-9]@[a-zA-Z0-9][-\.]{0,1}([a-zA-Z][-\.]{0,1})*[a-zA-Z0-9]\.[a-zA-Z0-9]{1,}([\.\-]{0,1}[a-zA-Z]){0,}[a-zA-Z0-9]{0,}$/i);
-            const button = document.querySelector(".upload-button");
-
-            if(emailRegexp.test(this.singleCellData.email)) {
-                button.disabled = false;
-            }
-            else {
-                button.disabled = true;
-            }
-
             return emailRegexp.test(this.singleCellData.email);
         },
 

@@ -1,9 +1,20 @@
 [
+    {"version": "v1.8",
+    "date": "2023-01-10",
+    "notes": ["Fixed a bug where double clicking on an atlas point gave wrong sample info.",
+              "Fixed a bug where double clicking on an atlas point in gene expression pca didn't work."
+              ]},
+        
+    {"version": "v1.7",
+    "date": "2022-12-31",
+    "notes": ["Fixed a bug where atlas plot size preferences didn't work."
+              ]},
+        
     {"version": "v1.6",
     "date": "2022-12-08",
     "notes": ["Removed the reference to the single cell projection coming soon for now.",
-                "Updated contact email, since the previous email address is not currently working.",
-                "Updated more sample and dataset metadata."]},
+              "Updated contact email, since the previous email address wast not working.",
+              "Updated more sample and dataset metadata."]},
     
     {"version": "v1.5",
     "date": "2022-11-01",
