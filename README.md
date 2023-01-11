@@ -44,6 +44,7 @@ $ yarn remove sass-loader
 
 # Check package version
 $ yarn info bootstrap-vue version
+$ yarn list --pattern "nuxt"
 
 ```
 
