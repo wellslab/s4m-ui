@@ -426,7 +426,7 @@ export default {
                 plotTypes: ["box", "violin", "pca"],
                 selectedPlotType: "box",
                 showPoints: false,
-                selectedSampleGroup: 'Cell Type',
+                selectedSampleGroup: 'Cell Type', // overwrite at mounted()
             },
 
             // Projection related
@@ -1089,6 +1089,7 @@ export default {
             this.sampleTable = res.data;    // {col: {row:val}}
             this.colourBy = Object.keys(this.sampleTable);   // ["Cell Type", "Sample Source", ...]
             this.selectedColourBy = this.colourBy[0];
+            this.geneExpressionTab.selectedSampleGroup = this.selectedColourBy;
             this.projection_selectedAtlasSampleGroup = this.selectedColourBy;
 
             // Fetch colours and ordering
