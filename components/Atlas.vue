@@ -777,7 +777,7 @@ export default {
                     let datasetId = sampleId.split("_")[0];
                     let matchingDataset = self.datasetInfo.allData.filter(item => parseInt(item.dataset_id)==parseInt(datasetId));
                     self.sampleInfo.shownData.push({'key':'dataset', 
-                                                    'value':matchingDataset[0].display_name, 
+                                                    'value':matchingDataset.length>0? matchingDataset[0].display_name : '[private]', 
                                                     'datasetId':datasetId});
                 }
                 self.sampleInfo.divX = self.sampleInfo.mouseX;
