@@ -142,7 +142,7 @@
             </b-modal>
 
             <!-- correlated genes (draggable), shows results of correlated genes calculation -->
-            <draggable-div v-show="genes_showCorrelatedGenes" class="border border-dark bg-light" style="width:900px; opacity:0.95;">
+            <draggable-div v-show="genes_showCorrelatedGenes" class="border border-dark bg-light" style="width:900px; opacity:0.95; max-height:600px">
                 <div slot="header" class="card-header bg-dark" title="Drag me around by this area">
                     <span class="text-white">Top 30 most correlated genes to <b>{{genes_selectedGeneNameInCorrelated}}</b></span>
                     <b-link href="#" @click="genes_showCorrelatedGenes=false" class="float-right font-weight-bold text-white">X</b-link>
