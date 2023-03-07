@@ -4,12 +4,14 @@
         <b-col class="overflow-auto">
             <b-form-select v-model="selectedSampleGroup1" :options="sampleGroupsToShow" @change="selectedItems1=[]" size="sm"></b-form-select>
             <div class='overflow-auto mt-2 p-1' style='max-height:250px;'>
+                <b-link @click="toggleSelectAll(0)">select all/none</b-link>
                 <b-form-checkbox-group stacked v-model="selectedItems1" :options="sampleTypeOrderingFiltered[selectedSampleGroup1]"></b-form-checkbox-group>
             </div>
         </b-col>
         <b-col>
             <b-form-select v-model="selectedSampleGroup2" :options="sampleGroupsToShow" @change="selectedItems2=[]" size="sm"></b-form-select>
             <div class='overflow-auto mt-2 p-1' style='max-height:300px;'>
+                <b-link @click="toggleSelectAll(1)">select all/none</b-link>
                 <b-form-checkbox-group stacked v-model="selectedItems2" :options="sampleTypeOrderingFiltered[selectedSampleGroup2]"></b-form-checkbox-group>
             </div>
         </b-col>
@@ -45,14 +47,12 @@ export default {
             sampleGroupsToShow: [],
             selectedSampleGroup1: null,
             selectedSampleGroup2: null,
-            sampleTypeOrderingFiltered: {},
+            sampleTypeOrderingFiltered: {},  // modified from sampleTypeOrdering to remove blanks, etc
             selectedItems1: [],
             selectedItems2: [],
+            selectAll: [false, false],
             //customItemCount: 0, // this will count length of custom items without those with zero sample ids
         }
-    },
-
-    computed: {
     },
 
     methods: {
@@ -88,6 +88,22 @@ export default {
             return items;
         },
 
+        toggleSelectAll(key) {
+            let target = this.sampleTypeOrderingFiltered[key==0? this.selectedSampleGroup1: this.selectedSampleGroup2];
+            this.selectAll[key] = !this.selectAll[key];
+            if (this.selectAll[key]) {
+                if (key==0)
+                    this.selectedItems1 = target.map(item => item.value);
+                else
+                    this.selectedItems2 = target.map(item => item.value);
+            } else {
+                if (key==0)
+                    this.selectedItems1 = [];
+                else
+                    this.selectedItems2 = [];
+            }
+        },
+
         // Send signal to save the result
         save() {
             this.$emit('save', this.customItems());
@@ -104,7 +120,7 @@ export default {
         this.sampleGroupsToShow = this.sampleGroups.filter(item => item !== this.customGroupName);  // remove customGroupName
         this.selectedSampleGroup1 = this.sampleGroupsToShow[0];
         this.selectedSampleGroup2 = this.sampleGroupsToShow[1];
-console.log("###", this.sampleGroupsToShow);
+
         // sampleTypeOrderingFiltered is a modified version of sampleTypeOrdering that removes
         // blanks and inserts counts
         for (const [key,val] of Object.entries(this.sampleTypeOrdering)) {

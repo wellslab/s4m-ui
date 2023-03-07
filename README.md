@@ -30,7 +30,7 @@ $ yarn add sass-loader@^10.1.1
 $ yarn add @nuxtjs/axios
 $ yarn add @nuxtjs/auth
 $ yarn add @nuxtjs/dotenv
-$ yarn add --dev @nuxtjs/google-analytics
+$ yarn add @nuxtjs/google-analytics
 $ yarn add vuedraggable
 # $ yarn add vue-shepherd
 

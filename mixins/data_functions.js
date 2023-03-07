@@ -124,7 +124,8 @@ export default {
                 legends[sampleGroup] = groupItems.map((value,i) => {
                     const colour = (params.sampleGroupItemColours && params.sampleGroupItemColours[sampleGroup])? 
                         params.sampleGroupItemColours[sampleGroup][value] : exampleColours[i % exampleColours.length];
-                    return {'value': value, 'number': sampleIds[value].length, 'sampleIds': sampleIds[value], 'colour': colour, 'visible': true,};
+                    const projectedItem = params.projectedItems && params.projectedItems.indexOf(value)!=-1;
+                    return {'value':value, 'number':sampleIds[value].length, 'sampleIds':sampleIds[value], 'colour':colour, 'visible':true, 'projectedItem':projectedItem};
                 });
             });
             return legends;

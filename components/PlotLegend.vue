@@ -14,11 +14,10 @@ See data_functions.js:_legendsFromSampleTable for expected data.
         <li v-for="legend in legends[selectedSampleGroup]" :key="legend.value" 
             :class="(itemsWithMargins && itemsWithMargins[selectedSampleGroup] && itemsWithMargins[selectedSampleGroup].indexOf(legend.value)!=-1)? 'mt-2' : ''">
             <b-link @click="$emit('legend-clicked', legend)" style="font-size:13px;">
-                <b-icon-circle-fill v-if="!itemsWithDiffShapes || itemsWithDiffShapes[selectedSampleGroup].indexOf(legend.value)==-1" 
-                    :style="{'color': legend.colour, 'opacity': legend.visible? 1:0.6}" scale="0.6"></b-icon-circle-fill>
-                <b-icon-diamond v-if="itemsWithDiffShapes && itemsWithDiffShapes[selectedSampleGroup].indexOf(legend.value)!=-1" 
-                    :style="{'color': legend.colour, 'opacity': legend.visible? 1:0.6}" scale="0.6"></b-icon-diamond>
-                <span :style="{'color': legend.visible? 'black':'#a7a7a7', 'font-weight': (itemsToHighlight && itemsToHighlight[selectedSampleGroup] && itemsToHighlight[selectedSampleGroup].indexOf(legend.value)!=-1)? 'bold':'normal'}">
+                <b-icon-circle-fill v-if="!legend.projectedItem" :style="{'color': legend.colour, 'opacity': legend.visible? 1:0.6}" scale="0.6"></b-icon-circle-fill>
+                <b-icon-diamond v-if="legend.projectedItem" :style="{'color':legend.colour, 'opacity': legend.visible? 1:0.6}" scale="0.6"></b-icon-diamond>
+                <span :style="{'color': legend.visible? 'black':'#a7a7a7', 'font-weight': (itemsToHighlight && itemsToHighlight[selectedSampleGroup] && itemsToHighlight[selectedSampleGroup].indexOf(legend.value)!=-1)? 'bold':'normal'}"
+                    v-b-tooltip.hover="legend.value.includes('Random')? 'Projection based on random values (useful as reference points)': ''">
                     {{legend.value}} ({{legend.number}})</span>
             </b-link>
         </li>
@@ -36,13 +35,13 @@ export default {
         
         itemsToHighlight: Object,  // highlight these items
         itemsWithMargins: Object,
-        itemsWithDiffShapes: Object
     },
 
     data() {
         return {
             sampleGroups: [],
             selectedSampleGroup:'cell_line',
+            itemsWithDiamondShape: {},
         }
     },
 
@@ -57,6 +56,7 @@ export default {
             this.selectedSampleGroup = (this.initialSampleGroup && this.sampleGroups.indexOf(this.initialSampleGroup)!=-1)? 
                 this.initialSampleGroup : this.sampleGroups[0];
         },
+
     },
 
     methods: {
@@ -70,7 +70,6 @@ export default {
             }
             return false;
         },
-
     },
 
     // Note that a component may mount before page elements, so use watch to populate data which may get fetched after component

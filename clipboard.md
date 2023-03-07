@@ -1,5 +1,95 @@
 # An area to keep code and tips temporarily.
 
+## Single cell data projection UI (in Atlas.vue) - prototype not implemented
+<!-- Project single-cell data -->
+<b-container v-show="projection_selectedView=='singlecell'">
+    <b-card border-variant="light">
+        <h5 class="text-center">Project single cell data (Coming soon)</h5>
+        <p>You can project your own single cell data here. </p>
+        <!-- Email -->
+        <b-form-group id="input-group-1" label="Email address:" label-for="project-email-input" description="We'll send the results to your email.">
+            <b-input-group size="sm" style="width: 360px">
+            <b-input-group-prepend is-text>
+                <b-icon icon="envelope"></b-icon>
+            </b-input-group-prepend>
+            <b-form-input :state="isEmailValid" disabled debounce="1000" style="width: 220px" id="project-email-input" v-model.lazy="singleCellData.email" placeholder="Enter email" required size="sm" class="project-email-input"></b-form-input>
+            <b-form-invalid-feedback id="input-live-feedback">Enter a valid email.</b-form-invalid-feedback>
+            </b-input-group>
+        </b-form-group>
+        <!-- Upload files -->
+        <!-- Desired format can be found here. -->
+        <b-form-group label="Single-cell data file:" label-for="project-data-input" description="Only .tsv files are accepted for online analysis.">
+            <b-form-file disabled accept=".tsv" size="sm" v-model="singleCellData.data" drop-placeholder="Drop file here" placeholder="Choose a file or drop it here" id="project-data-input"></b-form-file>
+        </b-form-group>
+        <!-- Upload button -->
+        <div class="form-group text-center">
+            <b-button :disabled="singleCellData.email=='' || singleCellData.data==null" size="sm" variant="primary" class="upload-button text-center mt-1 rounded" @click="uploadSingleCell(); disableUploadButton()"> <b-icon icon="cloud-upload-fill"></b-icon>  Upload data</b-button>
+            <b-spinner label="Loading..." variant="secondary" :style="{visibility: showLoading ? 'visible' : 'hidden'}" class="ml-2 align-middle"></b-spinner>
+            <span :style="{visibility: showLoading ? 'visible' : 'hidden', color:'#ced4da'}" class="ml-1 align-middle"
+                v-b-tooltip.hover title="It may take up to a minute for your data to be uploaded.">{{loadingTime}}s</span>
+        </div>
+    </b-card>
+</b-container>
+
+// Upload single-cell data projection
+uploadSingleCell() {
+    // Return if any of the data fields are empty
+    if(this.singleCellData.email == "" || this.singleCellData.data == null) {
+        return;
+    }
+
+    // Check file type - checking for .csv or .tsv at the moment.
+    if(this.singleCellData.data.name.split('.').pop() != "tsv" && this.singleCellData.data.name.split('.').pop() != "csv") {
+        alert("Wrong data type. Single-cell data file must be .tsv or .csv.");
+        this.singleCellData.data = null;
+        return;
+    }
+
+    // Check file size - if it is greater than 1 GB, then reset data file and return
+    let GB = 1;
+    if(this.singleCellData.data.size > GB * Math.pow(1024, 3)) {
+        alert("Data file is too big. Ensure file size is less than 1 GB.");
+        this.singleCellData.data = null;
+        return;
+    }
+
+    let formData = new FormData();
+    this.projection_selectedDataSource = "User-Single";
+
+    formData.append("data_source", this.projection_selectedDataSource);
+    formData.append("email", this.singleCellData.email);
+    formData.append("data", this.singleCellData.data);  
+
+    this.showLoading = true;
+    this.interval = setInterval(() => { this.loadingTime += 1; }, 1000);
+    this.$axios.post('/api/atlas-projection/' + this.atlasType + '/' + this.projection_selectedDataSource, 
+        formData, { headers: {'Content-Type': 'multipart/form-data'},}).then(response => {
+            this.showLoading = false;
+            clearInterval(this.interval);
+            this.loadingTime = 0;
+        }).catch(error => {
+            alert(error.response.data.message); 
+        })
+},
+
+// Disable projection upload button for 15s after each upload
+disableUploadButton() {
+    const button = document.querySelector(".upload-button");
+    button.disabled = true;
+
+    // Set a timeout of 15s
+    setTimeout(()=>{
+        button.disabled = false;
+    }, 15000);
+},
+
+// Check validity of email format using Regex
+emailState() {
+    const emailRegexp = new RegExp(/^[a-zA-Z0-9][\-_\.\+\!\#\$\%\&\'\*\/\=\?\^\`\{\|]{0,1}([a-zA-Z0-9][\-_\.\+\!\#\$\%\&\'\*\/\=\?\^\`\{\|]{0,1})*[a-zA-Z0-9]@[a-zA-Z0-9][-\.]{0,1}([a-zA-Z][-\.]{0,1})*[a-zA-Z0-9]\.[a-zA-Z0-9]{1,}([\.\-]{0,1}[a-zA-Z]){0,}[a-zA-Z0-9]{0,}$/i);
+    return emailRegexp.test(this.singleCellData.email);
+},
+
+
 ## URLs and routes
 To get query parameters that was used to call a page, use this.$route.query on the page (typically in mounted()), which will be an object passed to the url as params.
 

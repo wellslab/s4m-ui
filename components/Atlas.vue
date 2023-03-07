@@ -29,7 +29,7 @@
                 </b-form-select>
                 <!-- Plot legend - we do our own legend div instead of using plotly's -->
                 <PlotLegend v-show="sampleGroupsTab.selectedView=='PCA by sample group'"
-                    :legends="allLegends" :initial-sample-group="selectedColourBy" :items-with-margins="itemsWithMargins"
+                    :legends="allLegends" :initial-sample-group="selectedColourBy" :items-with-margins="itemsWithMargins" 
                     @legend-clicked="updatePlot" @sample-group-changed="updatePlot">
                 </PlotLegend>
 
@@ -82,7 +82,7 @@
                     </h5>
                     <div id="mainPlotDiv" v-show="sampleGroupsTab.selectedView!='Customise sample groups'"></div>
                 </b-card>
-                <b-card v-if="sampleGroupsTab.selectedView=='Customise sample groups'" border-variant="light">
+                <b-card v-show="sampleGroupsTab.selectedView=='Customise sample groups'" border-variant="light">
                     <h5 class="text-center">Customise sample groups</h5>
                     <div class="overflow-hidden">
                         <div slot="main" class="p-2">
@@ -156,8 +156,6 @@
                         @click="projection_selectedView='stemformatics'">Project Stemformatics data</b-list-group-item>
                     <b-list-group-item button :class="{selectedListGroupItem: projection_selectedView=='bulk'}"
                         @click="projection_selectedView='bulk'">Project Other data</b-list-group-item>
-                    <b-list-group-item v-if="false" button :class="{selectedListGroupItem: projection_selectedView=='singlecell'}"
-                        @click="projection_selectedView='singlecell'">Project single cell data</b-list-group-item>
                     <b-list-group-item button :class="{selectedListGroupItem: projection_selectedView=='capybara'}"
                         @click="projection_selectedView='capybara'">Show Capybara score</b-list-group-item>
                 </b-list-group>
@@ -173,36 +171,6 @@
                     <AtlasDataUpload :atlas-type="atlasType" selectedDataSource="User" @project-data="projectData"></AtlasDataUpload>
                 </div>
                 
-                <!-- Project single-cell data -->
-                <b-container v-show="projection_selectedView=='singlecell'">
-                    <b-card border-variant="light">
-                        <h5 class="text-center">Project single cell data (Coming soon)</h5>
-                        <p>You can project your own single cell data here. </p>
-                        <!-- Email -->
-                        <b-form-group id="input-group-1" label="Email address:" label-for="project-email-input" description="We'll send the results to your email.">
-                            <b-input-group size="sm" style="width: 360px">
-                            <b-input-group-prepend is-text>
-                                <b-icon icon="envelope"></b-icon>
-                            </b-input-group-prepend>
-                            <b-form-input :state="isEmailValid" disabled debounce="1000" style="width: 220px" id="project-email-input" v-model.lazy="singleCellData.email" placeholder="Enter email" required size="sm" class="project-email-input"></b-form-input>
-                            <b-form-invalid-feedback id="input-live-feedback">Enter a valid email.</b-form-invalid-feedback>
-                            </b-input-group>
-                        </b-form-group>
-                        <!-- Upload files -->
-                        <!-- Desired format can be found here. -->
-                        <b-form-group label="Single-cell data file:" label-for="project-data-input" description="Only .tsv files are accepted for online analysis.">
-                            <b-form-file disabled accept=".tsv" size="sm" v-model="singleCellData.data" drop-placeholder="Drop file here" placeholder="Choose a file or drop it here" id="project-data-input"></b-form-file>
-                        </b-form-group>
-                        <!-- Upload button -->
-                        <div class="form-group text-center">
-                            <b-button :disabled="singleCellData.email=='' || singleCellData.data==null" size="sm" variant="primary" class="upload-button text-center mt-1 rounded" @click="uploadSingleCell(); disableUploadButton()"> <b-icon icon="cloud-upload-fill"></b-icon>  Upload data</b-button>
-                            <b-spinner label="Loading..." variant="secondary" :style="{visibility: showLoading ? 'visible' : 'hidden'}" class="ml-2 align-middle"></b-spinner>
-                            <span :style="{visibility: showLoading ? 'visible' : 'hidden', color:'#ced4da'}" class="ml-1 align-middle"
-                                v-b-tooltip.hover title="It may take up to a minute for your data to be uploaded.">{{loadingTime}}s</span>
-                        </div>
-                    </b-card>
-                </b-container>
-
                 <!-- Capybara score plot -->
                 <b-container v-show="projection_selectedView=='capybara'" class="overflow-auto">
                     <b-card border-variant="light">
@@ -265,7 +233,7 @@
                 <b-container v-if="toolsTab.selectedView=='downloadData'">
                     <b-card border-variant="light">
                         <h5 class="text-center">Download data</h5>
-                        <b-card-text>
+                        <div style="font-size:13px"> <!-- same style as b-card-text which is basically <p> that shouldn't be outside ul -->
                             You can download the data used for the atlas here. The samples matrix contains data about each sample, 
                             the genes matrix shows which genes were included in the atlas and which were left out, and 
                             the expression matrix contains rank normalised expression values (note: large file).
@@ -274,7 +242,7 @@
                                     <b-link :href="apiUrl + '/atlases/' + atlasType + '/' + item.key + '?as_file=true'">{{item.name}}</b-link> ({{item.size}})
                                 </li>
                             </ul>
-                        </b-card-text>
+                        </div>
                     </b-card>
                 </b-container>
 
@@ -370,16 +338,6 @@ export default {
     mixins: [data_functions],
     props: ["atlasType", "displayName"],
 
-    computed: {
-        // Check whether email input under Projection tab in /Atlases is of valid format
-        isEmailValid() {
-            if(this.singleCellData.email) {
-                return this.emailState();
-            }
-            return null;
-        }
-    },
-
     data() {
         return {
             // Data related variables
@@ -436,12 +394,7 @@ export default {
             projection_selectedSampleGroup:'',
             projection_selectedAtlasSampleGroup:'Cell Type',
             projection_selectedDataSource: '',
-
-            // Variables for email and file input for single cell projection
-            singleCellData: {
-                email: '',
-                data: null,
-            },
+            projection_projectedItems: [],
 
             // Variables used by AtlasDataUpload component
             uploadData: {
@@ -555,7 +508,7 @@ export default {
         // Run before sample group plot to populate the legends array, and when a legend is clicked to show/hide a trace
         updateLegends() {
             this.allLegends = this._legendsFromSampleTable(this.sampleTable, 
-                {orient:'dict', sampleGroupItemColours:this.sampleTypeColours, sampleGroupItemsOrdered:this.sampleTypeOrdering});
+                {orient:'dict', sampleGroupItemColours:this.sampleTypeColours, sampleGroupItemsOrdered:this.sampleTypeOrdering, projectedItems:this.projection_projectedItems});
         },
      
         handleHover_image1(hovered) { this.imageHoverState.image1 = hovered },
@@ -927,22 +880,41 @@ export default {
 
         // ------------ Data projection methods ---------------
         projectData(projectionData) {
-            // Map a particular sample field from test data to all of the sample fields in the atlas.
+            // Map a particular sample field from query data to all of the sample fields in the atlas.
             // projectionData needs to have following objects (examples)
             // name: "notta"
-            // samples: [{"Sample Type":"CMP_71+_BAH+","Parental cell type":"CMP"}, ...]
-            // coords: [{'x':8.03,'y':0,'z':1.2}, ...]
+            // samples: [{"Sample Type":"CMP_71+_BAH+","Parental cell type":"CMP"}, ...] (sample table of query data as a list of dictionaries)
+            // coords: [{'x':8.03,'y':0,'z':1.2}, ...] (projected coords as a list of dictionaries)
             // combinedCoords: {'index':[], 'columns':[], 'data':[]}
-            // sampleIds: ['notta_GSM1977399',...]
-            // column: 'Sample Type'
+            // sampleIds: ['notta_GSM1977399',...]  (list of sample ids matching sample table)
+            // column: 'Sample Type' (which sample table column should be selected to show - should be one of the keys of samples)
+            // capybara: {'Sample Type':}
+            //
+            // We prefix all projected items with its name_ so that there's no duplicates in the legend.
             let column = projectionData.column;
+
+            // If we assume that projection included random samples, projectionData.coords should have extra coords for these.
+            // We need to include these in samples, as well as sampleIds now.
+            let nRandom = projectionData.coords.length - projectionData.sampleIds.length;   // should be 3, unless sample table had less than 3 columns
+            let sampleKeys = Object.keys(projectionData.samples[0]);
+            for (let i=0; i<nRandom; i++) {
+                projectionData.sampleIds.push(projectionData.name + "_random_" + i);
+                let sampleObj = {};
+                for (const key of sampleKeys)   // note that sample ids won't become unique here but for user uploaded datasets, it's hard to know which field that is.
+                    sampleObj[key] = "Random";
+                projectionData.samples.push(sampleObj);
+            }
 
             // This is a list of projected items that will be displayed in the legend. ["Ang_iPSC","Ang_HSC","Ang_iPSC",...]
             // Note that this list is same length as projected sample ids. Also these don't change when colour by changes.
             let sampleTypes = projectionData.samples.map(item => projectionData.name + "_" + item[column]);
 
+            // Define which items are projected - add to existing list of projected items in case of multiple projections
+            for (const item of Array.from(new Set(sampleTypes))) // unique values of sampleTypes only
+                this.projection_projectedItems.push(item);         
+
             // Create some dataset attributes needed
-            var datasetAttributes = {"dataset_id":'0000', "display_name":"[Projected Data]", "sampleIds":projectionData.sampleIds};
+            let datasetAttributes = {"dataset_id":'0000', "display_name":"[Projected Data]", "sampleIds":projectionData.sampleIds};
             
             // Now add projected points to all relevant data variables. Note that we should be able to
             // remove these points later - for now, reload page.
@@ -963,7 +935,7 @@ export default {
                 this.uploadData.projectedSampleIds.push(sampleId);
                 for (let item in this.sampleTable) {
                     this.sampleTable[item][sampleId] = sampleTypes[i];
-                    this.sampleTypeColours[item][sampleTypes[i]] = "black";
+                    this.sampleTypeColours[item][sampleTypes[i]] = sampleTypes[i].includes("Random")? "red" : "black"; // colour for projected samples
                     if (this.sampleTypeOrdering[item].indexOf(sampleTypes[i])==-1)
                         this.sampleTypeOrdering[item].push(sampleTypes[i]);
                     this.sampleInfo.allData[sampleId][item] = sampleTypes[i];
@@ -994,13 +966,13 @@ export default {
             const capybara = this.projection_data.capybara[this.projection_selectedAtlasSampleGroup];
 
             // y depends on projection_selectedSampleGroup
-            let y = this.projection_data.samples.map(item => item[this.projection_selectedSampleGroup]);
+            let y = this.projection_data.samples.map(item => item[this.projection_selectedSampleGroup]).filter(item => item!='Random');
 
             // Round data
             let data = [];
             capybara.data.forEach(row => {
                 data.push(row.map(item => Math.round(100*item)/100));
-            })
+            });
             let traces = [{type:'heatmap', z:data, y:y, x:capybara.columns}];
             let layout = {xaxis:{side:"top", automargin:true}, yaxis:{automargin:true}};
             Plotly.newPlot(div, traces, layout);
@@ -1014,64 +986,6 @@ export default {
                 this.versionInfo.currentVersion = res.data[this.atlasType].current_version;
                 this.versionInfo.releaseNotes = res.data[this.atlasType].release_notes;
             });
-        },
-
-        // Upload single-cell data projection
-        uploadSingleCell() {
-            // Return if any of the data fields are empty
-            if(this.singleCellData.email == "" || this.singleCellData.data == null) {
-                return;
-            }
-
-            // Check file type - checking for .csv or .tsv at the moment.
-            if(this.singleCellData.data.name.split('.').pop() != "tsv" && this.singleCellData.data.name.split('.').pop() != "csv") {
-                alert("Wrong data type. Single-cell data file must be .tsv or .csv.");
-                this.singleCellData.data = null;
-                return;
-            }
-
-            // Check file size - if it is greater than 1 GB, then reset data file and return
-            let GB = 1;
-            if(this.singleCellData.data.size > GB * Math.pow(1024, 3)) {
-                alert("Data file is too big. Ensure file size is less than 1 GB.");
-                this.singleCellData.data = null;
-                return;
-            }
-
-            let formData = new FormData();
-            this.projection_selectedDataSource = "User-Single";
-
-            formData.append("data_source", this.projection_selectedDataSource);
-            formData.append("email", this.singleCellData.email);
-            formData.append("data", this.singleCellData.data);  
-
-            this.showLoading = true;
-            this.interval = setInterval(() => { this.loadingTime += 1; }, 1000);
-            this.$axios.post('/api/atlas-projection/' + this.atlasType + '/' + this.projection_selectedDataSource, 
-                formData, { headers: {'Content-Type': 'multipart/form-data'},}).then(response => {
-                    this.showLoading = false;
-                    clearInterval(this.interval);
-                    this.loadingTime = 0;
-                }).catch(error => {
-                    alert(error.response.data.message); 
-                })
-        },
-
-        // Disable projection upload button for 15s after each upload
-        disableUploadButton() {
-            const button = document.querySelector(".upload-button");
-            button.disabled = true;
-
-            // Set a timeout of 15s
-            setTimeout(()=>{
-                button.disabled = false;
-            }, 15000);
-        },
-
-        // Check validity of email format using Regex
-        emailState() {
-            const emailRegexp = new RegExp(/^[a-zA-Z0-9][\-_\.\+\!\#\$\%\&\'\*\/\=\?\^\`\{\|]{0,1}([a-zA-Z0-9][\-_\.\+\!\#\$\%\&\'\*\/\=\?\^\`\{\|]{0,1})*[a-zA-Z0-9]@[a-zA-Z0-9][-\.]{0,1}([a-zA-Z][-\.]{0,1})*[a-zA-Z0-9]\.[a-zA-Z0-9]{1,}([\.\-]{0,1}[a-zA-Z]){0,}[a-zA-Z0-9]{0,}$/i);
-            return emailRegexp.test(this.singleCellData.email);
         },
 
     },
