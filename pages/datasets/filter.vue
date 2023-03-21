@@ -240,6 +240,7 @@ export default {
 
             if ('title' in query) this.collectionName = query.title;
             if ('description' in query) this.collectionDescription = query.description;
+            if (!('organism' in query)) query['organism'] = 'all';
             
             this.$axios.get("/api/search/datasets",{params: query}).then(res => {
                 this.datasets = res.data.results;

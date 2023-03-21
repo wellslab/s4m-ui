@@ -962,6 +962,10 @@ export default {
                 this.$bvModal.msgBoxOk("Use this function after projection to show quantitative scores.");
                 return;
             }
+            if (this.projection_selectedAtlasSampleGroup=='custom_sample_group') {
+                this.$bvModal.msgBoxOk("Currently calculating Capybara score on custom sample group is not supported.");
+                return;
+            }
             let div = document.getElementById('capybaraPlotDiv');
             const capybara = this.projection_data.capybara[this.projection_selectedAtlasSampleGroup];
 

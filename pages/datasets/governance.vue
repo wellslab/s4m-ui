@@ -5,12 +5,12 @@
     <h2>Dataset Processing and Governance</h2>
     <b-card v-if="$auth.loggedIn" class="border-0">
         <b-tabs v-model="tabIndex">
-            <b-tab title="Pending datasets">
+            <b-tab title="Datasets">
             <b-container class="col-md-6 justify-content-center">
                 <div style="height:400px" class="overflow-auto border my-3 p-2">
                     <ul class="list-unstyled text-left">
                         <li v-for="item in datasets" :key="item.dataset_id">
-                            <b-link href='#' @click="showDataset(item)" class='mr-2'>{{item.dataset_id}}</b-link> {{item.name}}
+                            <b-link :to="'/datasets/view?id=' + item.dataset_id" @click="showDataset(item)" class='mr-2'>{{item.dataset_id}}</b-link> {{item.name}}
                         </li>
                     </ul>
                 </div>

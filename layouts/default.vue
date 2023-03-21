@@ -23,7 +23,7 @@
           <ul><li v-for="note in item.notes" :key="note">{{note}}</li></ul>
         </li>
     </ul>
-    <template #modal-footer class="d-flex justify-content-between">
+    <template #modal-footer>
       <div>[{{hostname}}]</div>
       <div class="ml-auto"><b-button @click="$bvModal.hide('release-notes')" variant="primary">OK</b-button></div>
     </template>

@@ -57,6 +57,36 @@ export default {
 
     methods: {
 
+        setData() {
+            // Customise some properties specific to this component
+            this.sampleGroupsToShow = this.sampleGroups.filter(item => item !== this.customGroupName);  // remove customGroupName
+            this.selectedSampleGroup1 = this.sampleGroupsToShow[0];
+            this.selectedSampleGroup2 = this.sampleGroupsToShow[1];
+
+            // sampleTypeOrderingFiltered is a modified version of sampleTypeOrdering that removes
+            // blanks and inserts counts
+            for (const [key,val] of Object.entries(this.sampleTypeOrdering)) {
+                const filtered = val.filter(item => item!=''); // ['in vivo','ex vivo',...]
+                const counts = filtered.map(item => Object.values(this.sampleTable[key]).filter(value => value==item).length);
+                this.sampleTypeOrderingFiltered[key] = filtered.map((item,i) => {
+                    return {value:item, text:item + ' (' + counts[i] + ')'};
+                });
+            }
+
+            // If customGroupName is included in sampleGroup, we need reconstruct current custom group
+            if (this.sampleGroups.indexOf(this.customGroupName)!=-1) { 
+                var orderedItems = this.sampleTypeOrdering[this.customGroupName];
+                for (var i=0; i<orderedItems.length; i++) {
+                    var items = orderedItems[i].split("_");
+                    if (items[0]=="other" || items[1]=="other") continue;   // 
+                    if (this.selectedItems1.indexOf(items[0])==-1)
+                        this.selectedItems1.push(items[0]);
+                    if (this.selectedItems2.indexOf(items[1])==-1)
+                        this.selectedItems2.push(items[1]);
+                }
+            }
+        },
+
         // Return array of items after combining the selections from 1 and 2
         customItems() {
             let self = this;
@@ -115,33 +145,9 @@ export default {
         },
     },
 
-    mounted() {
-        // Customise some properties specific to this component
-        this.sampleGroupsToShow = this.sampleGroups.filter(item => item !== this.customGroupName);  // remove customGroupName
-        this.selectedSampleGroup1 = this.sampleGroupsToShow[0];
-        this.selectedSampleGroup2 = this.sampleGroupsToShow[1];
-
-        // sampleTypeOrderingFiltered is a modified version of sampleTypeOrdering that removes
-        // blanks and inserts counts
-        for (const [key,val] of Object.entries(this.sampleTypeOrdering)) {
-            const filtered = val.filter(item => item!=''); // ['in vivo','ex vivo',...]
-            const counts = filtered.map(item => Object.values(this.sampleTable[key]).filter(value => value==item).length);
-            this.sampleTypeOrderingFiltered[key] = filtered.map((item,i) => {
-                return {value:item, text:item + ' (' + counts[i] + ')'};
-            });
-        }
-
-        // If customGroupName is included in sampleGroup, we need reconstruct current custom group
-        if (this.sampleGroups.indexOf(this.customGroupName)!=-1) { 
-            var orderedItems = this.sampleTypeOrdering[this.customGroupName];
-            for (var i=0; i<orderedItems.length; i++) {
-                var items = orderedItems[i].split("_");
-                if (items[0]=="other" || items[1]=="other") continue;   // 
-                if (this.selectedItems1.indexOf(items[0])==-1)
-                    this.selectedItems1.push(items[0]);
-                if (this.selectedItems2.indexOf(items[1])==-1)
-                    this.selectedItems2.push(items[1]);
-            }
+    watch: {
+        sampleTypeOrdering: function() {
+            this.setData();
         }
     }
 }
