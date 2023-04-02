@@ -2,7 +2,7 @@
 <div>
 <Breadcrumb :breadcrumb="breadcrumb"/>
 <b-container class="pt-4">
-    <Atlas atlasType="dc" displayName="Dendritic Cell"/>
+    <Atlas atlasType="ma" displayName="Myeloid Activation"/>
 </b-container>
 </div>
 </template>
@@ -14,7 +14,7 @@ export default {
             breadcrumb: [
                 { text: 'Home', to: '/' },
                 { text: 'Atlas', to: '/atlas/about' },
-                { text: 'Dendritic Cell', active: true },
+                { text: 'Myeloid Activation', active: true },
             ],
         }
     }
