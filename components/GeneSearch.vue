@@ -69,7 +69,6 @@ export default {
             if (genes.length>0) {
                 this.selectedGene = genes[0];
                 this.$emit('gene-selected', this.selectedGene);
-                console.log('Gene selected');
             }
         },
     },

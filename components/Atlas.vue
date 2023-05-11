@@ -117,11 +117,11 @@
                 </b-button-group>
                 </b-form>
                 Plot type:
-                <b-form-select  size="sm" v-model="geneExpressionTab.selectedPlotType" :options="geneExpressionTab.plotTypes" 
+                <b-form-select size="sm" v-model="geneExpressionTab.selectedPlotType" :options="geneExpressionTab.plotTypes" 
                     @change="geneExpressionPlot" class="mb-2"></b-form-select>
                 <div v-show="geneExpressionTab.selectedPlotType!='pca'">
                     Group by:
-                    <b-form-select  size="sm" v-model="geneExpressionTab.selectedSampleGroup" :options="colourBy" 
+                    <b-form-select size="sm" v-model="geneExpressionTab.selectedSampleGroup" :options="colourBy" 
                         @change="geneExpressionPlot" class="mb-2"></b-form-select>
                     <b-form-checkbox  size="sm" v-model="geneExpressionTab.showPoints" @change="geneExpressionPlot" class="my-2">
                         Show points</b-form-checkbox>
@@ -142,6 +142,11 @@
                 <div id="boxPlotDiv"></div>
             </b-col>
         </b-row>
+        </b-tab>
+
+        <!-- Geneset Tab -->
+        <b-tab v-if="atlasType=='ma'" title="Gene sets">
+            <Genesets></Genesets>
         </b-tab>
 
         <!-- Projection Tab -->
@@ -639,27 +644,36 @@ export default {
                 return;
             }
             let selectedSampleGroup = self.geneExpressionTab.selectedSampleGroup;
-            let sampleIds = self.sampleIdsFromSampleGroup(selectedSampleGroup);
+            let sampleIds = self.sampleIdsFromSampleGroup(selectedSampleGroup); // {"monocyte":["6075_MOCK1",...], ...}
             let orderedSampleGroupItems = self.sampleTypeOrdering[selectedSampleGroup].filter(item => item!="");
 
             // Plot first empty/opaque data point for purposes of plot background
-            let emptyTrace = {name: '  ', y: [0], type: 'box', opacity: 0, hoverinfo: 'skip'};
-            let traces = [emptyTrace];
+            // let emptyTrace = {name: '  ', y: [0], type: 'box', opacity: 0, hoverinfo: 'skip'};
+            // let traces = [emptyTrace];
+            let traces = [];
 
             // Empty name for padding purposes
-            let names = [' '];
+            // let names = [' '];
+            let names = [];
 
             orderedSampleGroupItems.forEach(sampleGroupItem => {
+                // For each trace, we obtain matching sample ids for this sampleGroupItem (eg. "monocyte")
+                let matchingSampleIds = sampleIds[sampleGroupItem]; // ["6075_MOCK1",...]
+                // For hovertext, show sample information
+                //let hovertext = matchingSampleIds.map(item => self.sampleInfo.allData[item]['cell_type']);
+                // console.log(JSON.stringify(self.sampleInfo.allData));
                 let trace = {
                         type: self.geneExpressionTab.selectedPlotType,
-                        y: self.geneExpressionTab.geneExpression.filter(function(item,i) { return sampleIds[sampleGroupItem].indexOf(self.sampleIds[i])!=-1}),
+                        // For y values, use index of matchinSampleIds to work out matching expression values
+                        y: self.geneExpressionTab.geneExpression.filter((item,i) => matchingSampleIds.indexOf(self.sampleIds[i])!=-1),
                         box: { visible: true },
                         line: { width: 1, color: 'black' },
                         meanline: { visible: true },
                         name: sampleGroupItem,
                         x0: sampleGroupItem,
                         showlegend: false,
-                        hoverinfo: "y",
+                        hoverinfo: "text",
+                        hovertext: matchingSampleIds,
                         points: self.geneExpressionTab.showPoints? 'all': false, // works for violin
                         boxpoints: self.geneExpressionTab.showPoints? 'all': false,  // works for boxplot
                     };
@@ -675,8 +689,8 @@ export default {
             });
 
             // Plot the last empty/opaque data point for purposes of plot background
-            traces.push(emptyTrace);
-            names.push('  ');
+            // traces.push(emptyTrace);
+            // names.push('  ');
 
             // Set plot layout and draw grey rectangle for plot background
             let layout = {  title: "",  margin: {t:10, l:20, r:0, b:0},
@@ -704,7 +718,7 @@ export default {
             let self = this;
             // Fetch sampleId of clicked point
             let sampleId = plotBy=="sample type"? self.traces()[data.points[0].curveNumber].sampleIds[data.points[0].pointNumber] : self.sampleIds[data.points[0].pointNumber];
-            
+
             if (self.sampleInfo.sampleId==sampleId && performance.now() - self.sampleInfo.lastClickTime < 600) {   
                 // same sample id clicked and its internval since last click is short enough to define as double-click
 
@@ -1040,6 +1054,7 @@ export default {
                     let datasetIds = this.sampleIds.map(item => item.split("_")[0]);
                     datasetIds = Array.from(new Set(datasetIds));   // unique values only
                     this.$axios.get("/api/search/samples?orient=index&field=facs_profile&limit=1200&dataset_id=" + datasetIds.join(",")).then(res4 => {
+                        console.log("##", "/api/search/samples?orient=index&field=facs_profile&limit=1200&dataset_id=" + datasetIds.join(","));
                         this.sampleInfo.allData = res4.data;
                         Object.keys(this.sampleInfo.allData).forEach(sampleId => { this.sampleInfo.allData[sampleId]["sample_id"] = sampleId});
                     });
