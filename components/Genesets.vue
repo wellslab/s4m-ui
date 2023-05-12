@@ -126,7 +126,8 @@ export default {
         // Plot heatmap once all required data variables have been populated
         plotHeatmap(adjustHeight=null) {
             let traces = [{type: 'heatmap', z:this.expression, x:this.columns, y:this.geneSymbols, 
-                           colorbar: {title: 'log FC'}, colorscale:[[0,'blue'],[0.5,'#fcf6f6'],[1,'red']],
+                           //colorbar: {title: 'log FC'}, colorscale:[[0,'blue'],[0.5,'#fcf6f6'],[1,'red']],
+                           colorscale:'RdBu',
                            hovertemplate:"gene: %{y}<br>sample: %{x}<br>value: %{z}<br><extra>click<br>to select<br>gene</extra>", 
                            zmid:0, bordercolor:'grey', borderwidth:1}];
             let layout = {
@@ -250,7 +251,7 @@ export default {
         // Open up reactome with current gene set
         goToReactome() {
             this.$axios.post("/reactome/AnalysisService/identifiers/?interactors=false&pageSize=20&page=1&sortBy=ENTITIES_PVALUE&order=ASC&resource=TOTAL&pValue=1&includeDisease=true", 
-                             this.genes.join(','), {'headers': {'Content-Type':'text/plain'}}
+                             this.geneSymbols.join(','), {'headers': {'Content-Type':'text/plain'}}
             ).then(res => {
                 const token = res.data.summary.token;
                 window.open("https://reactome.org/PathwayBrowser/#DTAB=AN&ANALYSIS=" + token, "_blank");
