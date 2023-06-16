@@ -145,8 +145,8 @@
         </b-tab>
 
         <!-- Geneset Tab -->
-        <b-tab v-if="atlasType=='ma'" title="Gene sets">
-            <Genesets></Genesets>
+        <b-tab title="Gene sets">
+            <Genesets :atlas-type="atlasType" @show-gene-expression="showGeneExpressionFromGeneset"></Genesets>
         </b-tab>
 
         <!-- Projection Tab -->
@@ -843,16 +843,27 @@ export default {
         },
         
         // ------------ Gene expression related methods ---------------
-        // Show autocomplete on gene expression by fetching all possible entries
-        getPossibleGenes() {
+        // Show autocomplete on gene expression by fetching all possible entries.
+        // If geneSymbol is specified, run showGeneExpression as a callback after fetching possible genes.
+        getPossibleGenes(geneSymbol) {
             let self = this;
             let gene = self.geneExpressionTab.selectedGene;
             if (gene.length<=1) return;    // ignore 1 or less characters entered
             self.$axios.get('/api/atlases/' + self.atlasType + '/possible-genes?query_string=' + gene)
                 .then(function (response) {
-                    if (response.data.length>0)
+                    if (response.data.length>0) {
                         self.geneExpressionTab.possibleGenes = response.data;
+                        if (geneSymbol!=null)
+                            self.showGeneExpression(geneSymbol);
+                    }
             });
+        },
+        
+        // Should run when signal is received from Genesets component to show single gene expression
+        showGeneExpressionFromGeneset(geneSymbol) {
+            this.geneExpressionTab.selectedGene = geneSymbol;
+            this.getPossibleGenes(geneSymbol);
+            this.selectedTabIndex = 1;
         },
         
         // Show gene expression - fetch values from server and save them, then run geneExpressionPlot

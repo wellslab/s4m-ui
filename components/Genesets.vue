@@ -1,25 +1,40 @@
 <template>
 <div>
-    <b-form inline class="justify-content-center mb-2"> 
-        Gene set group <b-form-select  size="sm" v-model="selectedGenesetGroup" @change="fetchGenesetExpression('reset')" :options="genesetGroups" class="ml-1 mr-4"></b-form-select>
-        Gene set <b-form-select  size="sm" v-model="selectedGeneset" @change="fetchGenesetExpression" class="ml-1 mr-4">
+    <b-form v-show="showCustomGeneset" inline class="justify-content-center mb-2"><b>Showing custom gene set</b>
+        <b-link @click="showCustomGeneset=false" class="ml-2">(show collections instead)</b-link>
+    </b-form>
+    <b-form v-show="!showCustomGeneset" inline class="justify-content-center mb-2"> 
+        Gene set group and name <b-form-select  size="sm" v-model="selectedGenesetCollection" @change="setGenesets(); fetchGenesetExpression();" 
+            :options="Object.keys(genesetCollections)" class="ml-1"></b-form-select>
+        <b-form-select  size="sm" v-model="selectedGeneset" @change="fetchGenesetExpression" class="ml-1 mr-4">
             <b-form-select-option v-for="(geneset,index) in genesets" :key="geneset" :value="geneset" v-b-tooltip.hover 
                 :title="genesetDescriptions[index]">{{geneset}}</b-form-select-option>
         </b-form-select>
-        Samples at time <b-form-select  size="sm" v-model="selectedTimepoint" @change="fetchGenesetExpression" :options="timepoints" class="ml-1"></b-form-select>
-        <b-dropdown text="Tools" variant="dark" class="ml-4" size="sm">
+    </b-form>
+    <b-form inline class="justify-content-center mb-2">
+        Samples are averaged over <b-form-select size="sm" v-model="selectedGroupBy" @change="setSelectedGroupBy" :options="Object.keys(sampleTable)" class="mx-1">
+            </b-form-select>
+        and subset at <b-form-select size="sm" v-model="selectedSampleSubset" @change="setSelectedSampleSubset" class="ml-2">
+        <b-form-select-option v-for="item in sampleSubsets" :key="item" :value="item" :disabled="item==selectedGroupBy" 
+            :style="{color: item==selectedGroupBy? '#ddb3b3' : 'black'}">{{item}}</b-form-select-option>
+        </b-form-select>
+        <b-form-select v-if="selectedSampleSubset!='[no subset]'" size="sm" v-model="selectedSampleSubsetItem" @change="fetchGenesetExpression" 
+            :options="sampleSubsetItems" class="ml-1"></b-form-select>
+    </b-form>
+    <div class="text-center mt-3" style="line-height:30px">{{genesetInfo}} <b-link @click="showGenesetCountInfo=true"><b-icon-question-circle></b-icon-question-circle></b-link>
+        <b-button class="ml-4" size="sm" variant="secondary" v-b-tooltip.hover title="Click to view expression plot" 
+        @click="plotGeneExpression" style="width:120px; height:30px;">{{selectedGene==null? "[selected gene]": selectedGene}}</b-button>
+        <b-dropdown text="Tools" variant="dark" class="ml-1" size="sm">
+            <b-dropdown-item @click="showCustomGenesetModal=true">Create a custom gene set</b-dropdown-item>
             <b-dropdown-item @click="clusterColumns=!clusterColumns; fetchGenesetExpression();">Cluster columns using data
                 <b-icon-check v-if="clusterColumns"></b-icon-check>
             </b-dropdown-item>
+            <b-dropdown-item @click="showSelectSampleForBaseValue=true">Select sample for base value</b-dropdown-item>
             <b-dropdown-item @click="goToReactome">Show genes at Reactome</b-dropdown-item>
             <b-dropdown-item @click="downloadGenes">Download genes</b-dropdown-item>
             <b-dropdown-item @click="showBackgroundInfo=true">About gene sets</b-dropdown-item>
             <!-- <b-dropdown-item @click="plotHeatmap(adjustHeight=true)">Adjust height to fit all rows</b-dropdown-item> -->
         </b-dropdown>
-    </b-form>
-    <div class="text-center mt-3" style="line-height:30px">{{genesetInfo}} 
-        <b-button class="ml-4" size="sm" variant="secondary" v-b-tooltip.hover title="Click to view expression plot" 
-        @click="fetchGeneExpression" style="width:90px; height:30px;">{{selectedGene==null? "[gene]": selectedGene}}</b-button>
     </div>
     <div id="heatmapDiv"></div>
 
@@ -40,72 +55,167 @@
     </b-modal>
 
     <!-- gene expression plot (modal) -->
-    <b-modal static v-model="showGeneExpressionPlot" size="lg" ok-only>
+    <b-modal static v-model="showGeneExpressionPlot" size="lg" ok-only :title="selectedGene">
         <b-form inline class="justify-content-center mb-2"> 
-            Gene: <b class="ml-2 mr-4">{{selectedGene}}</b> Treatment type: <b-form-select  size="sm" v-model="selectedTreatmentType" :options="treatmentTypes" 
-                                @change="plotGeneExpression" class="ml-2"></b-form-select>
+            Trace: 
+            <b-form-select  size="sm" v-model="singleExpressionSelectedTrace" :options="Object.keys(sampleTable)" 
+                @change="plotGeneExpression" class="ml-2 mr-4"></b-form-select>
+            X-values:
+            <b-form-select  size="sm" v-model="singleExpressionSelectedX" :options="Object.keys(sampleTable)" 
+                @change="plotGeneExpression" class="ml-2"></b-form-select>
         </b-form>
         <div id="geneExpressionPlotDiv"></div>
     </b-modal>
 
-    <!-- <b-row v-if="false">
-        <b-col>
-            <b-table-lite :items="genesets" outlined>
-                <template #cell(2h)="row">
-                    <b-button size="sm" @click="showDetails(row.index,'2h')" variant="warning" style="width:50px">{{row.value.length}}</b-button>
-                </template>
-                <template #cell(6h)="row">
-                    <b-button size="sm" @click="showDetails(row.index,'6h')" variant="warning" style="width:50px">{{row.value.length}}</b-button>
-                </template>
-                <template #cell(16h)="row">
-                    <b-button size="sm" @click="showDetails(row.index,'16h')" variant="warning" style="width:50px">{{row.value.length}}</b-button>
-                </template>
-            </b-table-lite>
-        </b-col>
-        <b-col>
-        </b-col>
-    </b-row> -->
+    <b-modal v-model="showGenesetCountInfo" title="Info on number of genes" ok-only>
+        Gene set: <b>{{selectedGeneset}}</b><br/>
+        Total number of genes: {{geneSymbols.length + unfilteredGenes.length + missingGenes.length}}<br/>
+        &rarr; After removing genes not found in this atlas: {{geneSymbols.length + unfilteredGenes.length}}<br/>
+        &nbsp; &rarr; After removing genes filtered out in this atlas: {{geneSymbols.length}}<br/>
+        <br/>Stemformatics integrated atlas uses gene filtering to remove batch effects. Hence the filtered out genes
+        are not trustworthy sources of biological signal and exlcuded from the heatmap.
+        <br/><br/>Note if you entered gene symbols, the total number of genes here correspond to genes where matching id
+        was found, hence may be less than the original list.
+    </b-modal>
+
+    <b-modal v-model="showSelectSampleForBaseValue" title="Select sample for base value" ok-only>
+        Set sample to use as base value for each row<br/><br/>
+        <b-form-select  size="sm" v-model="selectedSampleBaseItem" :options="sampleGroupbyItems"></b-form-select><br/><br/>
+        Heatmap scales values for each row using z-score by default. Specify one of the columns shown to change this
+        scaling so that selected colum acts as a base value (ie. this value is subtracted from all other values for each row).
+      <template #modal-footer>
+          <b-button variant="secondary" size="sm" class="float-right" @click="showSelectSampleForBaseValue=false">Cancel</b-button>
+          <b-button variant="primary" size="sm" class="float-right" @click="fetchGenesetExpression(); showSelectSampleForBaseValue=false">Go</b-button>
+      </template>
+    </b-modal>
+
+    <b-modal v-model="showCustomGenesetModal" title="Create your own gene set">
+        <p>Upload your own list of genes to see their expression</p>
+        <b-form-textarea v-model="customGenesetText" placeholder="list of gene symbols or Ensembl ids" rows="10"></b-form-textarea>
+      <template #modal-footer>
+          <b-button variant="secondary" size="sm" class="float-right" @click="showCustomGenesetModal=false">Cancel</b-button>
+          <b-button variant="primary" size="sm" class="float-right" @click="showCustomGenesetExpression">Go</b-button>
+      </template>
+    </b-modal>
+
 </div>
 </template>
 
 <script>
 export default {
+    props: {
+        atlasType: String  // name of the atlas, eg. myeloid
+    },
+
     data() {
         return {
+            // For gene sets
+            genesetCollections: {}, // {'Hallmark':[{'name':'HALLMARK_ADIPOGENESIS', 'description':...}, ...], ...}
+            selectedGenesetCollection: null,    // 'Hallmark'
+            genesets: [],   // ['HALLMARK_ADIPOGENESIS',...]
+            genesetDescriptions: [], // ['HALLMARK_ADIPOGENESIS from MSigDB', ...]
+            selectedGeneset: null,  // 'HALLMARK_ADIPOGENESIS'
+
+            // sample table and groupings, subsets
+            sampleTable: {}, // {col: {sampleId: value}}
+            selectedGroupBy: null,  // 'treatment' (column of sample table to take mean values of)
+            selectedSampleSubset: null, // 'time' (column of sample table to select a subset of samples)
+            selectedSampleSubsetItem: null, // '2h' (one value from selectedSampleSubset)
+            selectedSampleBaseItem: '[z score]', // 'Control' (one value from unique items of selectedGroupBy)
+
+            // gene set expression data (for the heatmap)
+            expression: [],
+            columns: [],
+            geneIdFromSymbol: {},
+            geneSymbols: [],
+            unfilteredGenes: [],
+            missingGenes: [],
+
+            // modals and menu options
             showBackgroundInfo: false,
-            clusterColumns: false,
+            showGenesetCountInfo: false,
+            showSelectSampleForBaseValue: false,
+            showCustomGenesetModal: false,
+            clusterColumns: true,
 
             // For single gene expression plot
             showGeneExpressionPlot: false,
             selectedGene: null,
             updateSelectedGene: true,
             geneExpressionValues: {},
-            treatmentTypes: [], // ['PRR_other',...]
-            treatmentFromType: {}, // {'PRR_other':['Pam3CSK4',...]}
-            selectedTreatmentType: null,
-            orderedSamples: {},
+            singleExpressionSelectedTrace: null, // 'treatment'
+            singleExpressionSelectedX: null,  // 'time'
 
-            expression: [],
-            columns: [],
-            geneIdFromSymbol: {},
-            geneSymbols: [],
-            genesetGroups: ['DE genes','Hallmark'],
-            selectedGenesetGroup: 'DE genes',
-            genesets: [],
-            selectedGeneset: null,
-            genesetDescriptions: [],
-            timepoints: ['2h','6h','16h'],
-            selectedTimepoint: '2h',
+            // custom geneset
+            showCustomGeneset: false,
+            customGenesetText: '',
         }
     },
 
     computed: {
         genesetInfo() {
-            return this.selectedGeneset + " (" + this.geneSymbols.length + " genes), at " + this.selectedTimepoint
+            let totalGenes = this.geneSymbols.length + this.unfilteredGenes.length + this.missingGenes.length;
+            return this.selectedGeneset + ": " + this.geneSymbols.length + " genes (out of total " + totalGenes + ")";
         },
+
+        sampleSubsets() {
+            let items = ["[no subset]"];
+            Object.keys(this.sampleTable).forEach(item => items.push(item));
+            return items;
+        },
+
+        sampleSubsetItems() {
+            return this.selectedSampleSubset in this.sampleTable? this.sampleGroupItems(this.selectedSampleSubset): [];
+        },
+
+        sampleGroupbyItems() {
+            let items = ["[z score]"];
+            this.sampleGroupItems(this.selectedGroupBy).forEach(item => items.push(item));
+            return items;
+        }
+        
     },
 
     methods: {
+        // Return an array of unique items in the sample group (eg. sampleGroupItems('time') may return ['0hr','2hr',...])
+        sampleGroupItems(sampleGroup) {
+            return sampleGroup!=null? Array.from(new Set(Object.values(this.sampleTable[sampleGroup]))) : [];
+        },
+
+        // Should run whenever selectedGenesetCollection changes to set genesets and other variables
+        setGenesets() {
+            this.genesets = this.genesetCollections[this.selectedGenesetCollection].map(item => item.name);
+            this.genesetDescriptions = this.genesetCollections[this.selectedGenesetCollection].map(item => item.description);
+            this.selectedGeneset = this.genesets[0];
+        },
+
+        // Should run when the group by changes (= averaged over)
+        setSelectedGroupBy() {
+            if (this.selectedGroupBy==this.selectedSampleSubset) { // can't have both the same, so change selectedSampleSubset
+                this.selectedSampleSubset = "[no subset]";
+            }
+            this.fetchGenesetExpression();
+        },
+
+        // Should run when the sample subset selection changes
+        setSelectedSampleSubset() {
+            if (this.selectedSampleSubset!="[no subset]") { // select first item from possible items
+                if (this.atlasType=="ma" && this.selectedSampleSubset=="time")   // first item, 0h, is bad
+                    this.selectedSampleSubsetItem = '2h';
+                else
+                    this.selectedSampleSubsetItem = this.sampleSubsetItems[0];
+            }      
+            this.fetchGenesetExpression();
+        },
+
+        //
+        showCustomGenesetExpression() {
+            this.geneIds = this.customGenesetText.split("\n");
+            this.fetchHeatmapData();
+            this.showCustomGenesetModal = false;
+            this.showCustomGeneset = true;
+        },
+
         downloadGenes() {
             alert("Coming soon");
         },
@@ -150,31 +260,47 @@ export default {
             });
         },
 
-        // Fetch the expression values and run plotHeatmap function
-        // selection is used to reset the selectedGeneset, which is useful when the geneset group changes.
-        fetchGenesetExpression(selection) {
-            if (selection=='reset')
-                this.selectedGeneset = null;
+        fetchHeatmapData() {
             // Work out the parameters for the api call
             let params = [];
-            params.push('geneset_group=' + this.selectedGenesetGroup);
-            params.push('timepoint=' + this.selectedTimepoint);
+            params.push('gene_id=' + this.geneIds.join(','));
             params.push('cluster_columns=' + (this.clusterColumns? 't':'f'));
-            if (this.selectedGeneset!=null)
-                params.push('geneset=' + this.selectedGeneset);
-            this.$axios.get("/api/genes/geneset-table?" + params.join('&')).then(res => {
-                this.genesets = res.data.genesets.map(item => item.name);
-                if (this.selectedGeneset==null)
-                    this.selectedGeneset = this.genesets[0];
-                this.genesetDescriptions = res.data.genesets.map(item => item.description);
-                this.geneSymbols = res.data.geneSymbols;
-                for (let i=0; i<res.data.expression.index.length; i++)
-                    this.geneIdFromSymbol[this.geneSymbols[i]] = res.data.expression.index[i];
-                this.columns = res.data.expression.columns;
-                this.expression = res.data.expression.data;
+            params.push('groupby=' + this.selectedGroupBy);
+            if (this.selectedSampleSubset!='[no subset]') {
+                params.push('subsetby=' + this.selectedSampleSubset);
+                params.push('subsetby_item=' + this.selectedSampleSubsetItem);
+            }
+            if (this.selectedSampleBaseItem!='[z score]')
+                params.push('relative_value=' + this.selectedSampleBaseItem);
+            
+            this.$axios.get("/api/atlases/" + this.atlasType + "/heatmap-data?" + params.join('&')).then(res2 => {
+                // res2.data looks like {'index':[], 'columns':[], 'data':[[]]}. It also contains geneSymbol as the first column
+                // So extract data from res2.data and assign them to variables
+                if ('error' in res2.data) {
+                    alert(res2.data.error + " Try a different subset of samples or no subset.");
+                    return;
+                }
+                this.geneSymbols = res2.data.geneSymbols;
+                this.geneSymbols.forEach((item,i) => {
+                    this.geneIdFromSymbol[item] = res2.data.dataframe.index[i];
+                });
+                this.columns = res2.data.dataframe.columns;
+                this.expression = res2.data.dataframe.data; 
+                this.unfilteredGenes = res2.data.unfiltered;
+                this.missingGenes = res2.data.notFound;
                 this.selectedGene = null;
                 this.updateSelectedGene = true;
+                if (this.showCustomGeneset)
+                    this.selectedGeneset = "[custom gene set]";
                 this.plotHeatmap();
+            });
+        },
+
+        // Fetch the expression values for selected geneset and run plotHeatmap function
+        fetchGenesetExpression() {
+            this.$axios.get("/api/genes/geneset-collections?collection_name=" + this.selectedGenesetCollection + "&geneset_name=" + this.selectedGeneset).then(res => {
+                this.geneIds = res.data;
+                this.fetchHeatmapData();
             });
         },
 
@@ -204,46 +330,67 @@ export default {
 
         // Plot single gene expression once all required variables have been set
         plotGeneExpression() {
+            if (this.selectedGene==null) return;
+            this.$emit('show-gene-expression', this.selectedGene);
+            return;
             const exampleColours = ['#64edbc', '#6495ed', '#ed6495', '#edbc64', '#8b8b00', '#008b00', '#8b008b', '#00008b', 
                                     '#708090', '#908070', '#907080', '#709080', '#008080', '#008000', '#800000', '#bca68f', 
                                     '#bc8fa6', '#bc8f8f', '#008160', '#816000', '#600081', '#ff1493', '#14ff80'];
             let traces = [];
-            let times = ['2h','6h','16h'];
-            let treatments = this.treatmentFromType[this.selectedTreatmentType];
-            for (let treatment of treatments) {
+            let traceItems = this.sampleGroupItems(this.singleExpressionSelectedTrace);
+            let xvalues = this.sampleGroupItems(this.singleExpressionSelectedX);
+            
+            // Get sample ids from sampleTable so that it looks like {'treatment1':{'time1':['sampleId1',...]}},
+            // where singleExpressionSelectedTrace is 'treament' in this example, and singleExpressionSelectX is 'time'.
+            let sampleIds = {};
+            for (const [keyOuter,valOuter] of Object.entries(this.sampleTable[this.singleExpressionSelectedTrace])) {
+                for (const [keyInner,valInner] of Object.entries(this.sampleTable[this.singleExpressionSelectedX])) {
+                    if (!(valOuter in sampleIds)) sampleIds[valOuter] = {};
+                    if (!(valInner in sampleIds[valOuter])) sampleIds[valOuter][valInner] = [];
+                    if (keyOuter==keyInner) sampleIds[valOuter][valInner].push(keyInner);
+                }
+            }
+
+            // Define traces
+            for (let traceItem of traceItems) {
                 let x=[], y=[];
-                let sumValue = {}; // sum of y values for each time
-                for (let timevalue of times) {
-                    sumValue[timevalue] = 0;
-                    for (let sampleId of this.orderedSamples[treatment][timevalue]) {
-                        x.push(timevalue);
+                let sumValue = {}; // sum of y values for each x - used for joining the lines at the mean of these values
+                for (let xvalue of xvalues) {
+                    sumValue[xvalue] = 0;
+                    for (let sampleId of sampleIds[traceItem][xvalue]) {
+                        x.push(xvalue);
                         y.push(this.geneExpressionValues[sampleId]);
-                        sumValue[timevalue] += this.geneExpressionValues[sampleId];
+                        sumValue[xvalue] += this.geneExpressionValues[sampleId];
                     }
                 }
-                traces.push({type:'scatter', x:x, y:y, name:treatment, mode:'markers', 
-                                marker:{color:exampleColours[treatments.indexOf(treatment)]}});
-                traces.push({type:'scatter', x:times, 
-                                y:times.map(item => sumValue[item]/this.orderedSamples[treatment][item].length), 
+                traces.push({type:'scatter', x:x, y:y, name:traceItem, mode:'markers', 
+                                marker:{color:exampleColours[traceItems.indexOf(traceItem)]}});
+                traces.push({type:'scatter', x:xvalues, 
+                                y:xvalues.map(item => sumValue[item]/sampleIds[traceItem][item].length), 
                                 showlegend:false, mode:'lines', 
-                                marker:{color:exampleColours[treatments.indexOf(treatment)]}});
+                                marker:{color:exampleColours[traceItems.indexOf(traceItem)]}});
             }
             let layout = {};
             Plotly.newPlot("geneExpressionPlotDiv", traces, layout);
+
         },
 
         // Fetch single gene expression values and run plotGeneExpression
         fetchGeneExpression() {
-            this.$axios.get("/api/atlases/ma/expression-values?gene_id=" + this.geneIdFromSymbol[this.selectedGene]).then(res => {
+            this.showGeneExpressionPlot = true;
+            this.$axios.get("/api/atlases/" + this.atlasType + "/expression-values?gene_id=" + this.geneIdFromSymbol[this.selectedGene]).then(res => {
                 let result = res.data;
                 if (result.length==0) {
                     alert("Could not find this gene in the atlas.");
+                    this.showGeneExpressionPlot = false;
                     return;
                 }
-                this.showGeneExpressionPlot = true;
                 let values = result[0]; // {sampleId -> value}
                 delete values.index;    // don't need gene id key
                 this.geneExpressionValues = values;
+                this.singleExpressionSelectedTrace = this.selectedGroupBy;
+                this.singleExpressionSelectedX = this.selectedSampleSubset=='[no subset]'? 
+                    Object.keys(this.sampleTable).filter(item => item!=this.selectedGroupBy)[0] : this.selectedSampleSubset;
                 this.plotGeneExpression();
             });
         },
@@ -263,9 +410,22 @@ export default {
     },
 
     mounted() {
-        this.$axios.get("/api/atlases/ma/samples?orient=records").then(res => {
-            this.setOrderedSamples(res.data);
-            this.fetchGenesetExpression();
+        // Fetch available gene set collections
+        this.$axios.get("/api/genes/geneset-collections").then(res => {
+            this.genesetCollections = res.data;
+            this.selectedGenesetCollection = 'Hallmark' in this.genesetCollections? 'Hallmark' : Object.keys(this.genesetCollections)[0];
+            this.$axios.get("/api/atlases/" + this.atlasType + "/samples?orient=dict").then(res2 => {
+                this.sampleTable = res2.data;
+                this.selectedGroupBy = Object.keys(this.sampleTable)[0];
+                this.selectedSampleSubset = "[no subset]";
+                if (this.atlasType=='ma') {
+                    this.selectedGroupBy = 'treatment'; // set default groupby for some atlases
+                    this.selectedSampleSubset = 'time';
+                    this.selectedSampleSubsetItem = '2h';
+                }
+                this.setGenesets();
+                this.fetchGenesetExpression();
+            });
         });
     }
 }
