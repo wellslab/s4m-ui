@@ -285,31 +285,31 @@ export default {
 
         fetchHeatmapData() {
             // Work out the parameters for the api call
-            let params = [];
-            params.push('gene_id=' + this.geneIds.join(','));
-            params.push('cluster_columns=' + (this.clusterColumns? 't':'f'));
-            params.push('groupby=' + this.selectedGroupBy);
+            let formData = new FormData();
+            formData.append('gene_id', this.geneIds.join(','));
+            formData.append('cluster_columns', this.clusterColumns? 't':'f');
+            formData.append('groupby', this.selectedGroupBy);
             if (this.selectedSampleSubset!='[no subset]') {
-                params.push('subsetby=' + this.selectedSampleSubset);
-                params.push('subsetby_item=' + this.selectedSampleSubsetItem);
+                formData.append('subsetby', this.selectedSampleSubset);
+                formData.append('subsetby_item', this.selectedSampleSubsetItem);
             }
 
             if (this.selectedScoring=='Subtract row average')
-                params.push('relative_value=rowAverage');
+                formData.append('relative_value','rowAverage');
             else if (this.selectedScoring=='Use z score')
-                params.push('relative_value=zscore');
+                formData.append('relative_value','zscore');
             else if (this.selectedScoring=='Use untransformed values')
-                params.push('relative_value=none');
+                formData.append('relative_value','none');
             else if (this.selectedScoring=='Subtract selected column') {
                 if (this.selectedSampleBaseItem==null) {
                     this.showSelectSampleForBaseValue = true;
                     alert("Choose a column to use as base value");
                     return;
                 }
-                params.push('relative_value=' + this.selectedSampleBaseItem);
+                formData.append('relative_value',this.selectedSampleBaseItem);
             }
             
-            this.$axios.get("/api/atlases/" + this.atlasType + "/heatmap-data?" + params.join('&')).then(res2 => {
+            this.$axios.post("/api/atlas-heatmap/" + this.atlasType, formData, {headers: {'Content-Type': 'multipart/form-data'}}).then(res2 => {
                 // res2.data looks like {'index':[], 'columns':[], 'data':[[]]}. It also contains geneSymbol as the first column
                 // So extract data from res2.data and assign them to variables
                 if ('error' in res2.data) {
