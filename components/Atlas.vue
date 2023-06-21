@@ -1065,7 +1065,6 @@ export default {
                     let datasetIds = this.sampleIds.map(item => item.split("_")[0]);
                     datasetIds = Array.from(new Set(datasetIds));   // unique values only
                     this.$axios.get("/api/search/samples?orient=index&field=facs_profile&limit=1200&dataset_id=" + datasetIds.join(",")).then(res4 => {
-                        console.log("##", "/api/search/samples?orient=index&field=facs_profile&limit=1200&dataset_id=" + datasetIds.join(","));
                         this.sampleInfo.allData = res4.data;
                         Object.keys(this.sampleInfo.allData).forEach(sampleId => { this.sampleInfo.allData[sampleId]["sample_id"] = sampleId});
                     });

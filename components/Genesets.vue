@@ -24,12 +24,12 @@
     <div class="text-center mt-3" style="line-height:30px">{{genesetInfo}} <b-link @click="showGenesetCountInfo=true"><b-icon-question-circle></b-icon-question-circle></b-link>
         <b-button class="ml-4" size="sm" variant="secondary" v-b-tooltip.hover title="Click to view expression plot" 
         @click="plotGeneExpression" style="width:120px; height:30px;">{{selectedGene==null? "[selected gene]": selectedGene}}</b-button>
-        <b-dropdown text="Tools" variant="dark" class="ml-1" size="sm">
+        <b-button size="sm" variant="dark" @click="showSelectSampleForBaseValue=true">Set scoring</b-button>
+        <b-dropdown text="Tools" variant="dark" size="sm">
             <b-dropdown-item @click="showCustomGenesetModal=true">Create a custom gene set</b-dropdown-item>
             <b-dropdown-item @click="clusterColumns=!clusterColumns; fetchGenesetExpression();">Cluster columns using data
                 <b-icon-check v-if="clusterColumns"></b-icon-check>
             </b-dropdown-item>
-            <b-dropdown-item @click="showSelectSampleForBaseValue=true">Select sample for base value</b-dropdown-item>
             <b-dropdown-item @click="goToReactome">Show genes at Reactome</b-dropdown-item>
             <b-dropdown-item @click="downloadGenes">Download genes</b-dropdown-item>
             <b-dropdown-item @click="showBackgroundInfo=true">About gene sets</b-dropdown-item>
@@ -78,14 +78,30 @@
         was found, hence may be less than the original list.
     </b-modal>
 
-    <b-modal v-model="showSelectSampleForBaseValue" title="Select sample for base value" ok-only>
-        Set sample to use as base value for each row<br/><br/>
-        <b-form-select  size="sm" v-model="selectedSampleBaseItem" :options="sampleGroupbyItems"></b-form-select><br/><br/>
-        Heatmap scales values for each row using z-score by default. Specify one of the columns shown to change this
-        scaling so that selected colum acts as a base value (ie. this value is subtracted from all other values for each row).
+    <b-modal v-model="showSelectSampleForBaseValue" title="Select scoring method for heatmap" ok-only>
+        It is often better to transform the expression values before rendering them on a heatmap,
+        to highlight certain clusters. You can try different transforms here.<br/><br/>
+        <b-form-select size="sm" v-model="selectedScoring" :options="possibleScores"></b-form-select>
+        <b-form-select v-show="selectedScoring=='Subtract selected column'" size="sm" v-model="selectedSampleBaseItem" 
+            :options="sampleGroupItems(selectedGroupBy)" class="mt-2"></b-form-select><br/><br/>
+        <div v-if="selectedScoring=='Subtract row average'">
+            For each row, calculate the average value and subtract this from all values.
+        </div>
+        <div v-if="selectedScoring=='Subtract selected column'">
+            For each row, subtract the value matching the column specified (good for comparing all values against that
+            column, such as control values).
+        </div>
+        <div v-if="selectedScoring=='Use z score'">
+            For each row, transform the values using z score (not recommended for small number of columns).
+        </div>
+        <div v-if="selectedScoring=='Use untransformed values'">
+            Do not transform values. This will cluster rows more than columns, so may be better for finding
+            subsets of correlated genes.
+        </div>
+
       <template #modal-footer>
           <b-button variant="secondary" size="sm" class="float-right" @click="showSelectSampleForBaseValue=false">Cancel</b-button>
-          <b-button variant="primary" size="sm" class="float-right" @click="fetchGenesetExpression(); showSelectSampleForBaseValue=false">Go</b-button>
+          <b-button variant="primary" size="sm" class="float-right" @click="setScoringMethod">Go</b-button>
       </template>
     </b-modal>
 
@@ -116,12 +132,16 @@ export default {
             genesetDescriptions: [], // ['HALLMARK_ADIPOGENESIS from MSigDB', ...]
             selectedGeneset: null,  // 'HALLMARK_ADIPOGENESIS'
 
+            // Scoring options
+            possibleScores: ['Subtract row average', 'Subtract selected column', 'Use z score', 'Use untransformed values'],
+            selectedScoring: 'Subtract row average',
+
             // sample table and groupings, subsets
             sampleTable: {}, // {col: {sampleId: value}}
             selectedGroupBy: null,  // 'treatment' (column of sample table to take mean values of)
             selectedSampleSubset: null, // 'time' (column of sample table to select a subset of samples)
             selectedSampleSubsetItem: null, // '2h' (one value from selectedSampleSubset)
-            selectedSampleBaseItem: '[z score]', // 'Control' (one value from unique items of selectedGroupBy)
+            selectedSampleBaseItem: null, // 'Control' (one value from unique items of selectedGroupBy)
 
             // gene set expression data (for the heatmap)
             expression: [],
@@ -167,12 +187,6 @@ export default {
         sampleSubsetItems() {
             return this.selectedSampleSubset in this.sampleTable? this.sampleGroupItems(this.selectedSampleSubset): [];
         },
-
-        sampleGroupbyItems() {
-            let items = ["[z score]"];
-            this.sampleGroupItems(this.selectedGroupBy).forEach(item => items.push(item));
-            return items;
-        }
         
     },
 
@@ -235,7 +249,7 @@ export default {
 
         // Plot heatmap once all required data variables have been populated
         plotHeatmap(adjustHeight=null) {
-            let traces = [{type: 'heatmap', z:this.expression, x:this.columns, y:this.geneSymbols, 
+            let traces = [{type: 'heatmap', z:this.expression, x:this.columns, y:this.geneSymbols,
                            //colorbar: {title: 'log FC'}, colorscale:[[0,'blue'],[0.5,'#fcf6f6'],[1,'red']],
                            colorscale:'RdBu',
                            hovertemplate:"gene: %{y}<br>sample: %{x}<br>value: %{z}<br><extra>click<br>to select<br>gene</extra>", 
@@ -260,6 +274,15 @@ export default {
             });
         },
 
+        setScoringMethod() {
+            if (this.selectedScoring=='Subtract selected column' && this.selectedSampleBaseItem==null) {
+                alert("Choose a column to use as base value");
+                return;
+            }
+            this.showSelectSampleForBaseValue = false;
+            this.fetchHeatmapData();
+        },
+
         fetchHeatmapData() {
             // Work out the parameters for the api call
             let params = [];
@@ -270,8 +293,21 @@ export default {
                 params.push('subsetby=' + this.selectedSampleSubset);
                 params.push('subsetby_item=' + this.selectedSampleSubsetItem);
             }
-            if (this.selectedSampleBaseItem!='[z score]')
+
+            if (this.selectedScoring=='Subtract row average')
+                params.push('relative_value=rowAverage');
+            else if (this.selectedScoring=='Use z score')
+                params.push('relative_value=zscore');
+            else if (this.selectedScoring=='Use untransformed values')
+                params.push('relative_value=none');
+            else if (this.selectedScoring=='Subtract selected column') {
+                if (this.selectedSampleBaseItem==null) {
+                    this.showSelectSampleForBaseValue = true;
+                    alert("Choose a column to use as base value");
+                    return;
+                }
                 params.push('relative_value=' + this.selectedSampleBaseItem);
+            }
             
             this.$axios.get("/api/atlases/" + this.atlasType + "/heatmap-data?" + params.join('&')).then(res2 => {
                 // res2.data looks like {'index':[], 'columns':[], 'data':[[]]}. It also contains geneSymbol as the first column
