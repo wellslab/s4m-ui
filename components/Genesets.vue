@@ -67,6 +67,7 @@
         <div id="geneExpressionPlotDiv"></div>
     </b-modal>
 
+    <!-- information about number of genes shown -->
     <b-modal v-model="showGenesetCountInfo" title="Info on number of genes" ok-only>
         Gene set: <b>{{selectedGeneset}}</b><br/>
         Total number of genes: {{geneSymbols.length + unfilteredGenes.length + missingGenes.length}}<br/>
@@ -78,6 +79,7 @@
         was found, hence may be less than the original list.
     </b-modal>
 
+    <!-- Modal that handles set scoring function (started off as only selecting sample base value, hence the variable names here) -->
     <b-modal v-model="showSelectSampleForBaseValue" title="Select scoring method for heatmap" ok-only>
         It is often better to transform the expression values before rendering them on a heatmap,
         to highlight certain clusters. You can try different transforms here.<br/><br/>
@@ -98,13 +100,13 @@
             Do not transform values. This will cluster rows more than columns, so may be better for finding
             subsets of correlated genes.
         </div>
-
-      <template #modal-footer>
-          <b-button variant="secondary" size="sm" class="float-right" @click="showSelectSampleForBaseValue=false">Cancel</b-button>
-          <b-button variant="primary" size="sm" class="float-right" @click="setScoringMethod">Go</b-button>
-      </template>
+        <template #modal-footer>
+            <b-button variant="secondary" size="sm" class="float-right" @click="showSelectSampleForBaseValue=false">Cancel</b-button>
+            <b-button variant="primary" size="sm" class="float-right" @click="setScoringMethod">Go</b-button>
+        </template>
     </b-modal>
 
+    <!-- Modal where you can upload your own gene set -->
     <b-modal v-model="showCustomGenesetModal" title="Create your own gene set">
         <p>Upload your own list of genes to see their expression</p>
         <b-form-textarea v-model="customGenesetText" placeholder="list of gene symbols or Ensembl ids" rows="10"></b-form-textarea>
@@ -334,10 +336,14 @@ export default {
 
         // Fetch the expression values for selected geneset and run plotHeatmap function
         fetchGenesetExpression() {
-            this.$axios.get("/api/genes/geneset-collections?collection_name=" + this.selectedGenesetCollection + "&geneset_name=" + this.selectedGeneset).then(res => {
-                this.geneIds = res.data;
+            if (this.showCustomGeneset)
                 this.fetchHeatmapData();
-            });
+            else {
+                this.$axios.get("/api/genes/geneset-collections?collection_name=" + this.selectedGenesetCollection + "&geneset_name=" + this.selectedGeneset).then(res => {
+                    this.geneIds = res.data;
+                    this.fetchHeatmapData();
+                });
+            }
         },
 
         // From the sample table fetched by api call, [{columm -> value},...] format,
