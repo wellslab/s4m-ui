@@ -315,7 +315,7 @@ export default {
                 // res2.data looks like {'index':[], 'columns':[], 'data':[[]]}. It also contains geneSymbol as the first column
                 // So extract data from res2.data and assign them to variables
                 if ('error' in res2.data) {
-                    alert(res2.data.error + " Try a different subset of samples or no subset.");
+                    alert(res2.data.error);
                     return;
                 }
                 this.geneSymbols = res2.data.geneSymbols;

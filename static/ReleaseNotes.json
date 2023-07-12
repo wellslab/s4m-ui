@@ -1,7 +1,8 @@
 [
     {"version": "v1.9",
-    "date": "2023-03-10",
-    "notes": ["Customising sample groups in an atlas now has an option to select all/none.",
+    "date": "2023-07-13",
+    "notes": ["Introduced gene sets for each atlas.",
+              "Customising sample groups in an atlas now has an option to select all/none.",
               "Fixed a bug where find similar genes in dataset view sometimes resulted in a modal window which was too large.",
               "Projecting data onto an atlas now includes projections based on random values.",
               "Capybara score algorithm in data projection onto an atlas has been slightly modified to relax the constraint of all values adding up to 1.",
