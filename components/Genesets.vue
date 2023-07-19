@@ -30,10 +30,13 @@
             <b-dropdown-item @click="clusterColumns=!clusterColumns; fetchGenesetExpression();">Cluster columns using data
                 <b-icon-check v-if="clusterColumns"></b-icon-check>
             </b-dropdown-item>
+            <b-dropdown-item @click="setHeatmapHeightToFit=!setHeatmapHeightToFit; plotHeatmap();">Adjust height to fit all rows
+                <b-icon-check v-if="setHeatmapHeightToFit"></b-icon-check>
+            </b-dropdown-item>
             <b-dropdown-item @click="goToReactome">Show genes at Reactome</b-dropdown-item>
-            <b-dropdown-item @click="downloadGenes">Download genes</b-dropdown-item>
+            <b-dropdown-divider></b-dropdown-divider>
+            <b-dropdown-item @click="showDownloadModal=true">Download plot/genes</b-dropdown-item>
             <b-dropdown-item @click="showBackgroundInfo=true">About gene sets</b-dropdown-item>
-            <!-- <b-dropdown-item @click="plotHeatmap(adjustHeight=true)">Adjust height to fit all rows</b-dropdown-item> -->
         </b-dropdown>
     </div>
     <div id="heatmapDiv"></div>
@@ -116,6 +119,31 @@
       </template>
     </b-modal>
 
+    <!-- Modal for downloading plot and data -->
+    <b-modal v-model="showDownloadModal" title="Download plot/genes">
+        <b-tabs card>
+            <b-tab title="Plot" class="mt-3">
+                <b-form-group label="Image format">
+                    <b-form-radio-group v-model="downloadPlotFormat" :options="downloadPlotFormats"></b-form-radio-group>
+                </b-form-group>
+                <b-form inline>
+                    <b-form-group label="width (pixels)"><b-form-input v-model="downloadPlotWidth" size="sm"></b-form-input></b-form-group>
+                    <b-form-group label="height (pixels)"><b-form-input v-model="downloadPlotHeight" size="sm"></b-form-input></b-form-group>
+                </b-form>
+                <br/>Tip: try setting "Adjust height to fit all rows" from the Tools dropdown to ensure you get the full heatmap.<br/>
+                <b-button variant="primary" size="sm" class="mt-3" @click="downloadPlot">Download</b-button>
+            </b-tab>
+            <b-tab title="Genes">
+                <br/>These are the genes rendered on the heatmap in the same ordering as plotted.
+                Use copy and paste to export the list.<br/>
+                <b-form-textarea v-model="downloadGeneSymbols" rows="10" class="mt-2"></b-form-textarea>
+            </b-tab>
+        </b-tabs>
+      <template #modal-footer>
+          <b-button variant="secondary" size="sm" class="float-right" @click="showDownloadModal=false">Close</b-button>
+      </template>
+    </b-modal>
+
 </div>
 </template>
 
@@ -159,6 +187,8 @@ export default {
             showSelectSampleForBaseValue: false,
             showCustomGenesetModal: false,
             clusterColumns: true,
+            setHeatmapHeightToFit: false,
+            showDownloadModal: false,
 
             // For single gene expression plot
             showGeneExpressionPlot: false,
@@ -171,6 +201,12 @@ export default {
             // custom geneset
             showCustomGeneset: false,
             customGenesetText: '',
+
+            // downloading
+            downloadPlotFormats: ['jpeg','svg','webp'],
+            downloadPlotFormat: 'jpeg',
+            downloadPlotWidth: 1000,
+            downloadPlotHeight:1500,
         }
     },
 
@@ -190,6 +226,9 @@ export default {
             return this.selectedSampleSubset in this.sampleTable? this.sampleGroupItems(this.selectedSampleSubset): [];
         },
         
+        downloadGeneSymbols() {
+            return this.geneSymbols? this.geneSymbols.reverse().join("\n") : '';
+        },
     },
 
     methods: {
@@ -224,7 +263,7 @@ export default {
             this.fetchGenesetExpression();
         },
 
-        //
+        // Set geneIds to user specified and fetch heatmap data
         showCustomGenesetExpression() {
             this.geneIds = this.customGenesetText.split("\n");
             this.fetchHeatmapData();
@@ -250,7 +289,7 @@ export default {
         },
 
         // Plot heatmap once all required data variables have been populated
-        plotHeatmap(adjustHeight=null) {
+        plotHeatmap() {
             let traces = [{type: 'heatmap', z:this.expression, x:this.columns, y:this.geneSymbols,
                            //colorbar: {title: 'log FC'}, colorscale:[[0,'blue'],[0.5,'#fcf6f6'],[1,'red']],
                            colorscale:'RdBu',
@@ -259,10 +298,12 @@ export default {
             let layout = {
                           modebar:{orientation:'h'}, margin:{t:30},
                           yaxis: {ticktext:"<a href='https://google.com'>A</a>"}};
-            if (adjustHeight!=null) {
+            if (this.setHeatmapHeightToFit) {
                 layout.yaxis.autotick = false;
-                // layout.yaxis_nticks = this.geneSymbols.lengths;
+                layout.yaxis_nticks = this.geneSymbols.length;
+                layout.height = Math.max(20*this.geneSymbols.length, 100); // Don't make it too small for small number of genes
             }
+            Plotly.purge("heatmapDiv"); // otherwise it remembers the previous div height
             Plotly.newPlot("heatmapDiv", traces, layout);
             let div = document.getElementById('heatmapDiv');
             let self = this;
@@ -449,6 +490,18 @@ export default {
             });
 
         },
+
+        // Download  plot
+        downloadPlot() {
+            let name = "Heatmap";
+            Plotly.downloadImage(document.getElementById("heatmapDiv"), {
+                format: this.downloadPlotFormat,
+                height: parseInt(this.downloadPlotHeight),
+                width: parseInt(this.downloadPlotWidth),
+                filename: 'Stemformatics_' + this.atlasType + '_atlas_' + name,
+            });
+        },
+
     },
 
     mounted() {
