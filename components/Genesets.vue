@@ -227,7 +227,7 @@ export default {
         },
         
         downloadGeneSymbols() {
-            return this.geneSymbols? this.geneSymbols.reverse().join("\n") : '';
+            return this.geneSymbols? this.geneSymbols.slice().reverse().join("\n") : ''; // need slice to make a copy otherwise original array is reversed too!
         },
     },
 
