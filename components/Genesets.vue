@@ -508,7 +508,7 @@ export default {
         // Fetch available gene set collections
         this.$axios.get("/api/genes/geneset-collections").then(res => {
             this.genesetCollections = res.data;
-            this.selectedGenesetCollection = 'Hallmark' in this.genesetCollections? 'Hallmark' : Object.keys(this.genesetCollections)[0];
+            this.selectedGenesetCollection = this.atlasType + '_atlas' in this.genesetCollections? this.atlasType + '_atlas' : Oject.keys(this.genesetCollections)[0];
             this.$axios.get("/api/atlases/" + this.atlasType + "/samples?orient=dict").then(res2 => {
                 this.sampleTable = res2.data;
                 this.selectedGroupBy = Object.keys(this.sampleTable)[0];
