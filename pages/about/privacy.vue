@@ -44,7 +44,7 @@
 
 
             <h4 class="mt-3">Any Questions?</h4>
-            <p>Please contact us on <b-link href="mailto:jarnyc@unimelb.edu.au">jarnyc@unimelb.edu.au</b-link> 
+            <p>Please contact us on <b-link href="mailto:chen.zhan@unimelb.edu.au">chen.zhan@unimelb.edu.au</b-link> 
               if you have any question regarding our privacy policy.</p>
       </b-col>
     </b-row>

@@ -15,7 +15,7 @@
             </p>
 
             <ul>
-                <li>Email: <b-link href="mailto:jarnyc@unimelb.edu.au">jarnyc@unimelb.edu.au</b-link></li>
+                <li>Email: <b-link href="mailto:chen.zhan@unimelb.edu.au">chen.zhan@unimelb.edu.au</b-link></li>
                 <li>Address: 30 Royal Parade, Kenneth Myer Building (144), University of Melbourne, Parkville, Victoria</li>
             </ul>
       </b-col>

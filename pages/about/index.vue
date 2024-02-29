@@ -46,8 +46,8 @@
                 with improved annotations and accessible with a new set of visualisation tools. Mouse datasets are still accessible through 
                 individual dataset ids, but are omitted from various searches.</p>
                 <p>Looking for the old site? It's been decommisioned now. 
-                <b-link href="mailto:jarnyc@unimelb.edu.au">Contact us</b-link> if you need to access data from the old site.</p>
-                <p>Looking for a private dataset you used to access? Please <b-link href="mailto:jarnyc@unimelb.edu.au">contact us</b-link>.
+                <b-link href="mailto:chen.zhan@unimelb.edu.au">Contact us</b-link> if you need to access data from the old site.</p>
+                <p>Looking for a private dataset you used to access? Please <b-link href="mailto:chen.zhan@unimelb.edu.au">contact us</b-link>.
             </p>
         </b-col>
     </b-row>
