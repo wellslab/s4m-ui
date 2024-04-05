@@ -314,8 +314,15 @@ export default {
                     mode:'markers', type:'scatter3d', text:legend.sampleIds, hoverinfo:'text', 
                     marker:{color:legend.colour, size:5}, visible:legend.visible}
             ));
+
+            let expVar = Object.values(this.pca.attributes.explained_variance_);
+            const sum = expVar.reduce((a, b) => a + b, 0);
+            expVar = expVar.map(item => item/sum);
+            // percents of variances explained by PC1, PC2 and PC3 are kept in     
+            // expVar[0], expVar[1], and expVar[2]
+
             const layout = {showlegend:false, margin: {t:20, l:0, r:0, b:0}, 
-                scene:{xaxis:{title:'PC1'}, yaxis:{title:'PC2'}, zaxis:{title:'PC3'}}};
+                scene:{xaxis:{title:`PC1 (${(expVar[0] * 100).toFixed(2)}%)`}, yaxis:{title:`PC2 (${(expVar[1] * 100).toFixed(2)}%)`}, zaxis:{title:`PC3 (${(expVar[2] * 100).toFixed(2)}%)`}}};
             Plotly.newPlot('pcaPlotDiv', traces, layout);
         },
 

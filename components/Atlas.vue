@@ -522,20 +522,31 @@ export default {
         // ------------ Plot related methods ---------------
         // Layout dict used by plotly - can control size, camera, etc (used only for PCA plots)
         layout() {
+
+            // here we can insert matrix of variances explained by PCA plots
+            const pca_variances = {
+                myeloid:[14.43, 6.78, 6.52],
+                dc: [10.20, 6.67, 5.84],
+                blood: [17.88, 6.80, 5.64],
+                activation: [11.44, 10.88, 8.02],
+                ma: [27.96, 15.73, 7.75]
+            };
+            // now we can fetch variances explained by PC1 by pca_variances[this.atlasType][0]
+
             return { 
                 showlegend: false,
                 height: 500,   // height of the plot in pixels
                 width: 800,
                 margin: {t:20, l:0, r:0, b:0},
-                xaxis: {title: "PC1"},
-                yaxis: {title: "PC2"},
+                xaxis: {title: `PC1 (${pca_variances[this.atlasType][0]}%)`},
+                yaxis: {title: `PC2 (${pca_variances[this.atlasType][1]}%)`},
                 uirevision: true,
                 hovermode: 'closest',
                 scene: {camera: this.camera,
                         up: { x: 1, y: 0, z: 0 }, 
-                        xaxis: {title: "PC1"},
-                        yaxis: {title: "PC2"},
-                        zaxis: {title: "PC3"}}
+                        xaxis: {title: `PC1 (${pca_variances[this.atlasType][0]}%)`},
+                        yaxis: {title: `PC2 (${pca_variances[this.atlasType][1]}%)`},
+                        zaxis: {title: `PC3 (${pca_variances[this.atlasType][2]}%)`}}
             };
         },
         
