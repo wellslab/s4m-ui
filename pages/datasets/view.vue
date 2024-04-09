@@ -315,12 +315,9 @@ export default {
                     marker:{color:legend.colour, size:5}, visible:legend.visible}
             ));
 
-            let expVar = Object.values(this.pca.attributes.explained_variance_);
-            const sum = expVar.reduce((a, b) => a + b, 0);
-            expVar = expVar.map(item => item/sum);
-            // percents of variances explained by PC1, PC2 and PC3 are kept in     
-            // expVar[0], expVar[1], and expVar[2]
-
+            // extract percentages of variance explained of components in PCA
+            let expVar = Object.values(this.pca.attributes.explained_variance_ratio_);
+            
             const layout = {showlegend:false, margin: {t:20, l:0, r:0, b:0}, 
                 scene:{xaxis:{title:`PC1 (${(expVar[0] * 100).toFixed(2)}%)`}, yaxis:{title:`PC2 (${(expVar[1] * 100).toFixed(2)}%)`}, zaxis:{title:`PC3 (${(expVar[2] * 100).toFixed(2)}%)`}}};
             Plotly.newPlot('pcaPlotDiv', traces, layout);
@@ -336,10 +333,10 @@ export default {
         },
         
         plotPCAScree() {
-            // Read explained variance and convert to percentages
-            let expVar = Object.values(this.pca.attributes.explained_variance_);
-            const sum = expVar.reduce((a, b) => a + b, 0);
-            expVar = expVar.map(item => item/sum);
+            // Read percentages of variance explained of components in PCA
+            let expVar = Object.values(this.pca.attributes.explained_variance_ratio_);
+            // const sum = expVar.reduce((a, b) => a + b, 0);
+            // expVar = expVar.map(item => item/sum);
             const x = expVar.map((item,i) => 'PC' + (i + 1));
             const traces = [{x:x, y:expVar, mode:'markers', type:'bar'}];
             const layout = {title:"Percentage of variance explained for each PC component"};
