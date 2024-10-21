@@ -529,7 +529,8 @@ export default {
                 dc: [10.20, 6.67, 5.84],
                 blood: [17.88, 6.80, 5.64],
                 activation: [11.44, 10.88, 8.02],
-                ma: [27.96, 15.73, 7.75]
+                ma: [27.96, 15.73, 7.75],
+                training:[0,0,0]
             };
             // now we can fetch variances explained by PC1 by pca_variances[this.atlasType][0]
 
