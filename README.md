@@ -33,8 +33,8 @@ $ yarn add @nuxtjs/google-analytics
 $ yarn add vuedraggable
 # $ yarn add vue-shepherd
 
-# For running a server constantly
-$ yarn global add pm2  # see https://nuxtjs.org/docs/2.x/deployment/deployment-pm2/
+# For running a server constantly: pm2 is already in package.json, so no global install is needed.
+# Run it with npx (see https://nuxtjs.org/docs/2.x/deployment/deployment-pm2/)
 
 # $ npm install plotly.js-dist  # Not sure how to make plotly work this way - currently just loading cdn into header
 
@@ -67,16 +67,24 @@ $ yarn dev
 $ yarn build
 $ yarn start
 
-# or to run forever with pm2 (better for stable prod env). ecosystem.config.js runs "nuxt start" in cluster mode
+# or to run forever with pm2 (better for stable prod env). ecosystem.config.js runs "nuxt start" in cluster mode.
+# pm2 comes from node_modules, so run it via npx
 $ yarn build
-$ pm2 start ecosystem.config.js
-$ pm2 stop ecosystem.config.js  # to stop the server
+$ npx pm2 start ecosystem.config.js
+$ npx pm2 stop ecosystem.config.js  # to stop the server
+$ npx pm2 save && npx pm2 startup   # restart on reboot; run the command startup prints
 
 # to redeploy on prod after new commits. pm2 only serves the compiled .nuxt/ dir, so yarn build is required
 $ git pull
 $ yarn install --frozen-lockfile
 $ yarn build
-$ pm2 reload ecosystem.config.js  # restarts cluster workers one at a time, so no downtime
+$ npx pm2 reload ecosystem.config.js  # restarts cluster workers one at a time, so no downtime
+
+# after changing the node version, reload isn't enough: the pm2 daemon and its workers keep the node they started with
+$ rm -rf node_modules && yarn install --frozen-lockfile && yarn build
+$ npx pm2 kill && npx pm2 start ecosystem.config.js  # brief downtime
+$ npx pm2 show Stemformatics                          # check the node version
+$ npx pm2 save && npx pm2 startup
 
 # generate static project - doesn't seem to work for this project (see scripts section under package.json - running npm run generate is equivalent to nuxt generate for example)
 $ yarn generate
@@ -95,7 +103,7 @@ Vue timeline
 https://github.com/x10sv/bs-vue-timeline
 https://codesandbox.io/s/github/AngelinCalu/bs-vue-timeline-demo?file=/src/components/Experience.vue
 
-pm2 logs
+pm2 logs (`npx pm2 logs`)
 https://pm2.keymetrics.io/docs/usage/log-management/
 
 Excellent write up on how reactive elements in vue work
