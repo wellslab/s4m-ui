@@ -14,10 +14,9 @@ $ conda activate s4m-ui
 # If there are issues with the latest version of node, it may be worthwhile downgrading it.
 # Use conda search -f nodejs to see what versions are availabe first and choose one.
 $ conda install -c conda-forge yarn  
-$ conda install nodejs=14.8.0   # otherwise had issues
-# For node version 17, may get error:0308010C:digital envelope routines::unsupported when trying to run "yarn dev"
-# The solution here is to add this in the environment vars (https://github.com/webpack/webpack/issues/14532) 
-$ export NODE_OPTIONS=--openssl-legacy-provider
+# Use node 22.23.4+ or 24.22.1+ (both tested; earlier versions are affected by CVE-2026-111497).
+# Check `node -v` afterwards, and use nvm (https://github.com/nvm-sh/nvm) instead if conda doesn't have a fixed build.
+$ conda install -c conda-forge "nodejs>=22.23.4"
 
 # Run updates if necessary
 $ conda update --all
@@ -58,10 +57,7 @@ The hostname must contain `api-<name>.` as layouts/default.vue parses `<name>` o
 the client bundle at build time, so `yarn build` must be re-run after changing it.
 
 Older nuxt versions (< 2.16) failed on node 17+ with `error:0308010C:digital envelope routines::unsupported` and needed
-`NODE_OPTIONS=--openssl-legacy-provider`. The current lockfile (nuxt 2.18) builds without it, so don't set it. The `node`
-package in `dependencies` also installs node 16 into `node_modules/.bin`, which rejects that flag ("not allowed in
-NODE_OPTIONS") and is used when running commands via `npx` or `node_modules/.bin` directly. Use the `yarn` scripts below,
-which run under your installed node.
+`NODE_OPTIONS=--openssl-legacy-provider`. The current lockfile (nuxt 2.18) builds without it, so don't set it.
 
 ```bash
 # serve with hot reload at localhost (see nuxt.config.js for port number)
