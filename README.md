@@ -50,6 +50,19 @@ $ yarn list --pattern "nuxt"
 
 ## Running the application
 
+A `.env` file in the project root is required, containing the API server url, e.g.
+```
+BASE_API_URL=https://api-prod2.stemformatics.org
+```
+The hostname must contain `api-<name>.` as layouts/default.vue parses `<name>` out of it. Note that this value is baked into
+the client bundle at build time, so `yarn build` must be re-run after changing it.
+
+Older nuxt versions (< 2.16) failed on node 17+ with `error:0308010C:digital envelope routines::unsupported` and needed
+`NODE_OPTIONS=--openssl-legacy-provider`. The current lockfile (nuxt 2.18) builds without it, so don't set it. The `node`
+package in `dependencies` also installs node 16 into `node_modules/.bin`, which rejects that flag ("not allowed in
+NODE_OPTIONS") and is used when running commands via `npx` or `node_modules/.bin` directly. Use the `yarn` scripts below,
+which run under your installed node.
+
 ```bash
 # serve with hot reload at localhost (see nuxt.config.js for port number)
 $ yarn dev
@@ -58,10 +71,16 @@ $ yarn dev
 $ yarn build
 $ yarn start
 
-# or to run forever (better for stable prod env)
+# or to run forever with pm2 (better for stable prod env). ecosystem.config.js runs "nuxt start" in cluster mode
 $ yarn build
-$ pm2 start
-$ pm2 stop ecosystem.config.js
+$ pm2 start ecosystem.config.js
+$ pm2 stop ecosystem.config.js  # to stop the server
+
+# to redeploy on prod after new commits. pm2 only serves the compiled .nuxt/ dir, so yarn build is required
+$ git pull
+$ yarn install --frozen-lockfile
+$ yarn build
+$ pm2 reload ecosystem.config.js  # restarts cluster workers one at a time, so no downtime
 
 # generate static project - doesn't seem to work for this project (see scripts section under package.json - running npm run generate is equivalent to nuxt generate for example)
 $ yarn generate
