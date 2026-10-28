@@ -14,10 +14,9 @@ $ conda activate s4m-ui
 # If there are issues with the latest version of node, it may be worthwhile downgrading it.
 # Use conda search -f nodejs to see what versions are availabe first and choose one.
 $ conda install -c conda-forge yarn  
-$ conda install nodejs=14.8.0   # otherwise had issues
-# For node version 17, may get error:0308010C:digital envelope routines::unsupported when trying to run "yarn dev"
-# The solution here is to add this in the environment vars (https://github.com/webpack/webpack/issues/14532) 
-$ export NODE_OPTIONS=--openssl-legacy-provider
+# Use node 22.23.4+ or 24.22.1+ (both tested; earlier versions are affected by CVE-2026-111497).
+# Check `node -v` afterwards, and use nvm (https://github.com/nvm-sh/nvm) instead if conda doesn't have a fixed build.
+$ conda install -c conda-forge "nodejs>=22.23.4"
 
 # Run updates if necessary
 $ conda update --all
@@ -50,6 +49,16 @@ $ yarn list --pattern "nuxt"
 
 ## Running the application
 
+A `.env` file in the project root is required, containing the API server url, e.g.
+```
+BASE_API_URL=https://api-prod2.stemformatics.org
+```
+The hostname must contain `api-<name>.` as layouts/default.vue parses `<name>` out of it. Note that this value is baked into
+the client bundle at build time, so `yarn build` must be re-run after changing it.
+
+Older nuxt versions (< 2.16) failed on node 17+ with `error:0308010C:digital envelope routines::unsupported` and needed
+`NODE_OPTIONS=--openssl-legacy-provider`. The current lockfile (nuxt 2.18) builds without it, so don't set it.
+
 ```bash
 # serve with hot reload at localhost (see nuxt.config.js for port number)
 $ yarn dev
@@ -58,10 +67,16 @@ $ yarn dev
 $ yarn build
 $ yarn start
 
-# or to run forever (better for stable prod env)
+# or to run forever with pm2 (better for stable prod env). ecosystem.config.js runs "nuxt start" in cluster mode
 $ yarn build
-$ pm2 start
-$ pm2 stop ecosystem.config.js
+$ pm2 start ecosystem.config.js
+$ pm2 stop ecosystem.config.js  # to stop the server
+
+# to redeploy on prod after new commits. pm2 only serves the compiled .nuxt/ dir, so yarn build is required
+$ git pull
+$ yarn install --frozen-lockfile
+$ yarn build
+$ pm2 reload ecosystem.config.js  # restarts cluster workers one at a time, so no downtime
 
 # generate static project - doesn't seem to work for this project (see scripts section under package.json - running npm run generate is equivalent to nuxt generate for example)
 $ yarn generate

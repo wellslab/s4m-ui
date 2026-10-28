@@ -93,3 +93,6 @@ sw.*
 
 # VSCode
 .vscode/
+# Yarn 2+ (berry) files; this project uses yarn 1
+.yarn/
+.yarnrc.yml
